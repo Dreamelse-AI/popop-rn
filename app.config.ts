@@ -1,0 +1,76 @@
+import { ExpoConfig, ConfigContext } from 'expo/config'
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: 'Popop',
+  slug: 'popop-rn',
+  scheme: 'popop',
+  version: '1.0.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'automatic',
+  ios: {
+    supportsTablet: false,
+    bundleIdentifier: 'com.popop.app',
+    infoPlist: {
+      NSCameraUsageDescription: 'Used to take photos for your profile and chats',
+      NSMicrophoneUsageDescription: 'Used to record voice messages',
+      NSPhotoLibraryUsageDescription: 'Used to select photos from your library',
+      NSSpeechRecognitionUsageDescription: 'Used to transcribe voice messages',
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: [
+            'com.googleusercontent.apps.875163971501-eg6ltniot9voha7laehf4q9nv1c64b06',
+            'popop',
+          ],
+        },
+      ],
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: true,
+        NSAllowsLocalNetworking: true,
+      },
+    },
+  },
+  android: {
+    adaptiveIcon: {
+      backgroundColor: '#ffffff',
+    },
+    package: 'com.popop.app',
+    softwareKeyboardLayoutMode: 'resize',
+  },
+  plugins: [
+    'expo-dev-client',
+    'expo-apple-authentication',
+    '@react-native-google-signin/google-signin',
+    'expo-speech-recognition',
+    'expo-audio',
+    [
+      'expo-image-picker',
+      {
+        photosPermission: 'Used to select photos for your profile and chats',
+        cameraPermission: 'Used to take photos for your profile and chats',
+      },
+    ],
+    [
+      'expo-secure-store',
+      {},
+    ],
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          deploymentTarget: '16.4',
+        },
+        android: {
+          compileSdkVersion: 35,
+          targetSdkVersion: 35,
+        },
+      },
+    ],
+  ],
+  extra: {
+    apiBaseUrl: process.env.API_BASE_URL ?? 'https://i18n-api.imaginewithu.com',
+    apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
+    apiAppId: process.env.API_APP_ID ?? 'belike_ios',
+  },
+})

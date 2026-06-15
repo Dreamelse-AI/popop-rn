@@ -1,0 +1,54 @@
+import { View, Pressable, StyleSheet } from 'react-native'
+
+import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
+import IconSearch from '@/shared/assets/feed/icon/Frame 2117132466-1.svg'
+
+type TopNavBarProps = {
+  onSearchPress: () => void
+}
+
+export function TopNavBar({ onSearchPress }: TopNavBarProps) {
+  return (
+    <View style={styles.container}>
+      <View style={styles.logoWrapper}>
+        <LogoPopop width={220} height={30} />
+      </View>
+
+      <Pressable
+        onPress={onSearchPress}
+        style={styles.searchButton}
+        accessibilityLabel="搜索"
+        accessibilityRole="button"
+      >
+        <IconSearch width={36} height={36} />
+      </Pressable>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    backgroundColor: '#f7f7f7',
+  },
+  logoWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+})

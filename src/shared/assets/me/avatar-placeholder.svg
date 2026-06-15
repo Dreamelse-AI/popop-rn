@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 2117132526">
+<rect id="Rectangle 346243742" width="120" height="120" rx="60" fill="var(--fill-0, white)"/>
+<mask id="mask0_0_172" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<rect id="Rectangle 346243743" width="120" height="120" rx="60" fill="var(--fill-0, black)"/>
+</mask>
+<g mask="url(#mask0_0_172)">
+<g id="Ellipse 111820" filter="url(#filter0_f_0_172)">
+<ellipse cx="75" cy="62.5" rx="68" ry="47.5" fill="var(--fill-0, #F0DA9C)"/>
+</g>
+<rect id="Rectangle 346243744" x="34.7837" y="40" width="12" height="16" rx="6" transform="rotate(10 34.7837 40)" fill="var(--fill-0, black)"/>
+<rect id="Rectangle 346243745" x="59.391" y="44.8588" width="12" height="16" rx="6" transform="rotate(10 59.391 44.8588)" fill="var(--fill-0, black)"/>
+<path id="Vector 7427" d="M40 67.9998C40 67.9998 54 71.9998 56 67.9998" stroke="var(--stroke-0, black)" stroke-width="6" stroke-linecap="round"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_172" x="-9" y="-0.999999" width="168" height="127" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="8" result="effect1_foregroundBlur_0_172"/>
+</filter>
+</defs>
+</svg>

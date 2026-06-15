@@ -1,0 +1,343 @@
+{
+  "login": {
+    "skip": "Skip",
+    "continueWith": "Continue with {{provider}}",
+    "loading": "Loading...",
+    "agreePrefix": "I agree to ",
+    "iAgreePrefix": "I agree to "
+  },
+  "email": {
+    "title": "Sign in with Email",
+    "accountLabel": "📧 Email Account",
+    "placeholder": "Please enter your email address...",
+    "verificationLabel": "🔒 Email Verification",
+    "codePlaceholder": "Enter verification code",
+    "sendCode": "Send Code",
+    "resend": "Resend",
+    "sending": "Sending...",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
+  },
+  "agreement": {
+    "title": "Please agree to the account terms",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "personalInfoConsent": "Personal Information Collection Consent",
+    "ageOver14": "I am at least 14 years old",
+    "marketingConsent": "Consent to receive event and benefit information",
+    "confirm": "Sign In",
+    "continue": "Continue"
+  },
+  "profile": {
+    "title": "My Chat Profile",
+    "nameLabel": "Name",
+    "namePlaceholder": "Enter character name",
+    "genderLabel": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "instructionsLabel": "Custom Instructions",
+    "instructionsPlaceholder": "Enter your settings...",
+    "hint": "You can change this anytime in Character - Chat - Sidebar Settings.",
+    "submit": "Go to Chat",
+    "loading": "Saving...",
+    "avatarUpload": "Tap to upload avatar",
+    "avatarAuditFailed": "Image audit failed. Please choose another photo.",
+    "setupRetryHint": "Failed to load profile. Please try again."
+  },
+  "wallet": {
+    "lowBalanceHint": "Your balance is running low. Please recharge soon."
+  },
+  "me": {
+    "freeIce": "Free ice for you!",
+    "recharge": "Recharge",
+    "detail": "Detail",
+    "inviteFriends": "Invite friends and get ice",
+    "about": "About popop",
+    "language": "Language",
+    "deleteAccount": "Delete Account",
+    "logout": "Log Out",
+    "logoutConfirmTitle": "Log Out",
+    "logoutConfirmMessage": "Are you sure you want to log out?",
+    "deleteAccountConfirmTitle": "Delete Account",
+    "deleteAccountConfirmMessage": "Your account and data will be permanently deleted and cannot be recovered. Are you sure?",
+    "deleteAccountFailed": "Failed to delete account. Please try again later.",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "persona": {
+    "title": "My Chat Profile",
+    "name": "Name",
+    "namePlaceholder": "Enter a name",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "instruction": "Custom instruction",
+    "instructionPlaceholder": "Describe yourself to the character",
+    "goChat": "Go chat",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "changeHint": "You can change it anytime in \"Character - Chat - Sidebar Settings\"."
+  },
+  "feed": {
+    "talk": "Talk",
+    "recommended": "Recommended",
+    "viewAll": "View All",
+    "moreCharacters": "More Characters",
+    "characterDeleted": "This character has been deleted",
+    "postDeleted": "This post has been deleted"
+  },
+  "post": {
+    "commentSent": "Sent successfully"
+  },
+  "messages": {
+    "randomMatch": "Random Match",
+    "addFriend": "Add Friend",
+    "allCharacters": "All Characters",
+    "manage": "Manage",
+    "delete": "Delete"
+  },
+  "randomMatch": {
+    "skip": "Skip",
+    "goToChat": "Go to Chat",
+    "currentMood": "Current Mood",
+    "sad": "Sad",
+    "depressed": "Depressed",
+    "happy": "Happy",
+    "title": "Random Match",
+    "matching": "Matching...",
+    "addFriend": "Add Friend",
+    "chatPlaceholder": "Click to start chatting...",
+    "male": "Male",
+    "female": "Female",
+    "mockMessage": "You must be really tired.",
+    "genderNoLimit": "No limit",
+    "genderFemale": "Female",
+    "genderMale": "Male",
+    "genderNonHuman": "Non-human",
+    "typing": "Typing...",
+    "sendFailed": "Send failed, please retry",
+    "friendAccepted": "Friend request accepted",
+    "friendRejected": "Friend request rejected",
+    "addFriendFailed": "Failed to add friend",
+    "friendInviteTitle": "They want to be friends",
+    "reject": "Reject",
+    "accept": "Accept",
+    "exitConfirmTitle": "Leaving won't save the chat",
+    "exitCancel": "Go back",
+    "exitConfirm": "Confirm",
+    "networkError": "Network error, please retry",
+    "noMatchCharacter": "No match available, try adjusting filters",
+    "myTags": "#Anonymous",
+    "editTitle": "Anonymous Character Intro",
+    "addTagPlaceholder": "Add a tag"
+  },
+  "history": {
+    "back": "Back",
+    "income": "Income",
+    "expense": "Expense",
+    "loading": "Loading...",
+    "loadingMore": "Loading more...",
+    "empty": "No records yet",
+    "retry": "Retry",
+    "note": {
+      "refund": "Refunded to your account"
+    },
+    "kind": {
+      "recharge": "Cube recharge",
+      "grant": "Bonus grant",
+      "refund": "Refund",
+      "consume": "Spending",
+      "free_quota": "Free quota",
+      "adjust": "Balance adjustment",
+      "unknown": "Transaction"
+    },
+    "scene": {
+      "chat": "Chat",
+      "gen_image": "Image generation"
+    }
+  },
+  "character": {
+    "viewInfo": "View Info",
+    "chat": "Chat",
+    "create": "Create",
+    "searchPlaceholder": "Search by character name, tag, or personality",
+    "createPage": {
+      "save": "Save",
+      "basicSettings": "Basic Settings",
+      "appearance": "Appearance",
+      "appearanceHint": "Uploaded images are not directly visible to users. They will be used in the character's daily life after tagging.",
+      "name": "Name",
+      "namePlaceholder": "Enter character name...",
+      "tags": "Tags",
+      "species": "Species",
+      "gender": "Gender",
+      "voice": "Voice",
+      "pleaseSelect": "Please select",
+      "introduction": "Introduction",
+      "introductionPlaceholder": "Enter character introduction...",
+      "personality": "Personality",
+      "personalityPlaceholder": "Enter personality description...",
+      "anonymousTag": "🎭 Anonymous Identity Tag",
+      "anonymousTagPlaceholder": "Enter tag phrase",
+      "visibility": "🔒 Visibility",
+      "private": "Private",
+      "moreSettings": "More Settings",
+      "openingLine": "💬 Opening Line",
+      "otherSettings": "📓 Other Settings",
+      "beautify": "🎨 Beautify",
+      "openingLinePlaceholder": "Enter the character's first greeting...",
+      "otherSettingsPlaceholder": "Add more supplementary settings...",
+      "beautifyPlaceholder": "Enter effect details...",
+      "preview": "Preview"
+    },
+    "detailPage": {
+      "loading": "Loading...",
+      "loadFailed": "Failed to load. Please try again later.",
+      "back": "Back",
+      "goChat": "Go to chat"
+    }
+  },
+  "invite": {
+    "invite": "Invite",
+    "inviteCode": "Invite Code"
+  },
+  "promo": {
+    "download": "Download"
+  },
+  "chatProfileSheet": {
+    "title": "Select User Profile",
+    "addNew": "Add a new identity",
+    "current": "Current",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "save": "Save",
+    "close": "Close",
+    "loadFailed": "Failed to load profiles",
+    "retry": "Retry"
+  },
+  "chatSettings": {
+    "title": "Chat Settings",
+    "close": "Close chat settings",
+    "bonus": "Bonus",
+    "refillAt": "1 refill at {{time}}",
+    "privateRoom": "💓 Private Room",
+    "modeSelect": "Mode Selection",
+    "viewAll": "View All",
+    "customSettings": "Custom Settings",
+    "myChatProfile": "My Chat Profile",
+    "myChatProfileValue": "Not set",
+    "syncRealWorld": "Sync with the real world",
+    "syncRealWorldValue": "None",
+    "chatAtmosphere": "Chat Atmosphere",
+    "chatAtmosphereValue": "Change chat background and bubbles",
+    "changeApplied": "Changes applied",
+    "loadingModels": "Loading models…",
+    "loadModelsFailed": "Failed to load models",
+    "retry": "Retry",
+    "viewLess": "Show less"
+  },
+  "chatModels": {
+    "defaultIcon": "🧃",
+    "defaultCost": "20",
+    "items": {
+      "juice": {
+        "icon": "🧃",
+        "name": "Strawberry Milkshake",
+        "description": "Sweet, rich, with a hint of tang.",
+        "cost": "20"
+      },
+      "shake": {
+        "icon": "🥤",
+        "name": "Classic Shake",
+        "description": "Balanced and smooth for everyday chat.",
+        "cost": "15"
+      },
+      "cocktail": {
+        "icon": "🍹",
+        "name": "Summer Cocktail",
+        "description": "More creative, great for wild ideas.",
+        "cost": "25"
+      },
+      "bubble-tea": {
+        "icon": "🧋",
+        "name": "Bubble Tea",
+        "description": "Rational and steady replies.",
+        "cost": "18"
+      }
+    }
+  },
+  "chatPageStyleSheet": {
+    "title": "Chat Atmosphere",
+    "chatBackground": "Chat Background",
+    "chatBubble": "Chat Bubbles",
+    "customTheme": "Custom Themes",
+    "viewAll": "View All",
+    "viewAllBackgrounds": "View all chat backgrounds",
+    "confirm": "Confirm"
+  },
+  "chatModeCustomSheet": {
+    "title": "Custom Settings",
+    "open": "Open mode custom settings",
+    "instructionsLabel": "Custom Instructions",
+    "instructionsPlaceholder": "Input style is the expected model response...",
+    "confirm": "Confirm",
+    "creativityLevels": {
+      "balance": "Balance",
+      "creativity": "Creativity",
+      "rationality": "Rationality"
+    }
+  },
+  "chatBackgroundPage": {
+    "title": "Chat Background",
+    "back": "Back",
+    "addBackground": "Add background",
+    "deleteBackground": "Delete background"
+  },
+  "chatLocalAlbumSheet": {
+    "title": "Select from Album",
+    "recentlyUsed": "Recently used",
+    "browseDevice": "Choose from album",
+    "empty": "No photos yet. Choose from your album.",
+    "loading": "Loading...",
+    "uploading": "Uploading...",
+    "loadFailed": "Failed to load photos. Please try again.",
+    "pickFailed": "Failed to add photos. Please try again.",
+    "uploadFailed": "Upload failed. Please try again.",
+    "auditFailed": "Image did not pass review. Please try another one.",
+    "close": "Close",
+    "albums": {
+      "recent": "Add Image",
+      "female": "Female",
+      "male": "Male",
+      "nonHuman": "Non-human"
+    }
+  },
+  "messageMenu": {
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinned": "Pinned",
+    "pinFailed": "Failed to pin. Please try again.",
+    "unpinFailed": "Failed to unpin. Please try again.",
+    "endRelation": "End Relation"
+  },
+  "chatCharacterVersionSync": {
+    "title": "Character settings updated",
+    "message": "The character settings were updated. Sync to the latest version?",
+    "update": "Update",
+    "dismiss": "Not now",
+    "updating": "Syncing…",
+    "syncedMessage": "Synced to the latest settings"
+  },
+  "chatMessageMenu": {
+    "close": "Close menu",
+    "rollback": "Rewind",
+    "copy": "Copy",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "rollbacking": "Rewinding…",
+    "rollbackConfirmTitle": "Rewind to this message?",
+    "rollbackConfirmMessage": "This message and all messages after it will be deleted."
+  }
+}

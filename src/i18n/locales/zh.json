@@ -1,0 +1,343 @@
+{
+  "login": {
+    "skip": "跳过",
+    "continueWith": "使用 {{provider}} 继续",
+    "loading": "加载中...",
+    "agreePrefix": "我同意: ",
+    "iAgreePrefix": "我同意 "
+  },
+  "email": {
+    "title": "使用邮箱登录",
+    "accountLabel": "📧 邮箱账号",
+    "placeholder": "请输入您的邮箱地址...",
+    "verificationLabel": "🔒 邮箱验证",
+    "codePlaceholder": "输入验证码",
+    "sendCode": "发送验证码",
+    "resend": "重新发送",
+    "sending": "发送中...",
+    "signIn": "登录",
+    "signingIn": "登录中..."
+  },
+  "agreement": {
+    "title": "请同意账户使用条款",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "personalInfoConsent": "个人信息收集和使用同意",
+    "ageOver14": "您必须年满14周岁",
+    "marketingConsent": "同意接收活动及福利信息",
+    "confirm": "登录",
+    "continue": "继续"
+  },
+  "profile": {
+    "title": "我的聊天资料",
+    "nameLabel": "姓名",
+    "namePlaceholder": "输入角色名称",
+    "genderLabel": "性别",
+    "male": "男",
+    "female": "女",
+    "other": "其他",
+    "instructionsLabel": "自定义指令",
+    "instructionsPlaceholder": "输入您的设置...",
+    "hint": "您可以随时在「角色 - 聊天 - 侧边栏设置」中更改。",
+    "submit": "开始聊天",
+    "loading": "保存中...",
+    "avatarUpload": "点击上传头像",
+    "avatarAuditFailed": "图片审核未通过，请换一张试试",
+    "setupRetryHint": "加载资料失败，请稍后重试"
+  },
+  "wallet": {
+    "lowBalanceHint": "余额即将不足，请及时充值"
+  },
+  "me": {
+    "freeIce": "免费赠送冰块！",
+    "recharge": "充值",
+    "detail": "明细",
+    "inviteFriends": "邀请朋友获取冰块",
+    "about": "关于 popop",
+    "language": "语言",
+    "deleteAccount": "删除账号",
+    "logout": "退出登录",
+    "logoutConfirmTitle": "退出登录",
+    "logoutConfirmMessage": "确定要退出登录吗？",
+    "deleteAccountConfirmTitle": "删除账号",
+    "deleteAccountConfirmMessage": "账号与数据将被永久删除且无法恢复，确定删除吗？",
+    "deleteAccountFailed": "删除账号失败，请稍后重试。",
+    "cancel": "取消",
+    "confirm": "确认"
+  },
+  "persona": {
+    "title": "我的聊天资料",
+    "name": "名字",
+    "namePlaceholder": "请输入名字",
+    "gender": "性别",
+    "male": "男性",
+    "female": "女性",
+    "other": "其他",
+    "instruction": "自定义指令",
+    "instructionPlaceholder": "向角色描述你自己",
+    "goChat": "去聊天",
+    "saving": "保存中...",
+    "loading": "加载中...",
+    "changeHint": "可随时在「角色 - 聊天 - 侧边栏设置」中修改。"
+  },
+  "feed": {
+    "talk": "对话",
+    "recommended": "推荐内容",
+    "viewAll": "查看全部",
+    "moreCharacters": "更多角色",
+    "characterDeleted": "角色已被删除",
+    "postDeleted": "帖子已被删除"
+  },
+  "post": {
+    "commentSent": "发送成功"
+  },
+  "messages": {
+    "randomMatch": "随机匹配",
+    "addFriend": "添加好友",
+    "allCharacters": "所有角色",
+    "manage": "管理",
+    "delete": "删除"
+  },
+  "randomMatch": {
+    "skip": "跳过",
+    "goToChat": "开始聊天",
+    "currentMood": "当前心情",
+    "sad": "悲伤",
+    "depressed": "忧郁",
+    "happy": "开心",
+    "title": "随机匹配",
+    "matching": "匹配中...",
+    "addFriend": "添加好友",
+    "chatPlaceholder": "点击开始聊天...",
+    "male": "男性",
+    "female": "女性",
+    "mockMessage": "你一定很累吧。",
+    "genderNoLimit": "不限",
+    "genderFemale": "女性",
+    "genderMale": "男性",
+    "genderNonHuman": "非人类",
+    "typing": "对方正在输入中...",
+    "sendFailed": "发送失败，请重试",
+    "friendAccepted": "对方接受了好友邀请",
+    "friendRejected": "对方拒绝了你的好友邀请",
+    "addFriendFailed": "加好友失败",
+    "friendInviteTitle": "对方想加你为好友",
+    "reject": "拒绝",
+    "accept": "接受",
+    "exitConfirmTitle": "离开将不保留聊天",
+    "exitCancel": "返回",
+    "exitConfirm": "确认",
+    "networkError": "网络错误，请重试",
+    "noMatchCharacter": "暂无匹配角色，请调整筛选条件",
+    "myTags": "#匿名",
+    "editTitle": "匿名角色介绍",
+    "addTagPlaceholder": "添加标签"
+  },
+  "history": {
+    "back": "返回",
+    "income": "收入",
+    "expense": "支出",
+    "loading": "加载中...",
+    "loadingMore": "加载更多...",
+    "empty": "暂无记录",
+    "retry": "重试",
+    "note": {
+      "refund": "已退回账户"
+    },
+    "kind": {
+      "recharge": "代币充值",
+      "grant": "赠送",
+      "refund": "退款",
+      "consume": "消费",
+      "free_quota": "免费额度",
+      "adjust": "余额调整",
+      "unknown": "其他"
+    },
+    "scene": {
+      "chat": "聊天",
+      "gen_image": "生成图片"
+    }
+  },
+  "character": {
+    "viewInfo": "查看信息",
+    "chat": "聊天",
+    "create": "创建",
+    "searchPlaceholder": "搜索喜欢的角色名称、标签或性格",
+    "createPage": {
+      "save": "保存",
+      "basicSettings": "基础设定",
+      "appearance": "形象",
+      "appearanceHint": "上传的图片不会直接对用户可见，图片打完标签后将在角色日常中被使用。",
+      "name": "名字",
+      "namePlaceholder": "请输入角色名称...",
+      "tags": "标签",
+      "species": "物种",
+      "gender": "性别",
+      "voice": "音色",
+      "pleaseSelect": "请选择",
+      "introduction": "简介",
+      "introductionPlaceholder": "请输入角色简介...",
+      "personality": "性格",
+      "personalityPlaceholder": "请输入性格描述...",
+      "anonymousTag": "🎭 匿名身份标签",
+      "anonymousTagPlaceholder": "请输入标签短语",
+      "visibility": "🔒 可见性",
+      "private": "私密",
+      "moreSettings": "更多设定",
+      "openingLine": "💬 开场白",
+      "otherSettings": "📓 其他设定",
+      "beautify": "🎨 美化",
+      "openingLinePlaceholder": "请输入角色打招呼的第一句话...",
+      "otherSettingsPlaceholder": "添加更多补充设定...",
+      "beautifyPlaceholder": "请输入效果补充...",
+      "preview": "预览"
+    },
+    "detailPage": {
+      "loading": "加载中...",
+      "loadFailed": "加载失败，请稍后重试",
+      "back": "返回",
+      "goChat": "去聊天"
+    }
+  },
+  "invite": {
+    "invite": "邀请",
+    "inviteCode": "邀请码"
+  },
+  "promo": {
+    "download": "下载"
+  },
+  "chatProfileSheet": {
+    "title": "选择用户自设",
+    "addNew": "添加新的身份",
+    "current": "当前",
+    "confirm": "确认",
+    "edit": "编辑",
+    "save": "保存",
+    "close": "关闭",
+    "loadFailed": "加载自设失败",
+    "retry": "重试"
+  },
+  "chatSettings": {
+    "title": "聊天设置",
+    "close": "关闭聊天设置",
+    "bonus": "奖励",
+    "refillAt": "1 次补充于 {{time}}",
+    "privateRoom": "💓 私密空间",
+    "modeSelect": "模式选择",
+    "viewAll": "查看全部",
+    "customSettings": "自定义设置",
+    "myChatProfile": "我的聊天资料",
+    "myChatProfileValue": "未设置",
+    "syncRealWorld": "与现实世界同步",
+    "syncRealWorldValue": "无",
+    "chatAtmosphere": "聊天氛围设置",
+    "chatAtmosphereValue": "更改聊天背景与气泡",
+    "changeApplied": "变动已生效",
+    "loadingModels": "加载模型中…",
+    "loadModelsFailed": "模型加载失败",
+    "retry": "重试",
+    "viewLess": "收起"
+  },
+  "chatModels": {
+    "defaultIcon": "🧃",
+    "defaultCost": "20",
+    "items": {
+      "juice": {
+        "icon": "🧃",
+        "name": "草莓奶昔",
+        "description": "甜美、浓郁、带一点酸。",
+        "cost": "20"
+      },
+      "shake": {
+        "icon": "🥤",
+        "name": "经典奶昔",
+        "description": "均衡顺滑，日常对话首选。",
+        "cost": "15"
+      },
+      "cocktail": {
+        "icon": "🍹",
+        "name": "夏日特调",
+        "description": "更有创意，适合脑洞大开。",
+        "cost": "25"
+      },
+      "bubble-tea": {
+        "icon": "🧋",
+        "name": "珍珠奶茶",
+        "description": "理性克制，回复更稳定。",
+        "cost": "18"
+      }
+    }
+  },
+  "chatPageStyleSheet": {
+    "title": "聊天氛围设置",
+    "chatBackground": "聊天背景设置",
+    "chatBubble": "聊天气泡设置",
+    "customTheme": "用户自定义主题",
+    "viewAll": "查看全部",
+    "viewAllBackgrounds": "查看全部聊天背景",
+    "confirm": "确认"
+  },
+  "chatModeCustomSheet": {
+    "title": "用户自定义设置",
+    "open": "打开模式自定义设置",
+    "instructionsLabel": "用户自定义指令",
+    "instructionsPlaceholder": "输入风格是预期的模型响应...",
+    "confirm": "确认",
+    "creativityLevels": {
+      "balance": "平衡",
+      "creativity": "创造力",
+      "rationality": "合理性"
+    }
+  },
+  "chatBackgroundPage": {
+    "title": "聊天背景设置",
+    "back": "返回",
+    "addBackground": "添加背景",
+    "deleteBackground": "删除背景"
+  },
+  "chatLocalAlbumSheet": {
+    "title": "选择本地相册",
+    "recentlyUsed": "最近选用",
+    "browseDevice": "从相册选择",
+    "empty": "暂无图片，请从相册选择",
+    "loading": "加载中...",
+    "uploading": "上传中...",
+    "loadFailed": "加载失败，请重试",
+    "pickFailed": "添加图片失败，请重试",
+    "uploadFailed": "上传失败，请重试",
+    "auditFailed": "图片未通过审核，请换一张试试",
+    "close": "关闭",
+    "albums": {
+      "recent": "添加图片",
+      "female": "女性",
+      "male": "男性",
+      "nonHuman": "非人类"
+    }
+  },
+  "messageMenu": {
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "pinned": "已置顶",
+    "pinFailed": "置顶失败，请稍后重试",
+    "unpinFailed": "取消置顶失败，请稍后重试",
+    "endRelation": "结束关系"
+  },
+  "chatCharacterVersionSync": {
+    "title": "角色设定已更新",
+    "message": "角色设定被更新，是否同步最新设定？",
+    "update": "更新",
+    "dismiss": "不更新",
+    "updating": "同步中…",
+    "syncedMessage": "已同步到最新设定"
+  },
+  "chatMessageMenu": {
+    "close": "关闭菜单",
+    "rollback": "回溯",
+    "copy": "复制",
+    "cancel": "取消",
+    "confirm": "确定",
+    "rollbacking": "回溯中…",
+    "rollbackConfirmTitle": "确定回溯到这条消息吗？",
+    "rollbackConfirmMessage": "此消息及之后的消息将被删除，且无法恢复。"
+  }
+}

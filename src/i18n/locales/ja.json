@@ -1,0 +1,343 @@
+{
+  "login": {
+    "skip": "スキップ",
+    "continueWith": "{{provider}}で続ける",
+    "loading": "読み込み中...",
+    "agreePrefix": "同意します: ",
+    "iAgreePrefix": "同意します "
+  },
+  "email": {
+    "title": "メールでサインイン",
+    "accountLabel": "📧 メールアカウント",
+    "placeholder": "メールアドレスを入力してください...",
+    "verificationLabel": "🔒 メール認証",
+    "codePlaceholder": "認証コードを入力",
+    "sendCode": "コード送信",
+    "resend": "再送信",
+    "sending": "送信中...",
+    "signIn": "サインイン",
+    "signingIn": "サインイン中..."
+  },
+  "agreement": {
+    "title": "アカウント利用規約に同意してください",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "personalInfoConsent": "個人情報の収集・利用への同意",
+    "ageOver14": "14歳以上です",
+    "marketingConsent": "イベントや特典情報の受信に同意",
+    "confirm": "サインイン",
+    "continue": "続ける"
+  },
+  "profile": {
+    "title": "マイチャットプロフィール",
+    "nameLabel": "名前",
+    "namePlaceholder": "キャラクター名を入力",
+    "genderLabel": "性別",
+    "male": "男性",
+    "female": "女性",
+    "other": "その他",
+    "instructionsLabel": "カスタム指示",
+    "instructionsPlaceholder": "設定を入力してください...",
+    "hint": "「キャラクター - チャット - サイドバー設定」でいつでも変更できます。",
+    "submit": "チャットへ",
+    "loading": "保存中...",
+    "avatarUpload": "タップしてアバターをアップロード",
+    "avatarAuditFailed": "画像審査に通りませんでした。別の写真を選んでください。",
+    "setupRetryHint": "プロフィールの読み込みに失敗しました。しばらくしてから再度お試しください。"
+  },
+  "wallet": {
+    "lowBalanceHint": "残高が少なくなっています。チャージしてください"
+  },
+  "me": {
+    "freeIce": "アイスを無料でプレゼント！",
+    "recharge": "チャージ",
+    "detail": "詳細",
+    "inviteFriends": "友達を招待してアイスをもらおう",
+    "about": "popop について",
+    "language": "言語",
+    "deleteAccount": "アカウント削除",
+    "logout": "ログアウト",
+    "logoutConfirmTitle": "ログアウト",
+    "logoutConfirmMessage": "本当にログアウトしますか？",
+    "deleteAccountConfirmTitle": "アカウント削除",
+    "deleteAccountConfirmMessage": "アカウントとデータは完全に削除され、復元できません。削除しますか？",
+    "deleteAccountFailed": "アカウントの削除に失敗しました。後ほど再度お試しください。",
+    "cancel": "キャンセル",
+    "confirm": "確認"
+  },
+  "persona": {
+    "title": "私のチャットプロフィール",
+    "name": "名前",
+    "namePlaceholder": "名前を入力",
+    "gender": "性別",
+    "male": "男性",
+    "female": "女性",
+    "other": "その他",
+    "instruction": "カスタム指示",
+    "instructionPlaceholder": "キャラクターに自分を説明してください",
+    "goChat": "チャットへ",
+    "saving": "保存中...",
+    "loading": "読み込み中...",
+    "changeHint": "「キャラクター - チャット - サイドバー設定」でいつでも変更できます。"
+  },
+  "feed": {
+    "talk": "話す",
+    "recommended": "おすすめコンテンツ",
+    "viewAll": "すべて見る",
+    "moreCharacters": "もっと見る",
+    "characterDeleted": "キャラクターは削除されました",
+    "postDeleted": "投稿は削除されました"
+  },
+  "post": {
+    "commentSent": "送信しました"
+  },
+  "messages": {
+    "randomMatch": "ランダムマッチ",
+    "addFriend": "友達追加",
+    "allCharacters": "すべてのキャラクター",
+    "manage": "管理する",
+    "delete": "削除"
+  },
+  "randomMatch": {
+    "skip": "スキップ",
+    "goToChat": "チャットへ",
+    "currentMood": "今の気分",
+    "sad": "悲しい",
+    "depressed": "憂鬱",
+    "happy": "幸せ",
+    "title": "ランダムマッチ",
+    "matching": "マッチング中...",
+    "addFriend": "友達追加",
+    "chatPlaceholder": "クリックしてチャットを始める...",
+    "male": "男性",
+    "female": "女性",
+    "mockMessage": "本当にお疲れでしょう。",
+    "genderNoLimit": "制限なし",
+    "genderFemale": "女性",
+    "genderMale": "男性",
+    "genderNonHuman": "人間以外",
+    "typing": "相手が入力中...",
+    "sendFailed": "送信失敗、再試行してください",
+    "friendAccepted": "相手がフレンド申請を承認しました",
+    "friendRejected": "相手がフレンド申請を拒否しました",
+    "addFriendFailed": "友達追加に失敗しました",
+    "friendInviteTitle": "相手が友達になりたがっています",
+    "reject": "拒否",
+    "accept": "承認",
+    "exitConfirmTitle": "退出するとチャットは保存されません",
+    "exitCancel": "戻る",
+    "exitConfirm": "確認",
+    "networkError": "ネットワークエラー、再試行してください",
+    "noMatchCharacter": "マッチするキャラクターがいません。フィルターを調整してください",
+    "myTags": "#匿名",
+    "editTitle": "匿名キャラクター紹介",
+    "addTagPlaceholder": "タグを追加"
+  },
+  "history": {
+    "back": "戻る",
+    "income": "収入",
+    "expense": "支出",
+    "loading": "読み込み中...",
+    "loadingMore": "さらに読み込み中...",
+    "empty": "履歴がありません",
+    "retry": "再試行",
+    "note": {
+      "refund": "アカウントに返金されました"
+    },
+    "kind": {
+      "recharge": "キューブチャージ",
+      "grant": "ボーナス付与",
+      "refund": "返金",
+      "consume": "利用",
+      "free_quota": "無料枠",
+      "adjust": "残高調整",
+      "unknown": "その他"
+    },
+    "scene": {
+      "chat": "チャット",
+      "gen_image": "画像生成"
+    }
+  },
+  "character": {
+    "viewInfo": "情報を見る",
+    "chat": "チャット",
+    "create": "作成",
+    "searchPlaceholder": "好きなキャラクター名、タグ、性格で検索",
+    "createPage": {
+      "save": "保存",
+      "basicSettings": "基本設定",
+      "appearance": "外見",
+      "appearanceHint": "アップロードした画像はユーザーに直接表示されません。タグ付け後、キャラクターの日常で使用されます。",
+      "name": "名前",
+      "namePlaceholder": "キャラクター名を入力...",
+      "tags": "タグ",
+      "species": "種族",
+      "gender": "性別",
+      "voice": "声質",
+      "pleaseSelect": "選択してください",
+      "introduction": "紹介",
+      "introductionPlaceholder": "キャラクター紹介を入力...",
+      "personality": "性格",
+      "personalityPlaceholder": "性格の説明を入力...",
+      "anonymousTag": "🎭 匿名アイデンティティタグ",
+      "anonymousTagPlaceholder": "タグフレーズを入力",
+      "visibility": "🔒 公開範囲",
+      "private": "非公開",
+      "moreSettings": "詳細設定",
+      "openingLine": "💬 オープニング",
+      "otherSettings": "📓 その他の設定",
+      "beautify": "🎨 美化",
+      "openingLinePlaceholder": "キャラクターの最初の挨拶を入力...",
+      "otherSettingsPlaceholder": "追加設定を入力...",
+      "beautifyPlaceholder": "効果の詳細を入力...",
+      "preview": "プレビュー"
+    },
+    "detailPage": {
+      "loading": "読み込み中...",
+      "loadFailed": "読み込みに失敗しました。しばらくしてからお試しください。",
+      "back": "戻る",
+      "goChat": "チャットへ"
+    }
+  },
+  "invite": {
+    "invite": "招待する",
+    "inviteCode": "招待コード"
+  },
+  "promo": {
+    "download": "ダウンロード"
+  },
+  "chatProfileSheet": {
+    "title": "ユーザー設定を選択",
+    "addNew": "新しいアイデンティティを追加",
+    "current": "現在",
+    "confirm": "確認",
+    "edit": "編集",
+    "save": "保存",
+    "close": "閉じる",
+    "loadFailed": "プロフィールの読み込みに失敗しました",
+    "retry": "再試行"
+  },
+  "chatSettings": {
+    "title": "チャット設定",
+    "close": "チャット設定を閉じる",
+    "bonus": "ボーナス",
+    "refillAt": "1回補充は {{time}}",
+    "privateRoom": "💓 プライベートルーム",
+    "modeSelect": "モード選択",
+    "viewAll": "すべて表示",
+    "customSettings": "カスタム設定",
+    "myChatProfile": "マイチャットプロフィール",
+    "myChatProfileValue": "未設定",
+    "syncRealWorld": "現実世界と同期",
+    "syncRealWorldValue": "なし",
+    "chatAtmosphere": "チャット雰囲気設定",
+    "chatAtmosphereValue": "チャット背景と吹き出しを変更",
+    "changeApplied": "変更が反映されました",
+    "loadingModels": "モデルを読み込み中…",
+    "loadModelsFailed": "モデルの読み込みに失敗しました",
+    "retry": "再試行",
+    "viewLess": "折りたたむ"
+  },
+  "chatModels": {
+    "defaultIcon": "🧃",
+    "defaultCost": "20",
+    "items": {
+      "juice": {
+        "icon": "🧃",
+        "name": "ストロベリーミルクセーキ",
+        "description": "甘く、とろみがあり、少し酸っぱい。",
+        "cost": "20"
+      },
+      "shake": {
+        "icon": "🥤",
+        "name": "クラシックシェイク",
+        "description": "バランスの取れた日常会話向け。",
+        "cost": "15"
+      },
+      "cocktail": {
+        "icon": "🍹",
+        "name": "サマーカクテル",
+        "description": "創造性が高く、自由な発想に。",
+        "cost": "25"
+      },
+      "bubble-tea": {
+        "icon": "🧋",
+        "name": "タピオカミルクティー",
+        "description": "理性的で安定した返答。",
+        "cost": "18"
+      }
+    }
+  },
+  "chatPageStyleSheet": {
+    "title": "チャット雰囲気設定",
+    "chatBackground": "チャット背景設定",
+    "chatBubble": "チャット吹き出し設定",
+    "customTheme": "ユーザー定義テーマ",
+    "viewAll": "すべて表示",
+    "viewAllBackgrounds": "すべてのチャット背景を表示",
+    "confirm": "確認"
+  },
+  "chatModeCustomSheet": {
+    "title": "ユーザー定義設定",
+    "open": "モードのカスタム設定を開く",
+    "instructionsLabel": "ユーザー定義指示",
+    "instructionsPlaceholder": "入力スタイルは想定されるモデル応答です...",
+    "confirm": "確認",
+    "creativityLevels": {
+      "balance": "バランス",
+      "creativity": "創造性",
+      "rationality": "合理性"
+    }
+  },
+  "chatBackgroundPage": {
+    "title": "チャット背景設定",
+    "back": "戻る",
+    "addBackground": "背景を追加",
+    "deleteBackground": "背景を削除"
+  },
+  "chatLocalAlbumSheet": {
+    "title": "ローカルアルバムから選択",
+    "recentlyUsed": "最近使った画像",
+    "browseDevice": "アルバムから選択",
+    "empty": "画像がありません。アルバムから選択してください",
+    "loading": "読み込み中...",
+    "uploading": "アップロード中...",
+    "loadFailed": "読み込みに失敗しました。もう一度お試しください",
+    "pickFailed": "画像の追加に失敗しました。もう一度お試しください",
+    "uploadFailed": "アップロードに失敗しました。もう一度お試しください",
+    "auditFailed": "画像が審査を通過しませんでした。別の画像をお試しください",
+    "close": "閉じる",
+    "albums": {
+      "recent": "画像を追加",
+      "female": "女性",
+      "male": "男性",
+      "nonHuman": "非人間"
+    }
+  },
+  "messageMenu": {
+    "pin": "ピン留め",
+    "unpin": "ピン留め解除",
+    "pinned": "ピン留め済み",
+    "pinFailed": "ピン留めに失敗しました。しばらくしてから再試行してください。",
+    "unpinFailed": "ピン留め解除に失敗しました。しばらくしてから再試行してください。",
+    "endRelation": "関係終了"
+  },
+  "chatCharacterVersionSync": {
+    "title": "キャラ設定が更新されました",
+    "message": "キャラ設定が更新されました。最新の設定に同期しますか？",
+    "update": "更新",
+    "dismiss": "更新しない",
+    "updating": "同期中…",
+    "syncedMessage": "最新の設定に同期しました"
+  },
+  "chatMessageMenu": {
+    "close": "メニューを閉じる",
+    "rollback": "巻き戻し",
+    "copy": "コピー",
+    "cancel": "キャンセル",
+    "confirm": "確定",
+    "rollbacking": "巻き戻し中…",
+    "rollbackConfirmTitle": "このメッセージまで巻き戻しますか？",
+    "rollbackConfirmMessage": "このメッセージ以降は削除され、元に戻せません。"
+  }
+}
