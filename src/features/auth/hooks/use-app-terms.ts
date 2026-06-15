@@ -1,26 +1,27 @@
+import type { TermsInfo } from '@/generated/arca_apiComponents';
 import { useEffect, useState } from 'react';
 
 import type { AccountRegion } from '../auth-types';
-import { fetchAppTermsLinks, getCachedAppTermsLinks, type AppTermsLinks } from '../lib/app-terms';
+import { fetchAppTerms, getCachedAppTerms } from '../lib/app-terms';
 
 export function useAppTerms(region: AccountRegion) {
-  const [links, setLinks] = useState<AppTermsLinks>(() => getCachedAppTermsLinks(region) ?? {});
+  const [termsList, setTermsList] = useState<TermsInfo[]>(() => getCachedAppTerms(region) ?? []);
 
   useEffect(() => {
     let alive = true;
 
-    setLinks(getCachedAppTermsLinks(region) ?? {});
+    setTermsList(getCachedAppTerms(region) ?? []);
 
-    fetchAppTermsLinks(region)
+    fetchAppTerms(region)
       .then(result => {
         if (alive) {
-          setLinks(result);
+          setTermsList(result);
         }
       })
       .catch(err => {
         console.error('[useAppTerms] failed to load terms:', err);
         if (alive) {
-          setLinks({});
+          setTermsList([]);
         }
       });
 
@@ -29,5 +30,5 @@ export function useAppTerms(region: AccountRegion) {
     };
   }, [region]);
 
-  return links;
+  return termsList;
 }

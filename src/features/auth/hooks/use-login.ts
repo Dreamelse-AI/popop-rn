@@ -11,10 +11,13 @@ import { useCountdown } from './use-countdown'
 import { useGoogleLogin } from './use-google-login'
 import { useAppleLogin } from './use-apple-login'
 import { startOAuthCodeLogin } from './oauth-code-login'
-import type { AccountRegion, AuthProvider, AuthResponse, AgreementKey, ProfileGender } from '../auth-types'
-import { PROVIDER_LABELS, REGION_TO_LANGUAGE, getAgreementsByRegion, getLoginMethodsByRegion } from '../region-config'
+import type { AccountRegion, AuthProvider, AuthResponse, ProfileGender } from '../auth-types'
+import { canSubmitTerms, getRequiredTerms } from '../lib/app-terms'
+import { PROVIDER_LABELS, REGION_TO_LANGUAGE, getLoginMethodsByRegion } from '../region-config'
 import { getAccountRegion, setAccountRegion } from '@/shared/api/account-region-store'
 import { sessionStore } from '@/shared/session-store'
+import { useAuthStore } from '../auth-store'
+import { useAppTerms } from './use-app-terms'
 import i18n from '@/i18n'
 
 type LoginState = {
@@ -22,8 +25,7 @@ type LoginState = {
   email: string
   code: string
   agreed: boolean
-  agreementChecks: Partial<Record<AgreementKey, boolean>>
-  marketingConsent: boolean
+  agreementChecks: Partial<Record<string, boolean>>
   showEmailModal: boolean
   showAgreeModal: boolean
   agreeModalMode: 'email' | 'provider'
@@ -69,7 +71,6 @@ export function useLogin(navigation: UseLoginNavigation) {
     code: '',
     agreed: false,
     agreementChecks: {},
-    marketingConsent: false,
     showEmailModal: false,
     showAgreeModal: false,
     agreeModalMode: 'email',
@@ -85,9 +86,18 @@ export function useLogin(navigation: UseLoginNavigation) {
     step: 'email',
   }))
 
+  const termsList = useAppTerms(state.region)
+
   const update = useCallback((patch: Partial<LoginState>) => {
     setState(prev => ({ ...prev, ...patch }))
   }, [])
+
+  const enterGuestMode = useAuthStore(s => s.enterGuestMode)
+
+  const handleSkipLogin = useCallback(() => {
+    void enterGuestMode()
+    navigation.replace('Home')
+  }, [enterGuestMode, navigation])
 
   const providers = useMemo(
     () => getLoginMethodsByRegion(state.region),
@@ -110,7 +120,6 @@ export function useLogin(navigation: UseLoginNavigation) {
             regionLoading: false,
             agreed: false,
             agreementChecks: {},
-            marketingConsent: false,
             error: null,
           }
         })
@@ -132,7 +141,7 @@ export function useLogin(navigation: UseLoginNavigation) {
       const res = JSON.parse(raw) as AuthResponse
       pendingAuthRef.current = res
       pendingActionRef.current = null
-      update({ showAgreeModal: true, agreeModalMode: 'provider', agreementChecks: {}, marketingConsent: false, error: null })
+      update({ showAgreeModal: true, agreeModalMode: 'provider', agreementChecks: {}, error: null })
     } catch { /* ignore */ }
   }, [])
 
@@ -150,7 +159,6 @@ export function useLogin(navigation: UseLoginNavigation) {
         region,
         agreed: false,
         agreementChecks: {},
-        marketingConsent: false,
         error: null,
       }
     })
@@ -169,9 +177,9 @@ export function useLogin(navigation: UseLoginNavigation) {
   const buildPrefilledAgreementChecks = useCallback(() => {
     if (!state.agreed) return {}
     return Object.fromEntries(
-      getAgreementsByRegion(state.region).map(key => [key, true]),
-    ) as Partial<Record<AgreementKey, boolean>>
-  }, [state.agreed, state.region])
+      getRequiredTerms(termsList).map(term => [term.terms_id, true]),
+    )
+  }, [state.agreed, termsList])
 
   const openAgreeModal = useCallback((onConfirm: () => void, mode: 'email' | 'provider' = 'email') => {
     pendingActionRef.current = onConfirm
@@ -179,7 +187,6 @@ export function useLogin(navigation: UseLoginNavigation) {
       showAgreeModal: true,
       agreeModalMode: mode,
       agreementChecks: buildPrefilledAgreementChecks(),
-      marketingConsent: false,
       error: null,
     })
   }, [buildPrefilledAgreementChecks, update])
@@ -213,18 +220,14 @@ export function useLogin(navigation: UseLoginNavigation) {
     openAgreeModal(onConfirm, mode)
   }, [state.agreed, openAgreeModal])
 
-  const toggleAgreement = useCallback((key: AgreementKey) => {
+  const toggleAgreement = useCallback((termsId: string) => {
     setState(prev => ({
       ...prev,
       agreementChecks: {
         ...prev.agreementChecks,
-        [key]: !prev.agreementChecks[key],
+        [termsId]: !prev.agreementChecks[termsId],
       },
     }))
-  }, [])
-
-  const toggleMarketingConsent = useCallback(() => {
-    setState(prev => ({ ...prev, marketingConsent: !prev.marketingConsent }))
   }, [])
 
   const closeAgreeModal = useCallback(() => {
@@ -268,9 +271,7 @@ export function useLogin(navigation: UseLoginNavigation) {
 
   const canSubmitProfile = state.profileName.trim().length > 0 && state.profileGender !== null
 
-  const canSubmitAgreements = getAgreementsByRegion(state.region).every(
-    key => state.agreementChecks[key],
-  )
+  const canSubmitAgreements = canSubmitTerms(termsList, state.agreementChecks)
 
   const submitAgreeAndLogin = useCallback(() => {
     if (!canSubmitAgreements) return
@@ -372,7 +373,6 @@ export function useLogin(navigation: UseLoginNavigation) {
           showAgreeModal: true,
           agreeModalMode: 'provider',
           agreementChecks: {},
-          marketingConsent: false,
           error: null,
           showEmailModal: false,
         })
@@ -504,6 +504,7 @@ export function useLogin(navigation: UseLoginNavigation) {
 
   return {
     state: { ...state, providers },
+    termsList,
     countdown,
     setEmail,
     setCode,
@@ -515,10 +516,10 @@ export function useLogin(navigation: UseLoginNavigation) {
     closeEmailModal,
     requireAgreementBeforeAction,
     toggleAgreement,
-    toggleMarketingConsent,
     closeAgreeModal,
     submitAgreeAndLogin,
     canSubmitAgreements,
+    handleSkipLogin,
     setProfileName,
     setProfileGender,
     setProfileInstructions,

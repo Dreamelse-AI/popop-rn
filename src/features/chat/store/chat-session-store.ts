@@ -38,6 +38,7 @@ interface ChatSessionState {
   applyApiCurrentMessages: (
     currentMessages: PhoneMessageOutput[],
     pendingLocalIds: string[],
+    options?: { ignoreServerFailed?: boolean },
   ) => void;
   clearPendingByLocalIds: (pendingLocalIds: string[]) => void;
   markPendingByLocalIds: (pendingLocalIds: string[]) => void;
@@ -108,9 +109,14 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
       messages: [...state.messages, ...messages],
     })),
 
-  applyApiCurrentMessages: (currentMessages, pendingLocalIds) =>
+  applyApiCurrentMessages: (currentMessages, pendingLocalIds, options) =>
     set(state => ({
-      messages: applyCurrentMessages(state.messages, currentMessages, pendingLocalIds),
+      messages: applyCurrentMessages(
+        state.messages,
+        currentMessages,
+        pendingLocalIds,
+        options,
+      ),
     })),
 
   clearPendingByLocalIds: pendingLocalIds =>

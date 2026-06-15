@@ -6,11 +6,13 @@ import { Image } from 'expo-image';
 
 import {
   generateAppearanceImage,
+  type GenerateAppearanceContext,
   type GenerateAppearanceParams,
 } from '@/features/character-creation/api/gen-appearance-api';
 import { AsyncTaskPollError } from '@/features/character-creation/lib/poll-async-task';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
 import { randomUUID } from '@/shared/lib/random-uuid';
+import { showGlobalToast } from '@/shared/wallet';
 
 import { AiGeneratingSparkles } from './ai-generating-sparkles';
 import type { CharacterAiImageGeneratePayload } from './character-ai-image-sheet';
@@ -25,6 +27,7 @@ export type AiGeneratedImageItem = {
 type CharacterAiImageResultPageProps = {
   open: boolean;
   session: CharacterAiImageGeneratePayload | null;
+  getGenerationContext: () => GenerateAppearanceContext;
   onClose: () => void;
   onConfirm: (imageUrl: string) => void;
   onEditPrompt: (session: CharacterAiImageGeneratePayload) => void;
@@ -33,6 +36,7 @@ type CharacterAiImageResultPageProps = {
 export function CharacterAiImageResultPage({
   open,
   session,
+  getGenerationContext,
   onClose,
   onConfirm,
   onEditPrompt,
@@ -48,13 +52,19 @@ export function CharacterAiImageResultPage({
 
   sessionRef.current = session;
 
-  const startGeneration = useCallback(async (params: GenerateAppearanceParams, itemId: string) => {
+  const startGeneration = useCallback(async (
+    params: Omit<GenerateAppearanceParams, 'context'>,
+    itemId: string,
+  ) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      const resp = await generateAppearanceImage(params, controller.signal);
+      const resp = await generateAppearanceImage(
+        { ...params, context: getGenerationContext() },
+        controller.signal,
+      );
       if (!resp?.image?.url) {
         setItems((prev) =>
           prev.map((item) =>
@@ -89,11 +99,12 @@ export function CharacterAiImageResultPage({
           item.id === itemId ? { ...item, status: 'failed' as const, errorMessage: message } : item,
         ),
       );
+      showGlobalToast(message);
     }
-  }, [t]);
+  }, [getGenerationContext, t]);
 
   const appendGeneration = useCallback(
-    (params: GenerateAppearanceParams) => {
+    (params: Omit<GenerateAppearanceParams, 'context'>) => {
       const itemId = randomUUID();
       setItems((prev) => [...prev, { id: itemId, status: 'loading' }]);
       setSelectedId(itemId);

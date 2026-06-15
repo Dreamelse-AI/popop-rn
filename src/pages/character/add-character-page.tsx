@@ -1,15 +1,23 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
+import type { RootStackParamList } from '@/app/navigation'
 import { useAddableCharacters } from '@/features/character/hooks/use-addable-characters'
+import type { FlushToServerResult } from '@/features/character-creation/hooks/use-character-draft-form'
+import { CharacterCreateForm } from '@/pages/character-creation/edit/character-create-form'
+import { SpinnerIcon } from '@/pages/character-creation/components/creation-icons'
+import { showGlobalToast } from '@/shared/wallet'
+import { PopImage } from '@/shared/ui/pop-image'
 
 import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
 import IconSearch from '@/shared/assets/character/add-character/icon-search.svg'
-import { Image } from 'expo-image'
 
 type AddCharacterTab = 'chat' | 'create'
+type Nav = NativeStackNavigationProp<RootStackParamList>
 
 type AddCharacterPageProps = {
   onClose: () => void
@@ -20,32 +28,122 @@ type AddCharacterPageProps = {
 export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: AddCharacterPageProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const navigation = useNavigation<Nav>()
   const [activeTab, setActiveTab] = useState<AddCharacterTab>('chat')
+  const [goChatLoading, setGoChatLoading] = useState(false)
+  const [goChatReady, setGoChatReady] = useState(false)
+  const flushRef = useRef<(() => Promise<FlushToServerResult>) | null>(null)
+  const goChatRef = useRef<((signal?: AbortSignal) => Promise<string | null>) | null>(null)
+  const goChatAbortRef = useRef<AbortController | null>(null)
   const { items, loading, error } = useAddableCharacters(activeTab === 'chat')
+
+  const flushCreateForm = useCallback(async () => {
+    if (flushRef.current) {
+      await flushRef.current()
+    }
+  }, [])
+
+  const switchTab = useCallback(
+    async (tab: AddCharacterTab) => {
+      if (goChatLoading) return
+      if (activeTab === 'create' && tab === 'chat') {
+        await flushCreateForm()
+      }
+      setActiveTab(tab)
+    },
+    [activeTab, flushCreateForm, goChatLoading],
+  )
+
+  const handleBack = useCallback(async () => {
+    if (goChatLoading) return
+    if (activeTab === 'create') {
+      await flushCreateForm()
+    }
+    onClose()
+  }, [activeTab, flushCreateForm, goChatLoading, onClose])
+
+  const handleGoChat = useCallback(async () => {
+    if (goChatLoading || !goChatRef.current) return
+
+    goChatAbortRef.current?.abort()
+    const controller = new AbortController()
+    goChatAbortRef.current = controller
+
+    setGoChatLoading(true)
+    try {
+      const characterId = await goChatRef.current(controller.signal)
+      if (!characterId) {
+        showGlobalToast(t('character.creation.goChatFailed'))
+        return
+      }
+      navigation.navigate('CharacterChat', { characterId })
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+
+      console.error('[AddCharacterPage] go chat failed:', e)
+      showGlobalToast(t('character.creation.goChatFailed'))
+    } finally {
+      if (goChatAbortRef.current === controller) {
+        goChatAbortRef.current = null
+      }
+      setGoChatLoading(false)
+    }
+  }, [goChatLoading, navigation, t])
+
+  useEffect(() => {
+    return () => {
+      goChatAbortRef.current?.abort()
+    }
+  }, [])
+
+  const pageLocked = goChatLoading
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={onClose} style={styles.backButton} accessibilityLabel="返回">
+        <Pressable
+          onPress={() => void handleBack()}
+          disabled={pageLocked}
+          style={[styles.backButton, pageLocked && styles.disabled]}
+          accessibilityLabel="返回"
+        >
           <IconBack width={36} height={36} />
         </Pressable>
 
         <View style={styles.tabsCenter}>
-          <Pressable onPress={() => setActiveTab('chat')} style={styles.tab}>
+          <Pressable
+            onPress={() => void switchTab('chat')}
+            disabled={pageLocked}
+            style={styles.tab}
+          >
             <Text style={[styles.tabText, activeTab === 'chat' ? styles.tabTextActive : styles.tabTextInactive]}>
               {t('character.chat')}
             </Text>
             {activeTab === 'chat' && <View style={styles.tabIndicator} />}
           </Pressable>
-          <Pressable onPress={() => setActiveTab('create')} style={styles.tab}>
+          <Pressable
+            onPress={() => void switchTab('create')}
+            disabled={pageLocked}
+            style={styles.tab}
+          >
             <Text style={[styles.tabText, activeTab === 'create' ? styles.tabTextActive : styles.tabTextInactive]}>
-              {t('character.create')}
+              {t('character.addCharacter')}
             </Text>
             {activeTab === 'create' && <View style={styles.tabIndicator} />}
           </Pressable>
         </View>
 
-        <View style={styles.headerRight} />
+        {activeTab === 'create' ? (
+          <Pressable
+            onPress={() => void handleGoChat()}
+            disabled={pageLocked || !goChatReady}
+            style={[styles.goChatButton, (pageLocked || !goChatReady) && styles.disabled]}
+          >
+            <Text style={styles.goChatButtonText}>{t('character.detailPage.goChat')}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.headerRight} />
+        )}
       </View>
 
       {activeTab === 'chat' ? (
@@ -76,7 +174,7 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
                     onPress={() => onSelectCharacter(item.id)}
                     style={styles.characterCircle}
                   >
-                    <Image source={{ uri: item.image }} style={styles.characterImage} />
+                    <PopImage uri={item.image} style={styles.characterImage} />
                   </Pressable>
                 ))}
               </View>
@@ -84,8 +182,17 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
           </ScrollView>
         </>
       ) : (
-        <View style={styles.createPlaceholder}>
-          <Text style={styles.emptyText}>Create Form</Text>
+        <CharacterCreateForm
+          flushRef={flushRef}
+          goChatRef={goChatRef}
+          onGoChatReadyChange={setGoChatReady}
+        />
+      )}
+
+      {pageLocked && (
+        <View style={styles.loadingOverlay} accessibilityLiveRegion="polite">
+          <SpinnerIcon size={32} color="rgba(0,0,0,0.3)" />
+          <Text style={styles.loadingText}>{t('character.creation.goChatLoading')}</Text>
         </View>
       )}
     </View>
@@ -113,10 +220,10 @@ const styles = StyleSheet.create({
   tabsCenter: {
     position: 'absolute',
     left: '50%',
-    transform: [{ translateX: -60 }],
+    transform: [{ translateX: -72 }],
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 24,
   },
   tab: {
     alignItems: 'center',
@@ -130,7 +237,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   tabTextInactive: {
-    color: 'rgba(0,0,0,0.5)',
+    color: 'rgba(0,0,0,0.4)',
   },
   tabIndicator: {
     height: 2,
@@ -138,9 +245,23 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: '#000000',
   },
+  goChatButton: {
+    borderRadius: 9999,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  goChatButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000000',
+  },
   headerRight: {
     width: 36,
     height: 36,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   searchBar: {
     paddingHorizontal: 12,
@@ -191,14 +312,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  createPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   emptyText: {
     paddingVertical: 40,
     textAlign: 'center',
+    fontSize: 14,
+    color: 'rgba(0,0,0,0.4)',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(247,247,247,0.8)',
+    gap: 12,
+  },
+  loadingText: {
     fontSize: 14,
     color: 'rgba(0,0,0,0.4)',
   },

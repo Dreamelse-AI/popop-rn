@@ -3,17 +3,23 @@
   "version": "1.0.0",
   "main": "index.ts",
   "private": true,
+  "packageManager": "pnpm@11.5.2",
   "scripts": {
-    "start": "npm run typecheck && expo start",
-    "start:lan": "npm run typecheck && expo start --host lan",
-    "start:fast": "expo start",
     "dev": "expo start --dev-client --port 8082",
-    "dev:lan": "expo start --dev-client --host lan",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "dev:clear": "expo start --dev-client --port 8082 --clear",
+    "dev:kill": "node scripts/kill-metro.mjs",
+    "dev:ios": "node scripts/dev-ios.mjs",
+    "dev:android": "node scripts/dev-android.mjs",
+    "ios:sim": "node scripts/dev-ios.mjs",
+    "ios:sim:attach": "node scripts/dev-ios.mjs --attach",
+    "android:device": "node scripts/dev-android.mjs",
+    "android:device:attach": "node scripts/dev-android.mjs --attach",
+    "android:device:build": "node scripts/run-android-device.mjs",
+    "typecheck": "tsc --noEmit",
+    "gen:api": "node scripts/gen-api.mjs",
+    "idl:update": "git submodule update --remote external/common-idl",
+    "sync:generated-from-fe": "node scripts/sync-generated-from-fe.mjs",
+    "sync:i18n-from-fe": "node scripts/sync-i18n-from-fe.mjs"
   },
   "dependencies": {
     "@react-native-google-signin/google-signin": "^16.1.2",
@@ -30,6 +36,7 @@
     "expo-crypto": "~56.0.4",
     "expo-dev-client": "^56.0.20",
     "expo-file-system": "~56.0.8",
+    "expo-iap": "^4.3.1",
     "expo-image": "~56.0.11",
     "expo-image-picker": "~56.0.17",
     "expo-linear-gradient": "^56.0.4",
@@ -56,7 +63,6 @@
     "babel-plugin-module-resolver": "^5.0.3",
     "babel-preset-expo": "^56.0.15",
     "react-native-svg-transformer": "^1.5.3",
-    "reactotron-core-client": "^2.10.0",
     "reactotron-react-native": "^5.2.0",
     "typescript": "~6.0.3"
   }

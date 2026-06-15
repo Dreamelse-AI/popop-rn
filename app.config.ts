@@ -42,6 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-dev-client',
     'expo-apple-authentication',
     '@react-native-google-signin/google-signin',
+    'expo-iap',
     'expo-speech-recognition',
     'expo-audio',
     [
@@ -64,6 +65,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         android: {
           compileSdkVersion: 35,
           targetSdkVersion: 35,
+          kotlinVersion: '2.2.0',
         },
       },
     ],
@@ -72,5 +74,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     apiBaseUrl: process.env.API_BASE_URL ?? 'https://i18n-api.imaginewithu.com',
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',
+    devAuthToken: process.env.DEV_AUTH_TOKEN ?? '',
   },
 })

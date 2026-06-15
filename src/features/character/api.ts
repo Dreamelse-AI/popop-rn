@@ -17,10 +17,8 @@ export const characterApi = {
     limit = 30,
     keyword?: string,
     cursor?: string,
-    showFriends = false,
   ) => {
     const req: ListCopyableCharactersReq = {
-      show_friends: showFriends,
       limit,
       ...(keyword ? { keyword } : {}),
       ...(cursor ? { cursor } : {}),
@@ -28,7 +26,7 @@ export const characterApi = {
     return listCopyableCharacters(req);
   },
 
-  /** 角色落地页：返回角色信息 + 静态 HTML 片段 */
+  /** 角色落地页：POST /character/detail，参数走 body（character_id、source、impression_id） */
   getDetail: (req: GetCharacterDetailReq) =>
     getCharacterDetail(req) as Promise<GetCharacterDetailPageResp>,
 };

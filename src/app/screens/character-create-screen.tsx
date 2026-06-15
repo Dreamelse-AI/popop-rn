@@ -1,19 +1,12 @@
-import { useCallback } from 'react'
-import { useNavigation } from '@react-navigation/native'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 import type { RootStackParamList } from '../navigation'
-import { CharacterCreatePage } from '@/pages/character/character-create-page'
+import { CharacterCreateFormPage } from '@/pages/character-creation/edit/character-create-form-page'
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'CharacterCreate'>
+type Route = RouteProp<RootStackParamList, 'CharacterCreate'>
 
 export function CharacterCreateScreen() {
-  const navigation = useNavigation<Nav>()
+  const route = useRoute<Route>()
+  const draftId = route.params?.draftId
 
-  const handleClose = useCallback(() => {
-    navigation.goBack()
-  }, [navigation])
-
-  return (
-    <CharacterCreatePage onClose={handleClose} />
-  )
+  return <CharacterCreateFormPage draftId={draftId} />
 }

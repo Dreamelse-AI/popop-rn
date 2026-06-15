@@ -15,8 +15,8 @@ import IconSendActive from '@/shared/assets/random-match/icon-send-active.svg'
 import IconMic from '@/shared/assets/random-match/icon-mic.svg'
 import IconEdit from '@/shared/assets/random-match/icon-edit.svg'
 
-import type { PhoneMessageOutput } from '@/generated/arca_apiComponents'
-import { addFriendFromAnonymousChat } from '@/generated/arca_api'
+import type { PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents'
+import { addFriendFromAnonymousChat, sendMessageToAnonymousCharacter } from '@/generated/arca_api'
 import { showGlobalToast } from '@/shared/wallet'
 import { useVoiceRecorder } from '@/features/chat/hooks/use-voice-recorder'
 import { VoiceRecordingBanner } from '@/features/chat/ui/chat-input-bar'
@@ -106,17 +106,22 @@ export function MatchChatPage({
     setInputText('')
     setCharacterMessage('')
     try {
-      await new Promise(r => setTimeout(r, 1000 + Math.random() * 1000))
-      const MOCK_REPLIES = [
-        '그렇구나~ 더 이야기해줘!',
-        '오 진짜? 나도 그런 적 있어',
-        '음... 그건 좀 어려운 상황이네',
-        '헤헤 재밌다 😊',
-        '그래서 어떻게 됐어?',
-      ]
-      const reply = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)]!
-      setCharacterMessage(reply)
-    } catch (err) {
+      const messages: PhoneMessageInput[] = [{ msg_type: 'text', text: { text: value } }]
+      const resp = await sendMessageToAnonymousCharacter({
+        chat_session_id: chatSessionId,
+        messages,
+      })
+      const replies = resp.character_messages ?? []
+      const lastTextReply = [...replies].reverse().find(m => m.text?.text)
+      if (lastTextReply?.text?.text) {
+        setCharacterMessage(lastTextReply.text.text)
+      }
+      const lastEmotion = [...replies].reverse().find(m => m.emotion)?.emotion
+      if (lastEmotion) setTemplate(resolveTemplate(lastEmotion))
+      if (resp.friend_request_pending) {
+        setShowFriendInvite(true)
+      }
+    } catch {
       showGlobalToast(t('randomMatch.sendFailed', '发送失败，请重试'))
     } finally {
       setIsSending(false)

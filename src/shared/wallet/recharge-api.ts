@@ -11,16 +11,16 @@ import type {
   RechargeVerifyResp,
 } from '@/generated/arca_apiComponents'
 
-export const STRIPE_PROVIDER = 'stripe' as const
+import { getRechargeProvider } from './iap-utils'
 
 export { rechargePackages }
 
-export function createStripeRechargeOrder(
+export function createRechargeOrder(
   packageId: string,
 ): Promise<RechargeCreateResp> {
   const req: RechargeCreateReq = {
     package_id: packageId,
-    provider: STRIPE_PROVIDER,
+    provider: getRechargeProvider(),
   }
   return rechargeCreate(req)
 }
@@ -35,7 +35,7 @@ export const RECHARGE_PENDING_STORAGE_KEY = 'popop.recharge.pending'
 
 export type PendingRechargeSession = {
   orderId: string
-  paymentIntentId?: string
+  productId: string
   tokenAmount: number
 }
 

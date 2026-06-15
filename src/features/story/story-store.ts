@@ -3,6 +3,11 @@ import { storage } from '@/shared/storage'
 
 const STORAGE_KEY = 'story_read_state'
 
+type HeadlineUnreadItem = {
+  characterId: string
+  unread: boolean
+}
+
 type StoryReadState = {
   readStoryIds: Set<string>
   fullyReadCharacterIds: Set<string>
@@ -13,6 +18,8 @@ type StoryReadState = {
   getLastReadStory: (characterId: string) => string | undefined
   isStoryRead: (storyId: string) => boolean
   isCharacterFullyRead: (characterId: string) => boolean
+  /** headline 拉取后：服务端 unread=true 时清除过期的 fullyRead 本地标记 */
+  syncHeadlineReadStateFromServer: (items: HeadlineUnreadItem[]) => void
 }
 
 export const useStoryReadStore = create<StoryReadState>((set, get) => ({
@@ -56,6 +63,22 @@ export const useStoryReadStore = create<StoryReadState>((set, get) => ({
 
   isCharacterFullyRead: (characterId: string) =>
     get().fullyReadCharacterIds.has(characterId),
+
+  syncHeadlineReadStateFromServer: (items: HeadlineUnreadItem[]) => {
+    const unreadCharacterIds = items.filter(item => item.unread).map(item => item.characterId)
+    if (unreadCharacterIds.length === 0) return
+
+    set(state => {
+      const next = new Set(state.fullyReadCharacterIds)
+      let changed = false
+      for (const characterId of unreadCharacterIds) {
+        if (next.delete(characterId)) changed = true
+      }
+      if (!changed) return state
+      saveReadIds(state.readStoryIds, next, state.lastReadStoryPerCharacter)
+      return { fullyReadCharacterIds: next }
+    })
+  },
 }))
 
 function loadReadIds(): {

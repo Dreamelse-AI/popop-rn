@@ -1,5 +1,5 @@
 export { refreshWallet, useWalletStore } from './wallet-store';
-export { createStripeRechargeOrder, verifyRechargeOrder } from './recharge-api';
+export { createRechargeOrder, verifyRechargeOrder } from './recharge-api';
 export { runPaidAction } from './run-paid-action';
 export type { PaidActionSource, RunPaidActionOptions } from './run-paid-action';
 export { showGlobalToast, useToastStore } from './toast-store';

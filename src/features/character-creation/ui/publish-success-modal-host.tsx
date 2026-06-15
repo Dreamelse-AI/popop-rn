@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CreationPostDynamicSheet } from '@/pages/character-creation/components/creation-post-dynamic-sheet'
 import {
   PREVIEW_PUBLISH_SUCCESS_MODAL,
   PREVIEW_PUBLISH_SUCCESS_MODAL_MOCK,
@@ -48,6 +49,16 @@ export function PublishSuccessModalHost() {
         onDismiss={handleDismiss}
         onPostDynamic={handlePostDynamic}
       />
+
+      {postDynamicTarget ? (
+        <CreationPostDynamicSheet
+          open={postDynamicTarget !== null}
+          characterId={postDynamicTarget.characterId}
+          characterName={postDynamicTarget.characterName.trim() || t('character.creation.unnamed')}
+          characterCoverUrl={postDynamicTarget.coverUrl}
+          onClose={handlePostDynamicClose}
+        />
+      ) : null}
     </>
   )
 }

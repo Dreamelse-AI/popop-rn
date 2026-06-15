@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/app/navigation';
 
 import { useCreationCharacters } from '@/features/character-creation/hooks/use-creation-characters';
 import type { CreationCharacterItem, CreationListTab } from '@/features/character-creation/types';
@@ -14,15 +15,16 @@ import { CreationNewCard } from './components/creation-new-card';
 import { CreationPostDynamicSheet } from './components/creation-post-dynamic-sheet';
 import { CreationTopTabs } from './components/creation-top-tabs';
 
+import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg';
+
 type CharacterCreationTabProps = {
   isActive?: boolean;
   onNavigateToFeed?: () => void;
 };
 
 export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: CharacterCreationTabProps) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<CreationListTab>('draft');
   const [deleteTarget, setDeleteTarget] = useState<CreationCharacterItem | null>(null);
   const [dynamicTarget, setDynamicTarget] = useState<CreationCharacterItem | null>(null);
@@ -42,17 +44,16 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
   const isGloballyEmpty = !loading && !error && drafts.length === 0 && published.length === 0;
 
   const handleCreate = useCallback(() => {
-    // Navigate to character create page
-    (navigation as { navigate: (name: string) => void }).navigate('CharacterCreate');
+    navigation.navigate('CharacterCreate');
   }, [navigation]);
 
   const handleEdit = useCallback(
     (item: CreationCharacterItem) => {
       if (item.status === 'draft') {
-        (navigation as { navigate: (name: string, params: Record<string, string>) => void }).navigate('CharacterCreate', { draftId: item.id });
+        navigation.navigate('CharacterCreate', { draftId: item.id });
         return;
       }
-      (navigation as { navigate: (name: string, params: Record<string, string>) => void }).navigate('CharacterCreate', { characterId: item.id, mode: 'character' });
+      navigation.navigate('CharacterCreate', { characterId: item.id, mode: 'character' });
     },
     [navigation],
   );
@@ -71,9 +72,9 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
   const currentItems = activeTab === 'draft' ? drafts : published;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.logoBar}>
-        <Text style={styles.logoText}>POPOP</Text>
+        <LogoPopop width={190} height={30} />
       </View>
 
       {isGloballyEmpty ? (
@@ -157,6 +158,7 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
         characterCoverUrl={dynamicTarget?.coverUrl}
         onClose={() => setDynamicTarget(null)}
         onPublishSuccess={handlePostPublishSuccess}
+        includeSafeAreaTop={false}
       />
     </View>
   );
@@ -170,18 +172,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f7',
   },
   logoBar: {
-    position: 'relative',
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f7f7f7',
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#000000',
-    letterSpacing: 1,
   },
   scrollArea: {
     flex: 1,

@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import type { HomeFeedCharacter } from '@/features/feed/feed-types'
 import { useOpenCharacterChat } from '@/features/friendship/hooks/use-open-character-chat'
 import { ChatCountBadge, formatChatCount } from '@/shared/ui/chat-count-badge'
-import { Image } from 'expo-image'
+import { PopImage } from '@/shared/ui/pop-image'
 
 type FeedCharacterCardProps = {
   character: HomeFeedCharacter
@@ -40,8 +40,10 @@ export function FeedCharacterCard({
       style={cardStyle}
       accessibilityRole="button"
     >
-      <Image
-        source={{ uri: character.image }}
+      <PopImage
+        uri={character.image}
+        contentFit="cover"
+        recyclingKey={character.characterId}
         style={styles.backgroundImage}
       />
 

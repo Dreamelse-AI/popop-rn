@@ -17,7 +17,6 @@ import { ChatMessageList } from './chat-message-list'
 import { ChatCharacterVersionSyncDialog } from './chat-character-version-sync-dialog'
 import { ChatRollbackConfirmDialog } from './chat-rollback-confirm-dialog'
 import { ChatSettingsDrawer } from './chat-settings-drawer'
-import { Image } from 'expo-image'
 
 export type CharacterChatScreenProps = {
   character: ChatCharacter

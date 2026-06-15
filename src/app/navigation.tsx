@@ -21,7 +21,13 @@ export type RootStackParamList = {
   CharacterProfile: { characterId: string }
   AddCharacter: undefined
   CharacterSearch: undefined
-  CharacterCreate: undefined
+  CharacterCreate:
+    | {
+        draftId?: string
+        characterId?: string
+        mode?: string
+      }
+    | undefined
   RecommendedMore: { featuredCharacters?: HomeFeedCharacter[] }
   RandomMatch: undefined
 }

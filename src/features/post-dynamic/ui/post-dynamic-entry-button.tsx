@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     backgroundColor: '#ffffff',
-    marginVertical: 8,
+    marginTop: 8,
   },
   label: {
     fontSize: 16,

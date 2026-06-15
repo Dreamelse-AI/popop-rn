@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 
 import { MAX_CHARACTER_IMAGES } from '@/features/character-creation/config';
+import type { GenerateAppearanceContext } from '@/features/character-creation/api/gen-appearance-api';
 import { CharacterAiImageFlow } from '@/features/character-creation/ui/character-ai-image-flow';
 import { uploadCharacterAppearanceImage } from '@/features/character-creation/lib/upload-character-image';
 import type { CreationFormImage } from '@/features/character-creation/types/form';
@@ -20,6 +21,7 @@ import {
 type CharacterAppearanceFieldProps = {
   images: CreationFormImage[];
   draftId?: string;
+  getGenerationContext: () => GenerateAppearanceContext;
   onChange: (images: CreationFormImage[]) => void;
   onGalleryTriggerReady?: (openGallery: () => void) => void;
 };
@@ -27,6 +29,7 @@ type CharacterAppearanceFieldProps = {
 export function CharacterAppearanceField({
   images,
   draftId,
+  getGenerationContext,
   onChange,
   onGalleryTriggerReady,
 }: CharacterAppearanceFieldProps) {
@@ -216,6 +219,7 @@ export function CharacterAppearanceField({
         open={aiFlowOpen}
         onClose={() => setAiFlowOpen(false)}
         onConfirm={handleAiConfirm}
+        getGenerationContext={getGenerationContext}
       />
 
       <CharacterAppearanceImageViewer
