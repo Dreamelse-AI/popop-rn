@@ -1,11 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Linking } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import type { AgreementKey } from '../auth-types'
-import {
-  AGREEMENT_LINKS,
-  getAgreementsByRegion,
-  hasMarketingConsent,
-} from '../region-config'
+import type { TermsInfo } from '@/generated/arca_apiComponents'
 import type { useLogin } from '../hooks/use-login'
 import { AuthBottomSheet } from './auth-bottom-sheet'
 import IconValidCircle from '@/shared/assets/auth/valid-circle.svg'
@@ -33,21 +28,23 @@ type AgreementRowProps = {
   checked: boolean
   label: string
   href?: string
+  showChevron?: boolean
   onToggle: () => void
 }
 
-function AgreementRow({ checked, label, href, onToggle }: AgreementRowProps) {
+function AgreementRow({ checked, label, href, showChevron = false, onToggle }: AgreementRowProps) {
   return (
     <View style={styles.rowContainer}>
       <Pressable onPress={onToggle} style={styles.rowContent}>
         <AgreementCheckIcon checked={checked} />
         <Text style={styles.rowLabel}>{label}</Text>
       </Pressable>
-      {href && (
+      {(href || showChevron) && (
         <Pressable
-          onPress={() => Linking.openURL(href)}
+          onPress={href ? () => Linking.openURL(href) : undefined}
           style={styles.rowChevron}
-          accessibilityLabel={`View ${label}`}
+          accessibilityLabel={href ? `View ${label}` : undefined}
+          disabled={!href}
         >
           <IconChevronRight width={24} height={24} />
         </Pressable>
@@ -59,67 +56,50 @@ function AgreementRow({ checked, label, href, onToggle }: AgreementRowProps) {
 export function AgreeModal({ loginHook }: AgreeModalProps) {
   const {
     state,
+    termsList,
     toggleAgreement,
-    toggleMarketingConsent,
     closeAgreeModal,
     submitAgreeAndLogin,
     canSubmitAgreements,
   } = loginHook
   const { t } = useTranslation()
 
-  const agreements = getAgreementsByRegion(state.region)
-  const showMarketing = hasMarketingConsent(state.region)
   const title = t('agreement.title')
   const confirmText = state.agreeModalMode === 'email' ? t('agreement.confirm') : t('agreement.continue')
+  const canSubmit = canSubmitAgreements && !state.loading
 
-  const renderRow = (key: AgreementKey) => {
-    const label = t(`agreement.${key}`)
-    const href = AGREEMENT_LINKS[key]
-
-    return (
-      <AgreementRow
-        key={key}
-        checked={!!state.agreementChecks[key]}
-        label={label}
-        href={href}
-        onToggle={() => toggleAgreement(key)}
-      />
-    )
-  }
+  const renderRow = (term: TermsInfo) => (
+    <AgreementRow
+      key={term.terms_id}
+      checked={!!state.agreementChecks[term.terms_id]}
+      label={term.title}
+      href={term.link || undefined}
+      showChevron={!term.link}
+      onToggle={() => toggleAgreement(term.terms_id)}
+    />
+  )
 
   return (
     <AuthBottomSheet
       open={state.showAgreeModal}
       onClose={closeAgreeModal}
+      showLogo={false}
       footer={
         <Pressable
           onPress={submitAgreeAndLogin}
-          disabled={!canSubmitAgreements || state.loading}
-          style={[styles.submitButton, (!canSubmitAgreements || state.loading) && styles.submitButtonDisabled]}
+          disabled={!canSubmit}
+          style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
         >
-          <Text style={styles.submitText}>
+          <Text style={styles.submitButtonText}>
             {state.loading ? t('email.signingIn') : confirmText}
           </Text>
         </Pressable>
       }
     >
       <View style={styles.content}>
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.divider} />
-        </View>
-
-        <View style={styles.rowsSection}>
-          {agreements.map(renderRow)}
-          {showMarketing && (
-            <AgreementRow
-              checked={state.marketingConsent}
-              label={t('agreement.marketingConsent')}
-              href="/marketing-consent"
-              onToggle={toggleMarketingConsent}
-            />
-          )}
-        </View>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.divider} />
+        <View style={styles.rows}>{termsList.map(renderRow)}</View>
       </View>
     </AuthBottomSheet>
   )
@@ -127,88 +107,90 @@ export function AgreeModal({ loginHook }: AgreeModalProps) {
 
 const styles = StyleSheet.create({
   content: {
-    gap: 24,
     paddingHorizontal: 12,
     paddingBottom: 12,
-    paddingTop: 16,
-  },
-  titleSection: {
-    gap: 12,
-    paddingHorizontal: 12,
   },
   title: {
-    textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
-    color: '#000000',
+    textAlign: 'center',
+    color: '#000',
+    marginBottom: 12,
   },
   divider: {
     height: 1,
     backgroundColor: 'rgba(0,0,0,0.1)',
+    marginBottom: 24,
   },
-  rowsSection: {
+  rows: {
     gap: 8,
-    paddingHorizontal: 12,
   },
   rowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 60,
+    minHeight: 60,
     borderRadius: 24,
-    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: '#fff',
     paddingHorizontal: 12,
   },
   rowContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   rowLabel: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: '#000000',
+    color: '#000',
   },
   rowChevron: {
-    flexShrink: 0,
-    padding: 6,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkIconWrapper: {
-    padding: 6,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkIconUnchecked: {
-    opacity: 0.1,
+    opacity: 0.35,
   },
   checkIconCircle: {
     width: 24,
     height: 24,
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   checkIconCheckOverlay: {
     position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitButton: {
     height: 60,
     borderRadius: 20,
-    backgroundColor: '#000000',
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   submitButtonDisabled: {
-    opacity: 0.2,
+    backgroundColor: '#c8c8c8',
   },
-  submitText: {
+  submitButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#fff',
   },
 })

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -10,18 +9,20 @@ import { useAuthStore } from '@/features/auth/auth-store'
 import { useMeProfileStore } from '@/features/user-persona'
 import { apiClient } from '@/shared/api/api-client'
 import { deregister } from '@/generated/arca_api'
-import { refreshWallet, useWalletStore, openRecharge } from '@/shared/wallet'
+import { openRecharge, refreshWallet, showGlobalToast, useWalletStore } from '@/shared/wallet'
 import { CenterDialog } from '@/shared/ui/center-dialog'
+import { PopImage } from '@/shared/ui/pop-image'
 import { UserPersonaSheet } from '@/features/user-persona/components/user-persona-sheet'
 import { HistoryPage } from './history-page'
 import { AboutPage } from './about-page'
 import { InvitePage } from './invite-page'
-import i18n from '@/i18n'
+import { useLongPress } from './messages/use-long-press'
+import i18n, { LANGUAGE_OPTIONS } from '@/i18n'
 
 import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
 import IconLogout from '@/shared/assets/me/icon-logout.svg'
 import IconAbout from '@/shared/assets/me/icon-about.svg'
-import { Image } from 'expo-image'
+import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 
 type MeNav = NativeStackNavigationProp<RootStackParamList, 'Home'>
 
@@ -32,19 +33,36 @@ type MenuItem = {
   onPress?: () => void
 }
 
-const LANGUAGE_OPTIONS = [
-  { code: 'ko', label: 'Korean' },
-  { code: 'ja', label: 'Japanese' },
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: 'Chinese' },
-]
+function isRemoteAvatarUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://')
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    const Clipboard = require('expo-clipboard')
+    await Clipboard.setStringAsync(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function formatFreeIceCountdown(nextGrantAt: number | null, nowSec: number): string {
+  if (!nextGrantAt) return '--:--:--'
+  const remain = Math.max(0, nextGrantAt - nowSec)
+  const h = Math.floor(remain / 3600)
+  const m = Math.floor((remain % 3600) / 60)
+  const s = remain % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
 
 export function MePage() {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
   const navigation = useNavigation<MeNav>()
   const logout = useAuthStore(s => s.logout)
   const totalTokens = useWalletStore(s => s.totalTokens)
+  const nextGrantAt = useWalletStore(s => s.nextGrantAt)
   const displayName = useMeProfileStore(s => s.displayName)
   const displayUid = useMeProfileStore(s => s.displayUid)
   const avatarUrl = useMeProfileStore(s => s.avatarUrl)
@@ -60,13 +78,32 @@ export function MePage() {
   const [showAbout, setShowAbout] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showPersona, setShowPersona] = useState(false)
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000))
 
   const currentLangLabel = LANGUAGE_OPTIONS.find(l => l.code === i18n.language)?.label ?? 'English'
+  const freeIceCountdown = formatFreeIceCountdown(nextGrantAt, nowSec)
+  const remoteAvatarUrl = isRemoteAvatarUrl(avatarUrl) ? avatarUrl : null
 
   useEffect(() => {
     void refreshMeProfile()
     void refreshWallet()
   }, [refreshMeProfile])
+
+  useEffect(() => {
+    if (!nextGrantAt) return
+    const timer = setInterval(() => {
+      setNowSec(Math.floor(Date.now() / 1000))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [nextGrantAt])
+
+  const handleCopyUid = async () => {
+    if (!displayUid) return
+    const ok = await copyToClipboard(displayUid)
+    if (ok) showGlobalToast(t('me.copySuccess'))
+  }
+
+  const uidLongPress = useLongPress({ onLongPress: () => void handleCopyUid() })
 
   const handleLogout = () => {
     apiClient.setToken(null)
@@ -99,79 +136,83 @@ export function MePage() {
   ]
 
   return (
-  <>
-    <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Profile section */}
-      <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
-        <View style={styles.avatarWrapper}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatarPlaceholder} />
-          )}
-        </View>
-        <Text style={styles.displayName}>
-          {displayName || (profileLoading ? t('persona.loading') : '...')}
-        </Text>
-        <Text style={styles.uid}>@{displayUid || '...'}</Text>
-      </Pressable>
-
-      {/* Cards container */}
-      <View style={styles.cardsContainer}>
-        {/* Free ice card */}
-        <View style={styles.freeIceCard}>
-          <View style={styles.freeIceRow}>
-            <View style={styles.freeIceLeft}>
-              <Text style={styles.iceEmoji}>🧊</Text>
-              <Text style={styles.freeIceLabel}>{t('me.freeIce')}</Text>
-            </View>
-            <Text style={styles.freeIceTimer}>23:34:12</Text>
-          </View>
-        </View>
-
-        {/* Token card */}
-        <View style={styles.tokenCard}>
-          <View style={styles.tokenLeft}>
-            <Text style={styles.tokenEmoji}>🧊</Text>
-            <Text style={styles.tokenAmount}>{totalTokens ?? 0}</Text>
-          </View>
-          <View style={styles.tokenActions}>
-            <Pressable style={styles.rechargeButton} onPress={() => openRecharge({ source: 'me_page' })}>
-              <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
-            </Pressable>
-            <Pressable style={styles.detailButton} onPress={() => setShowHistory(true)}>
-              <Text style={styles.detailText}>{t('me.detail')}</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Menu items */}
-        {menuItems.map((item, idx) => (
-          <Pressable key={idx} style={styles.menuItem} onPress={item.onPress}>
-            {item.emoji ? (
-              <Text style={styles.menuEmoji}>{item.emoji}</Text>
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
+          <View style={styles.avatarWrapper}>
+            {remoteAvatarUrl ? (
+              <PopImage uri={remoteAvatarUrl} style={styles.avatarImage} />
             ) : (
-              <IconAbout width={20} height={12} />
+              <AvatarPlaceholder width={120} height={120} />
             )}
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            {item.trailing && (
-              <Text style={styles.menuTrailingText}>{item.trailing}</Text>
-            )}
-            <IconChevron width={24} height={24} />
-          </Pressable>
-        ))}
-
-        {/* Logout button */}
-        <Pressable style={styles.logoutRow} onPress={() => setShowLogoutModal(true)}>
-          <Text style={styles.logoutText}>{t('me.logout')}</Text>
-          <IconLogout width={16} height={16} />
+          </View>
+          <Text style={styles.displayName}>
+            {displayName || (profileLoading ? t('persona.loading') : '...')}
+          </Text>
         </Pressable>
-      </View>
 
-      {/* Logout confirmation dialog */}
+        <Pressable
+          style={styles.uidButton}
+          onTouchStart={uidLongPress.onTouchStart}
+          onTouchMove={uidLongPress.onTouchMove}
+          onTouchEnd={uidLongPress.onTouchEnd}
+          onLongPress={() => void handleCopyUid()}
+        >
+          <Text style={styles.uid}>@{displayUid || '...'}</Text>
+        </Pressable>
+
+        <View style={styles.cardsContainer}>
+          <View style={styles.freeIceCard}>
+            <View style={styles.freeIceRow}>
+              <View style={styles.freeIceLeft}>
+                <Text style={styles.iceEmoji}>🧊</Text>
+                <Text style={styles.freeIceLabel}>{t('me.freeIce')}</Text>
+              </View>
+              <Text style={styles.freeIceTimer}>{freeIceCountdown}</Text>
+            </View>
+          </View>
+
+          <View style={styles.tokenCard}>
+            <View style={styles.tokenLeft}>
+              <Text style={styles.tokenEmoji}>🧊</Text>
+              <Text style={styles.tokenAmount}>{totalTokens ?? 0}</Text>
+            </View>
+            <View style={styles.tokenActions}>
+              <Pressable style={styles.rechargeButton} onPress={() => openRecharge({ source: 'me_page' })}>
+                <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
+              </Pressable>
+              <Pressable style={styles.detailButton} onPress={() => setShowHistory(true)}>
+                <Text style={styles.detailText}>{t('me.detail')}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {menuItems.map((item, idx) => (
+            <Pressable key={idx} style={styles.menuItem} onPress={item.onPress}>
+              {item.emoji ? (
+                <Text style={styles.menuEmoji}>{item.emoji}</Text>
+              ) : (
+                <IconAbout width={20} height={12} />
+              )}
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              {item.trailing ? (
+                <Text style={styles.menuTrailingText}>{item.trailing}</Text>
+              ) : null}
+              <IconChevron width={24} height={24} />
+            </Pressable>
+          ))}
+
+          <Pressable style={styles.logoutRow} onPress={() => setShowLogoutModal(true)}>
+            <Text style={styles.logoutText}>{t('me.logout')}</Text>
+            <IconLogout width={16} height={16} />
+          </Pressable>
+        </View>
+      </ScrollView>
+
       <CenterDialog open={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
         <View style={styles.dialogContent}>
           <Text style={styles.dialogTitle}>{t('me.logoutConfirmTitle')}</Text>
@@ -187,7 +228,6 @@ export function MePage() {
         </View>
       </CenterDialog>
 
-      {/* Delete account confirmation dialog */}
       <CenterDialog
         open={showDeleteModal}
         onClose={() => { if (!deleting) setShowDeleteModal(false) }}
@@ -215,47 +255,44 @@ export function MePage() {
         </View>
       </CenterDialog>
 
-      {/* Language picker */}
-      <Modal visible={showLangPicker} transparent animationType="fade" onRequestClose={() => setShowLangPicker(false)}>
-        <Pressable style={styles.langOverlay} onPress={() => setShowLangPicker(false)}>
-          <View style={styles.langPanel}>
-            {LANGUAGE_OPTIONS.map(option => (
-              <Pressable
-                key={option.code}
-                style={styles.langOption}
-                onPress={() => {
-                  i18n.changeLanguage(option.code)
-                  setShowLangPicker(false)
-                }}
-              >
-                <Text style={styles.langOptionLabel}>{option.label}</Text>
-                {i18n.language === option.code && (
-                  <Text style={styles.langOptionCheck}>✓</Text>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
-    </ScrollView>
+      <CenterDialog open={showLangPicker} onClose={() => setShowLangPicker(false)}>
+        <View style={styles.langPanel}>
+          {LANGUAGE_OPTIONS.map(option => (
+            <Pressable
+              key={option.code}
+              style={styles.langOption}
+              onPress={() => {
+                i18n.changeLanguage(option.code)
+                setShowLangPicker(false)
+              }}
+            >
+              <Text style={styles.langOptionLabel}>{option.label}</Text>
+              {i18n.language === option.code ? (
+                <Text style={styles.langOptionCheck}>✓</Text>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+      </CenterDialog>
 
-    {showHistory && (
-      <HistoryPage onBack={() => setShowHistory(false)} />
-    )}
+      {showHistory ? (
+        <HistoryPage onBack={() => setShowHistory(false)} />
+      ) : null}
 
-    {showAbout && (
-      <AboutPage onBack={() => setShowAbout(false)} />
-    )}
+      {showAbout ? (
+        <AboutPage onBack={() => setShowAbout(false)} />
+      ) : null}
 
-    {showInvite && (
-      <InvitePage onBack={() => setShowInvite(false)} />
-    )}
+      {showInvite ? (
+        <InvitePage onBack={() => setShowInvite(false)} />
+      ) : null}
 
-    <UserPersonaSheet
-      open={showPersona}
-      onClose={() => setShowPersona(false)}
-    />
-  </>
+      <UserPersonaSheet
+        open={showPersona}
+        onClose={() => setShowPersona(false)}
+        fallbackAvatar={remoteAvatarUrl ?? undefined}
+      />
+    </>
   )
 }
 
@@ -269,11 +306,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  // Profile
   profileSection: {
     alignItems: 'center',
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   avatarWrapper: {
     width: 120,
@@ -285,31 +321,27 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f0f0f0',
-  },
   displayName: {
     marginTop: 16,
     fontSize: 20,
     fontWeight: '600',
     color: '#000000',
   },
-  uid: {
+  uidButton: {
     marginTop: 4,
+    marginBottom: 16,
+  },
+  uid: {
     fontSize: 10,
     color: 'rgba(0,0,0,0.6)',
   },
 
-  // Cards container
   cardsContainer: {
     width: '100%',
     paddingHorizontal: 12,
     gap: 8,
   },
 
-  // Free ice card
   freeIceCard: {
     backgroundColor: '#fdeab3',
     borderWidth: 1,
@@ -343,7 +375,6 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
 
-  // Token card
   tokenCard: {
     backgroundColor: '#ffffff',
     borderWidth: 1,
@@ -396,7 +427,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  // Menu items
   menuItem: {
     backgroundColor: '#ffffff',
     borderWidth: 1,
@@ -423,12 +453,12 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
   },
 
-  // Logout
   logoutRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    gap: 8,
   },
   logoutText: {
     flex: 1,
@@ -437,7 +467,6 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
   },
 
-  // Dialog
   dialogContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -491,18 +520,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  // Language picker
-  langOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
   langPanel: {
-    width: 280,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    overflow: 'hidden',
     paddingVertical: 8,
   },
   langOption: {

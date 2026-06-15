@@ -8,6 +8,12 @@ export function resolveTosAssetUrl(url: string): string {
   return url
 }
 
+/** 聊天图片展示：保留 blob 预览，TOS 链接走开发代理 */
+export function resolveChatImageDisplayUrl(url: string): string {
+  if (!url || url.startsWith('blob:')) return url
+  return resolveTosAssetUrl(url)
+}
+
 function toHex(bytes: Uint8Array): string {
   return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')
 }

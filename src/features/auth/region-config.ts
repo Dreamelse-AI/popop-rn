@@ -1,7 +1,11 @@
 import type { AccountRegion, AgreementKey, AuthProvider } from './auth-types';
 import { getLocales } from 'expo-localization';
 
-export const MOCK_ACCOUNT_REGION: AccountRegion = 'KR';
+/** 登录/注册页及未命中 IP、缓存时的默认账户地区 */
+export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'KR';
+
+/** @deprecated 使用 DEFAULT_ACCOUNT_REGION */
+export const MOCK_ACCOUNT_REGION = DEFAULT_ACCOUNT_REGION;
 
 export const REGION_TO_LANGUAGE: Record<AccountRegion, string> = {
   KR: 'ko',

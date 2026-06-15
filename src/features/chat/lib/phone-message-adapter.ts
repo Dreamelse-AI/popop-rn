@@ -345,11 +345,17 @@ export function createOptimisticImageMessage(input: { url: string }): ChatMessag
   };
 }
 
+type ApplyCurrentMessagesOptions = {
+  /** 角色空回复时服务端可能仍标记 is_failed，此时不应展示红色感叹号 */
+  ignoreServerFailed?: boolean;
+};
+
 /** 回写服务端 message_id，清除 pending */
 export function applyCurrentMessages(
   localMessages: ChatMessage[],
   currentMessages: PhoneMessageOutput[],
   pendingLocalIds: string[],
+  options?: ApplyCurrentMessagesOptions,
 ): ChatMessage[] {
   const next = [...localMessages];
   let pendingIndex = 0;
@@ -373,7 +379,8 @@ export function applyCurrentMessages(
     ) {
       next[index] = {
         ...existing,
-        status: serverMsg.is_failed ? 'failed' : undefined,
+        status:
+          serverMsg.is_failed && !options?.ignoreServerFailed ? 'failed' : undefined,
         serverMessageId: serverMsg.message_id,
         cursor: serverMsg.cursor,
         at: serverMsg.created_at ?? existing.at,
@@ -383,7 +390,11 @@ export function applyCurrentMessages(
               voiceUrl: serverMsg.voice?.voice?.url ?? existing.voiceUrl,
               transcript: serverMsg.voice?.text ?? existing.transcript,
             }
-          : {}),
+          : existing.type === 'image'
+            ? {
+                url: serverMsg.image?.image?.url ?? existing.url,
+              }
+            : {}),
       };
     }
   }

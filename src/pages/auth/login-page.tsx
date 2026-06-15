@@ -24,11 +24,13 @@ export function LoginPage() {
 
   const {
     state,
+    termsList,
     handleEmailLogin,
     loginWithProvider,
     setAgreed,
     setRegion,
     clearToast,
+    handleSkipLogin,
   } = loginHook
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function LoginPage() {
       <View style={styles.header}>
         <RegionSelector region={state.region} onRegionChange={setRegion} />
 
-        <Pressable style={styles.skipButton} onPress={() => navigation.replace('Home')}>
+        <Pressable style={styles.skipButton} onPress={handleSkipLogin}>
           <Text style={styles.skipText}>{t('login.skip')}</Text>
         </Pressable>
       </View>
@@ -79,7 +81,7 @@ export function LoginPage() {
         </View>
 
         <View style={styles.agreeRow}>
-          <AgreeCheckbox checked={state.agreed} region={state.region} tone="light" onChange={setAgreed} />
+          <AgreeCheckbox checked={state.agreed} termsList={termsList} tone="light" onChange={setAgreed} />
         </View>
       </View>
 

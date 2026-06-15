@@ -56,9 +56,7 @@ export async function setChatPreferenceMock(
   const pref = getOrCreatePreference(req.character_id);
   const nextModelId = req.model_id ?? pref.current.model_id;
   const nextTemperature =
-    req.temperature >= 0
-      ? req.temperature
-      : pref.current.temperature;
+    req.temperature >= 0 ? req.temperature : pref.current.temperature;
 
   pref.current = {
     ...pref.current,

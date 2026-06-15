@@ -48,7 +48,17 @@ open ios/Popop.xcworkspace
 
 ```bash
 # 类型检查
-npx tsc --noEmit
+npm run typecheck
+
+# API 生成（需 goctl + submodule）
+git submodule update --init external/common-idl
+npm run gen:api
+
+# 从 popop-fe 快速同步 generated（临时）
+npm run sync:generated-from-fe
+
+# IDL 更新
+npm run idl:update && npm run gen:api
 
 # 清除 Metro 缓存
 npx expo start --clear
@@ -103,6 +113,7 @@ src/
 
 ### 开发调试
 
+- **本地自动登录**: 复制 `.env.example` 为 `.env.local`，把 `DEV_AUTH_TOKEN=xxx` 里的 `xxx` 换成真实 JWT。仅 `__DEV__` 生效，token 永不过期；改 env 后需重启 Metro。
 - **Network Inspector**: `ios/Podfile.properties.json` 中 `EX_DEV_CLIENT_NETWORK_INSPECTOR` 设为 `false`，设为 `true` 会导致 TLS 连接问题
 - **ATS**: Info.plist 中 `NSAllowsArbitraryLoads` 设为 `true`（开发环境），生产环境需改回 `false`
 - **Metro 缓存**: 如果修改了 native 代码或配置文件后出现异常，尝试 `npx expo start --clear`

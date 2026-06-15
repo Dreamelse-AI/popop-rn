@@ -1,6 +1,5 @@
 import type {
   CharacterCreateForm,
-  CharacterDraftItem,
   DeleteCharacterDraftReq,
   DeleteCharacterDraftResp,
   DeleteCharacterReq,
@@ -21,8 +20,6 @@ import { USE_CHARACTER_CREATION_MOCK } from '../config';
 import { loadPublishedCharacterCreateForm as fetchPublishedCharacterCreateForm } from '../lib/load-published-character-form';
 import * as mock from './character-creation-api.mock';
 
-export type { GetCharacterDraftDetailReqParams, GetCharacterDraftDetailResp } from '@/generated/arca_apiComponents';
-
 export function listCharacterDrafts(): Promise<ListCharacterDraftsResp> {
   return USE_CHARACTER_CREATION_MOCK ? mock.listCharacterDrafts() : real.listCharacterDrafts();
 }
@@ -32,7 +29,7 @@ export function getCharacterDraftDetail(
 ): Promise<GetCharacterDraftDetailResp> {
   return USE_CHARACTER_CREATION_MOCK
     ? mock.getCharacterDraftDetail(params)
-    : real.getCharacterDraftDetail({ draft_id: params.draft_id });
+    : real.getCharacterDraftDetail(params);
 }
 
 export function listUserCharacters(req: ListUserCharactersReq): Promise<ListUserCharactersResp> {

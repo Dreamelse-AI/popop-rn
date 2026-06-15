@@ -13,7 +13,11 @@ export type GetCharacterDetailPageResp = GetCharacterDetailResp & {
 
 export const characterApi = {
   /** 拉取可复制角色（添加好友页数据源，后端做可见性筛选） */
-  listCopyable: (limit = 30, keyword?: string, cursor?: string) => {
+  listCopyable: (
+    limit = 30,
+    keyword?: string,
+    cursor?: string,
+  ) => {
     const req: ListCopyableCharactersReq = {
       limit,
       ...(keyword ? { keyword } : {}),
@@ -22,7 +26,7 @@ export const characterApi = {
     return listCopyableCharacters(req);
   },
 
-  /** 角色落地页：返回角色信息 + 静态 HTML 片段 */
+  /** 角色落地页：POST /character/detail，参数走 body（character_id、source、impression_id） */
   getDetail: (req: GetCharacterDetailReq) =>
     getCharacterDetail(req) as Promise<GetCharacterDetailPageResp>,
 };

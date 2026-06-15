@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import type { CharacterDraftFormState } from '@/features/character-creation/types/form';
+import { draftStateToApiForm } from '@/features/character-creation/lib/form-mapper';
 import { useCharacterPageConfig } from '@/features/character-creation/hooks/use-character-page-config';
 import { BasicSelectDropdownField } from './basic-select-dropdown-field';
 import { VisibilitySelectField } from './visibility-select-field';
@@ -10,6 +11,7 @@ import { VisibilitySelectField } from './visibility-select-field';
 import { CharacterAppearanceField } from './character-appearance-field';
 import { CharacterDetailsField } from './character-details-field';
 import { CharacterTagsField } from './character-tags-field';
+import { CharacterVoiceField } from './character-voice-field';
 import { OpeningPrologueField } from './opening-prologue-field';
 import {
   BasicFieldCard,
@@ -69,12 +71,11 @@ export function BasicInfoSection({ form, setRef, onChange }: BasicInfoSectionPro
         </View>
       </View>
 
-      <BasicFieldCard label={t('character.createPage.voice')}>
-        <BasicSelectRow
-          value={form.voiceName || form.voiceId}
-          placeholder={t('character.createPage.pleaseSelect')}
-        />
-      </BasicFieldCard>
+      <CharacterVoiceField
+        voiceId={form.voiceId}
+        voiceName={form.voiceName}
+        onChange={({ voiceId, voiceName }) => onChange({ voiceId, voiceName })}
+      />
 
       <BasicFieldCard label={t('character.createPage.introduction')}>
         <BasicTextInput
@@ -128,6 +129,17 @@ export function AppearanceSection({ form, setRef, onChange }: AppearanceSectionP
   const { t } = useTranslation();
   const count = form.images.length;
   const openGalleryRef = useRef<(() => void) | null>(null);
+  const formRef = useRef(form);
+  formRef.current = form;
+
+  const getGenerationContext = useCallback(
+    () => ({
+      mode: 'draft' as const,
+      draft: draftStateToApiForm(formRef.current),
+      scene: formRef.current.targetCharacterId ? 'update_appearance' as const : 'create_character' as const,
+    }),
+    [],
+  );
 
   return (
     <FormSectionCard id="section-appearance" sectionKey="appearance" setRef={setRef}>
@@ -153,6 +165,7 @@ export function AppearanceSection({ form, setRef, onChange }: AppearanceSectionP
       <CharacterAppearanceField
         images={form.images}
         draftId={form.draftId}
+        getGenerationContext={getGenerationContext}
         onChange={(images) => onChange({ images })}
         onGalleryTriggerReady={(openGallery) => {
           openGalleryRef.current = openGallery;

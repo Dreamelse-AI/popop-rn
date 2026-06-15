@@ -147,5 +147,5 @@ export function shouldUseMockCharacterPosts(): boolean {
   const flag = readMockCharacterPostsFlag();
   if (flag === 'true' || flag === '1' || flag === 'yes') return true;
   if (flag === 'false' || flag === '0' || flag === 'no') return false;
-  return __DEV__;
+  return false;
 }

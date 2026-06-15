@@ -1,6 +1,6 @@
 import type { AccountRegion } from '@/features/auth/auth-types'
 import {
-  getDeviceAccountRegion,
+  DEFAULT_ACCOUNT_REGION,
   mapCountryCodeToAccountRegion,
 } from '@/features/auth/region-config'
 import { API_BASE, IP_REGION_PATH } from '@/shared/api/api-base'
@@ -36,7 +36,7 @@ export function isAccountRegionReady(): boolean {
 }
 
 export function getAccountRegion(): AccountRegion {
-  return userOverride ?? resolvedRegion ?? readStoredAccountRegion() ?? getDeviceAccountRegion()
+  return userOverride ?? resolvedRegion ?? readStoredAccountRegion() ?? DEFAULT_ACCOUNT_REGION
 }
 
 export function setAccountRegion(region: AccountRegion): void {
@@ -90,9 +90,9 @@ export function bootstrapAccountRegion(): Promise<AccountRegion> {
         resolvedRegion = mapCountryCodeToAccountRegion(result)
         persistAccountRegion(resolvedRegion)
       } else if (result === 'empty') {
-        resolvedRegion = getDeviceAccountRegion()
+        resolvedRegion = DEFAULT_ACCOUNT_REGION
       } else {
-        resolvedRegion = cached ?? getDeviceAccountRegion()
+        resolvedRegion = cached ?? DEFAULT_ACCOUNT_REGION
       }
 
       regionReady = true

@@ -8,6 +8,7 @@ export type PublishCharacterPostParams = {
   characterCoverUrl?: string | null;
   content: string;
   imageUrls: string[];
+  bgmMusicKey?: string | null;
 };
 
 function toImageMedia(url: string, id: string): Media {
@@ -47,11 +48,13 @@ export async function publishCharacterPost(params: PublishCharacterPostParams): 
     .map((url, index) => toImageMedia(url, `post-image-${index}`));
 
   const content = params.content.trim();
+  const bgmMusicKey = params.bgmMusicKey?.trim();
 
   const createResp = await createPost({
     content: content || undefined,
     images: images.length ? images : undefined,
     visibility: 1,
+    bgm_music_key: bgmMusicKey || undefined,
     linked_items: [buildLinkedCharacterItem(params)],
   });
 

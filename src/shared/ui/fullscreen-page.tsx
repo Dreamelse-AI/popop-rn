@@ -20,13 +20,15 @@ export function FullscreenPage({
 
 type PageHeaderBarProps = {
   children: ReactNode
+  /** 父级已处理顶部安全区时设为 false，避免重复留白 */
+  includeSafeAreaTop?: boolean
 }
 
-export function PageHeaderBar({ children }: PageHeaderBarProps) {
+export function PageHeaderBar({ children, includeSafeAreaTop = true }: PageHeaderBarProps) {
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.headerOuter, { paddingTop: insets.top }]}>
+    <View style={[styles.headerOuter, includeSafeAreaTop && { paddingTop: insets.top }]}>
       <View style={styles.headerInner}>
         {children}
       </View>

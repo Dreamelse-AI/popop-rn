@@ -11,11 +11,8 @@ import {
   COLLAPSED_MODEL_COUNT,
   CUSTOM_INSTRUCTIONS_MAX_LENGTH,
   DEFAULT_TEMPERATURE_LEVEL,
-  temperatureLevelToApi,
-  temperatureToLevel,
   toChatModelDisplay,
   type ChatModelDisplay,
-  type TemperatureLevel,
 } from '../lib/chat-model-display';
 import {
   getChatModelSessionConfig,
@@ -74,7 +71,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       characterSaveIdRef.current = saveId;
       const resp = await chatPreferenceApi.get(saveId);
 
-      const temperatureDefault = temperatureToLevel(
+      const temperatureDefault = clampTemperatureLevel(
         resp.options.temperature_default ?? DEFAULT_TEMPERATURE_LEVEL,
       );
       defaultTemperatureRef.current = temperatureDefault;
@@ -88,7 +85,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const existing = getChatModelSessionConfig(characterSaveIdRef.current, activeModelId);
         if (!existing) {
           setChatModelSessionConfig(characterSaveIdRef.current, activeModelId, {
-            temperatureLevel: temperatureToLevel(resp.current.temperature),
+            temperatureLevel: clampTemperatureLevel(resp.current.temperature),
             customInstructions: '',
           });
         }
@@ -154,7 +151,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const resp = await chatPreferenceApi.set({
           character_id: characterId,
           model_id: modelId,
-          temperature: temperatureLevelToApi(normalized.temperatureLevel as TemperatureLevel),
+          temperature: normalized.temperatureLevel,
         });
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
@@ -189,12 +186,12 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const resp = await chatPreferenceApi.set({
           character_id: characterId,
           model_id: model.modelId,
-          temperature: temperatureLevelToApi(targetSettings.temperatureLevel as TemperatureLevel),
+          temperature: targetSettings.temperatureLevel,
         });
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
         setChatModelSessionConfig(characterSaveIdRef.current, model.modelId, {
-          temperatureLevel: temperatureToLevel(resp.temperature),
+          temperatureLevel: clampTemperatureLevel(resp.temperature),
           customInstructions: targetSettings.customInstructions,
         });
         onApplied?.();

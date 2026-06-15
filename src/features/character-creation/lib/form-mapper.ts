@@ -10,8 +10,6 @@ import type { CharacterDraftFormState, CreationFormImage } from '../types/form';
 import { createEmptyDraftFormState } from '../types/form';
 import { normalizeAppearanceImageTags } from './appearance-image-tags';
 
-export type { CharacterDraftDetail };
-
 /** 服务端 UserUploadImage 扩展 tags 字段（生成类型尚未包含） */
 type UserUploadImagePayload = UserUploadImage & { tags?: string[] };
 
@@ -50,33 +48,18 @@ export function mapImagesToApi(images: CreationFormImage[]): CharacterCreateForm
   });
 }
 
-function readCustomizedSettings(
-  settings: CharacterCreateForm['customized_settings'],
-): Record<string, string> {
-  if (!settings) return {};
-  return Object.fromEntries(
-    Object.entries(settings)
-      .map(([key, content]) => [key, content.trim()] as const)
-      .filter(([, content]) => content.length > 0),
-  );
-}
-
-function writeCustomizedSettings(
-  settings: Record<string, string>,
-): CharacterCreateForm['customized_settings'] {
-  const entries = Object.entries(settings)
-    .map(([key, content]) => [key, content.trim()] as const)
-    .filter(([, content]) => content.length > 0);
-  if (entries.length === 0) return undefined;
-  return Object.fromEntries(entries);
-}
-
 export function apiFormToDraftState(
   draftId: string,
   form: CharacterCreateForm,
   serverUpdatedAt: number,
 ): CharacterDraftFormState {
-  const customizedSettings = readCustomizedSettings(form.customized_settings);
+  const customizedSettings = form.customized_settings
+    ? Object.fromEntries(
+        Object.entries(form.customized_settings)
+          .map(([key, value]) => [key, value?.trim() ?? ''] as const)
+          .filter(([, content]) => content.length > 0),
+      )
+    : {};
 
   return {
     draftId,
@@ -136,7 +119,11 @@ export function isDraftFormContentEqual(
 }
 
 export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCreateForm {
-  const customized_settings = writeCustomizedSettings(state.customizedSettings);
+  const customizedEntries = Object.entries(state.customizedSettings)
+    .map(([key, content]) => [key, content.trim()] as const)
+    .filter(([, content]) => content.length > 0);
+  const customized_settings =
+    customizedEntries.length > 0 ? Object.fromEntries(customizedEntries) : undefined;
 
   return {
     name: state.name || undefined,
@@ -251,10 +238,6 @@ export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): 
     }
   }
 
-  const landingPageUrls = (character.landing_page_urls ?? [])
-    .map((url) => url.trim())
-    .filter(Boolean);
-
   return {
     name: character.name?.trim() || character.aka?.trim() || undefined,
     gender: resolveGenderValue(character.gender) || undefined,
@@ -263,6 +246,6 @@ export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): 
     voice_id: character.voice?.voice_id,
     visibility: character.is_public === false ? 'private' : 'public',
     images: images.length ? images : undefined,
-    landing_page_urls: landingPageUrls.length ? landingPageUrls : [],
+    landing_page_urls: character.landing_page_urls ?? [],
   };
 }

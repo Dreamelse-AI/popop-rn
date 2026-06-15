@@ -1,0 +1,15 @@
+---
+description: Screen and navigation structure for popop-rn
+globs: src/pages/**/*,src/app/**/*
+alwaysApply: false
+---
+
+# RN 屏幕结构
+
+- 页面组件放 `src/pages/<feature>/`
+- 业务逻辑放 `src/features/<name>/`
+- 新 screen 必须注册 `src/app/navigation.tsx` 的 `RootStackParamList`
+- 使用 `useSafeAreaInsets()` 处理刘海/底部安全区
+- Tab 首页壳：`src/pages/home/home-page.tsx` + `src/pages/home/nav/bottom-nav-bar.tsx`
+
+不使用 Expo Router file-based routing。

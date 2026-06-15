@@ -1,3 +1,5 @@
+export { PopIcon } from './pop-icon'
+export { PopImage } from './pop-image'
 export { BottomSheet } from './bottom-sheet'
 export { CenterDialog } from './center-dialog'
 export { ChatCountBadge, formatChatCount } from './chat-count-badge'

@@ -1,4 +1,4 @@
 [submodule "external/common-idl"]
 	path = external/common-idl
-	url = git@github.com:Dreamelse-AI/common_idl-i18n.git
+	url = https://github.com/Dreamelse-AI/common_idl-i18n.git
 	branch = dev

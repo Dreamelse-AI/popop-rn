@@ -1,0 +1,16 @@
+---
+description: Block web-only imports and patterns in popop-rn src/
+globs: src/**/*
+alwaysApply: false
+---
+
+# RN：禁止 Web 依赖
+
+在 `popop-rn/src/` 中：
+
+- 禁止 `localStorage` / `sessionStorage` / `document` / `window`（除类型声明）
+- 禁止 `react-dom`、`react-router`、`tailwindcss`
+- 禁止 `@popop/consumer`、`@popop/shared` workspace import
+- 禁止 `import.meta.env`（用 `expo-constants` 或 `process.env`）
+
+持久化用 `src/shared/storage/`；导航用 React Navigation。
