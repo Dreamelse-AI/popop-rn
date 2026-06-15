@@ -13,7 +13,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "idl:update": "git submodule update --remote external/common-idl",
+    "gen:api": "node scripts/gen-api.mjs",
+    "gen:api:update": "git submodule update --remote external/common-idl && node scripts/gen-api.mjs"
   },
   "dependencies": {
     "@react-native-google-signin/google-signin": "^16.1.2",

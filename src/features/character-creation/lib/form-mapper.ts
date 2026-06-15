@@ -1,8 +1,8 @@
 import type {
   CharacterCreateForm,
   CharacterDetailInfo,
+  CharacterDraftDetail,
   CharacterDraftItem,
-  CustomizedSettingInfo,
   UserUploadImage,
 } from '@/generated/arca_apiComponents';
 
@@ -10,8 +10,7 @@ import type { CharacterDraftFormState, CreationFormImage } from '../types/form';
 import { createEmptyDraftFormState } from '../types/form';
 import { normalizeAppearanceImageTags } from './appearance-image-tags';
 
-/** 服务端草稿详情（RN CharacterDraftItem 已包含完整字段） */
-export type CharacterDraftDetail = CharacterDraftItem;
+export type { CharacterDraftDetail };
 
 /** 服务端 UserUploadImage 扩展 tags 字段（生成类型尚未包含） */
 type UserUploadImagePayload = UserUploadImage & { tags?: string[] };
@@ -52,26 +51,24 @@ export function mapImagesToApi(images: CreationFormImage[]): CharacterCreateForm
 }
 
 function readCustomizedSettings(
-  settings: { [key: string]: CustomizedSettingInfo } | undefined,
+  settings: CharacterCreateForm['customized_settings'],
 ): Record<string, string> {
   if (!settings) return {};
   return Object.fromEntries(
     Object.entries(settings)
-      .map(([key, info]) => [key, info.content?.trim() ?? ''] as const)
+      .map(([key, content]) => [key, content.trim()] as const)
       .filter(([, content]) => content.length > 0),
   );
 }
 
 function writeCustomizedSettings(
   settings: Record<string, string>,
-): { [key: string]: CustomizedSettingInfo } | undefined {
+): CharacterCreateForm['customized_settings'] {
   const entries = Object.entries(settings)
     .map(([key, content]) => [key, content.trim()] as const)
     .filter(([, content]) => content.length > 0);
   if (entries.length === 0) return undefined;
-  return Object.fromEntries(
-    entries.map(([key, content]) => [key, { icon: '', content }]),
-  );
+  return Object.fromEntries(entries);
 }
 
 export function apiFormToDraftState(
@@ -87,8 +84,8 @@ export function apiFormToDraftState(
     tags: form.tags ?? [],
     species: form.species ?? '',
     gender: form.gender ?? '',
-    voiceId: form.voice?.voice_id ?? '',
-    voiceName: form.voice?.voice_name ?? '',
+    voiceId: form.voice_id ?? '',
+    voiceName: '',
     profile: form.profile ?? '',
     disposition: form.disposition ?? '',
     anonymousTags: form.anonymous_tags ?? [],
@@ -103,16 +100,14 @@ export function apiFormToDraftState(
 }
 
 export function draftStateFromServerItem(draft: CharacterDraftItem): CharacterDraftFormState {
-  const form = draft.character_create_form;
-  const coverImage = form?.images?.find(img => img.is_main_pic) ?? form?.images?.[0];
-  const coverUrl = coverImage?.url?.trim();
+  const coverUrl = draft.media?.url?.trim();
   const images: CharacterDraftFormState['images'] = coverUrl
     ? [{ id: 'cover', url: coverUrl, source: 'upload', isMain: true, tags: [] }]
     : [];
 
   return {
     ...createEmptyDraftFormState(draft.draft_id, draft.updated_at ?? 0),
-    name: form?.name?.trim() ?? '',
+    name: draft.name?.trim() ?? '',
     images,
   };
 }
@@ -148,7 +143,7 @@ export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCr
     tags: state.tags.length ? state.tags : undefined,
     species: state.species || undefined,
     gender: state.gender || undefined,
-    voice: state.voiceId ? { voice_id: state.voiceId, voice_name: state.voiceName || undefined } : undefined,
+    voice_id: state.voiceId || undefined,
     profile: state.profile || undefined,
     disposition: state.disposition || undefined,
     anonymous_tags: state.anonymousTags.length ? state.anonymousTags : undefined,
@@ -205,7 +200,7 @@ export function isDraftFormMeaningful(form: CharacterCreateForm): boolean {
       form.profile?.trim() ||
       form.species?.trim() ||
       form.gender ||
-      form.voice?.voice_id ||
+      form.voice_id ||
       (form.opening_prologue?.length ?? 0) > 0 ||
       Object.keys(form.customized_settings ?? {}).length > 0,
   );
@@ -256,16 +251,18 @@ export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): 
     }
   }
 
-  const landingPageUrl = character.landing_page_url?.trim();
+  const landingPageUrls = (character.landing_page_urls ?? [])
+    .map((url) => url.trim())
+    .filter(Boolean);
 
   return {
     name: character.name?.trim() || character.aka?.trim() || undefined,
     gender: resolveGenderValue(character.gender) || undefined,
     species: character.species?.trim() || undefined,
     profile: character.profile?.trim() || undefined,
-    voice: character.voice,
+    voice_id: character.voice?.voice_id,
     visibility: character.is_public === false ? 'private' : 'public',
     images: images.length ? images : undefined,
-    landing_page_urls: landingPageUrl ? [landingPageUrl] : [],
+    landing_page_urls: landingPageUrls.length ? landingPageUrls : [],
   };
 }

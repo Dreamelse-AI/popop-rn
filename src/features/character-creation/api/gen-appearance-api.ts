@@ -86,8 +86,8 @@ function buildGenAppearanceRequest(params: GenerateAppearanceParams): GenAppeara
   const userPrompt = params.prompt.trim();
   const styleKey = params.styleKey.trim();
 
-  if (userPrompt) req.description = userPrompt;
-  if (styleKey) req.style_name = styleKey;
+  if (userPrompt) req.user_prompt = userPrompt;
+  if (styleKey) req.style_key = styleKey;
 
   return req;
 }

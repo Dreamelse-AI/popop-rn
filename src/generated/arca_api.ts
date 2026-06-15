@@ -112,6 +112,14 @@ export function scheduledPrint(req: components.ScheduledPrintReq) {
  * @description 
  * @param req
  */
+export function agreeTerms(req: components.AgreeTermsReq) {
+	return arcaWebapi.post<components.AgreeTermsResp>(`/app/agree_terms`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function auditImage(req: components.AuditImageReq) {
 	return arcaWebapi.post<components.AuditImageResp>(`/audit/image`, req)
 }
@@ -174,13 +182,6 @@ export function getAppConfig() {
 /**
  * @description 
  */
-export function getTerms() {
-	return arcaWebapi.post<components.AppTermsResp>(`/app/get_terms`)
-}
-
-/**
- * @description 
- */
 export function getIPRegion() {
 	return arcaWebapi.get<components.GetIPRegionResp>(`/app/ip_region`)
 }
@@ -191,6 +192,13 @@ export function getIPRegion() {
  */
 export function reportAppState(req: components.ReportAppStateReq) {
 	return arcaWebapi.post<components.ReportAppStateResp>(`/app/report_app_state`, req)
+}
+
+/**
+ * @description 
+ */
+export function getTerms() {
+	return arcaWebapi.get<components.AppTermsResp>(`/app/terms`)
 }
 
 /**
@@ -229,7 +237,7 @@ export function syncChatWithCharacter(req: components.ChatWithCharacterReq) {
  * @param req
  */
 export function createCharacter(req: components.CreateCharacterReq) {
-	return arcaWebapi.post<components.CreateCharacterResp>(`/character/create`, req)
+	return arcaWebapi.post<components.AsyncTaskSubmitResp>(`/character/create`, req)
 }
 
 /**
@@ -238,14 +246,6 @@ export function createCharacter(req: components.CreateCharacterReq) {
  */
 export function createCharacterAppearance(req: components.CreateAppearanceReq) {
 	return arcaWebapi.post<components.CreateAppearanceResp>(`/character/create_appearance`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function delGenerationTemporaryAsset(req: components.DelGenerationTemporaryAssetReq) {
-	return arcaWebapi.post<components.DelGenerationTemporaryAssetResp>(`/character/del_generation_temp_asset`, req)
 }
 
 /**
@@ -282,6 +282,22 @@ export function draftChat(req: components.DraftChatReq) {
 
 /**
  * @description 
+ * @param params
+ */
+export function getCharacterDraftDetail(params: components.GetCharacterDraftDetailReqParams) {
+	return arcaWebapi.get<components.GetCharacterDraftDetailResp>(`/character/draft_detail`, params)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function forwardPostToCharacter(req: components.ForwardPostToCharacterReq) {
+	return arcaWebapi.post<components.ForwardPostToCharacterResp>(`/character/forward_post`, req)
+}
+
+/**
+ * @description 
  * @param req
  */
 export function genAppearanceFromInput(req: components.GenAppearanceFromInputReq) {
@@ -308,14 +324,6 @@ export function generateCharacterSchedule(req: components.GenerateCharacterSched
  * @description 
  * @param req
  */
-export function getGenerationTemporaryAsset(req: components.GetGenerationTemporaryAssetReq) {
-	return arcaWebapi.post<components.GetGenerationTemporaryAssetResp>(`/character/get_generation_temp_asset`, req)
-}
-
-/**
- * @description 
- * @param req
- */
 export function getCharacterMemories(req: components.GetCharacterMemoriesReq) {
 	return arcaWebapi.post<components.GetCharacterGroupMemoriesResp>(`/character/get_memories`, req)
 }
@@ -330,25 +338,10 @@ export function getSoulWordEvaluation(req: components.GetSoulWordEvaluationReq) 
 
 /**
  * @description 
- */
-export function listAppearanceStyles() {
-	return arcaWebapi.post<components.ListAppearanceStylesResp>(`/character/list_appearance_styles`)
-}
-
-/**
- * @description 
  * @param req
  */
 export function listCharacterAppearances(req: components.ListCharacterAppearancesReq) {
 	return arcaWebapi.post<components.ListCharacterAppearancesResp>(`/character/list_appearances`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listCharacterVoices(req: components.ListCharacterVoicesReq) {
-	return arcaWebapi.post<components.ListCharacterVoicesResp>(`/character/list_character_voices`, req)
 }
 
 /**
@@ -362,22 +355,8 @@ export function listCopyableCharacters(req: components.ListCopyableCharactersReq
 /**
  * @description 
  */
-export function listCopyableCharactersTag() {
-	return arcaWebapi.post<components.ListCopyableCharactersTagResp>(`/character/list_copyable_characters_tag`)
-}
-
-/**
- * @description 
- */
 export function listCharacterDrafts() {
 	return arcaWebapi.post<components.ListCharacterDraftsResp>(`/character/list_drafts`)
-}
-
-/**
- * @description 
- */
-export function listEmojis() {
-	return arcaWebapi.post<components.ListEmojisResp>(`/character/list_emojis`)
 }
 
 /**
@@ -402,14 +381,6 @@ export function list_character_phone_chat_history(req: components.ListCharacterP
  */
 export function listCharacterScheduleByDay(req: components.ListCharacterScheduleByDayReq) {
 	return arcaWebapi.post<components.ListCharacterScheduleByDayResp>(`/character/list_schedule_by_day`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listCharacterStories(req: components.ListCharacterStoriesReq) {
-	return arcaWebapi.post<components.ListCharacterStoriesResp>(`/character/list_stories`, req)
 }
 
 /**
@@ -868,6 +839,13 @@ export function listEmojiPanel() {
  */
 export function uploadUserEmoji(req: components.UploadUserEmojiReq) {
 	return arcaWebapi.post<components.UploadUserEmojiResp>(`/emoji/upload`, req)
+}
+
+/**
+ * @description 
+ */
+export function getMusicList() {
+	return arcaWebapi.get<components.ListMusicResp>(`/resource/music_list`)
 }
 
 /**

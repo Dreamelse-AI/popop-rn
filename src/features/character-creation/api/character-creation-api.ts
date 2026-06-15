@@ -5,6 +5,8 @@ import type {
   DeleteCharacterDraftResp,
   DeleteCharacterReq,
   DeleteCharacterResp,
+  GetCharacterDraftDetailReqParams,
+  GetCharacterDraftDetailResp,
   ListCharacterDraftsResp,
   ListUserCharactersReq,
   ListUserCharactersResp,
@@ -19,25 +21,18 @@ import { USE_CHARACTER_CREATION_MOCK } from '../config';
 import { loadPublishedCharacterCreateForm as fetchPublishedCharacterCreateForm } from '../lib/load-published-character-form';
 import * as mock from './character-creation-api.mock';
 
-export type { GetCharacterDraftDetailReqParams, GetCharacterDraftDetailResp } from './character-creation-api.mock';
+export type { GetCharacterDraftDetailReqParams, GetCharacterDraftDetailResp } from '@/generated/arca_apiComponents';
 
 export function listCharacterDrafts(): Promise<ListCharacterDraftsResp> {
   return USE_CHARACTER_CREATION_MOCK ? mock.listCharacterDrafts() : real.listCharacterDrafts();
 }
 
 export function getCharacterDraftDetail(
-  params: { draft_id: string },
-): Promise<{ draft: CharacterDraftItem }> {
-  if (USE_CHARACTER_CREATION_MOCK) {
-    return mock.getCharacterDraftDetail(params);
-  }
-  // RN generated API does not have a dedicated getCharacterDraftDetail endpoint.
-  // We retrieve it from listCharacterDrafts as a fallback, wrapping the matching item.
-  return real.listCharacterDrafts().then((resp) => {
-    const draft = (resp.drafts ?? []).find(d => d.draft_id === params.draft_id);
-    if (!draft) throw new Error('Draft not found');
-    return { draft };
-  });
+  params: GetCharacterDraftDetailReqParams,
+): Promise<GetCharacterDraftDetailResp> {
+  return USE_CHARACTER_CREATION_MOCK
+    ? mock.getCharacterDraftDetail(params)
+    : real.getCharacterDraftDetail({ draft_id: params.draft_id });
 }
 
 export function listUserCharacters(req: ListUserCharactersReq): Promise<ListUserCharactersResp> {

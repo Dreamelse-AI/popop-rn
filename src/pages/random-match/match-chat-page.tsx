@@ -35,7 +35,7 @@ const GENDER_OPTIONS = [
   { emoji: '☺️', labelKey: 'randomMatch.genderNoLimit', value: null },
   { emoji: '👩', labelKey: 'randomMatch.genderFemale', value: 'female' },
   { emoji: '👨', labelKey: 'randomMatch.genderMale', value: 'male' },
-  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'non-human' },
+  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'other' },
 ] as const
 
 type MatchChatPageProps = {

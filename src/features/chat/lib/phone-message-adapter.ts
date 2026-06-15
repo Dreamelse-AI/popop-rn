@@ -120,8 +120,10 @@ export function formatPhoneMessagePreview(message: PhoneMessageOutput): string {
       return message.invitation?.title ?? message.invitation?.description ?? '[邀约]';
     case 'html_file':
       return '[链接]';
-    case 'forward':
-      return message.forward?.summary ?? message.forward?.title ?? '[转发]';
+    case 'forward': {
+      const forward = message.chat_forward ?? message.media_forward;
+      return forward?.summary ?? forward?.title ?? '[转发]';
+    }
     default:
       return '';
   }

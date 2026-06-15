@@ -22,6 +22,16 @@ export function clampTemperatureLevel(value: number): TemperatureLevel {
   return value as TemperatureLevel
 }
 
+/** 将 UI 三档温度映射为 API 0–2 小数 */
+export function temperatureLevelToApi(level: TemperatureLevel): number {
+  return level
+}
+
+/** 将 API 温度读数映射回 UI 三档 */
+export function temperatureToLevel(value: number): TemperatureLevel {
+  return clampTemperatureLevel(Math.round(value))
+}
+
 export function toChatModelDisplay(model: ChatModelOption, t: TFunction): ChatModelDisplay {
   const modelId = model.model_id
   const icon = t(`chatModels.items.${modelId}.icon`, { defaultValue: t('chatModels.defaultIcon') })

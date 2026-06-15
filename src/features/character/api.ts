@@ -13,14 +13,8 @@ export type GetCharacterDetailPageResp = GetCharacterDetailResp & {
 
 export const characterApi = {
   /** 拉取可复制角色（添加好友页数据源，后端做可见性筛选） */
-  listCopyable: (
-    limit = 30,
-    keyword?: string,
-    cursor?: string,
-    showFriends = false,
-  ) => {
+  listCopyable: (limit = 30, keyword?: string, cursor?: string) => {
     const req: ListCopyableCharactersReq = {
-      show_friends: showFriends,
       limit,
       ...(keyword ? { keyword } : {}),
       ...(cursor ? { cursor } : {}),

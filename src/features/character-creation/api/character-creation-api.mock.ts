@@ -1,11 +1,14 @@
 import type {
   CharacterCreateForm,
+  CharacterDraftDetail,
   CharacterDraftItem,
   CharacterPageBasicInfo,
   DeleteCharacterDraftReq,
   DeleteCharacterDraftResp,
   DeleteCharacterReq,
   DeleteCharacterResp,
+  GetCharacterDraftDetailReqParams,
+  GetCharacterDraftDetailResp,
   ListCharacterDraftsResp,
   ListUserCharactersReq,
   ListUserCharactersResp,
@@ -62,10 +65,15 @@ const mockDrafts: MockDraftRecord[] = [
 ];
 
 function toDraftListItem(draft: MockDraftRecord): CharacterDraftItem {
+  const form = draft.character_create_form;
+  const mainImage = form?.images?.find((img) => img.is_main_pic) ?? form?.images?.[0];
+
   return {
     draft_id: draft.draft_id,
-    target_character_id: draft.target_character_id,
-    character_create_form: draft.character_create_form ?? { landing_page_urls: [] },
+    name: form?.name,
+    media: mainImage?.url
+      ? { id: 'cover', url: mainImage.url, media_type: 'image' }
+      : undefined,
     updated_at: draft.updated_at,
     status: draft.status,
     reject_reason: draft.reject_reason,
@@ -90,14 +98,6 @@ function nextPublishedId() {
   return `mock-char-${publishedSeq}`;
 }
 
-export type GetCharacterDraftDetailReqParams = {
-  draft_id: string;
-};
-
-export type GetCharacterDraftDetailResp = {
-  draft: CharacterDraftItem;
-};
-
 export async function listCharacterDrafts(): Promise<ListCharacterDraftsResp> {
   await delay();
   return { drafts: mockDrafts.map(toDraftListItem) };
@@ -110,14 +110,18 @@ export async function getCharacterDraftDetail(
   const draft = mockDrafts.find(d => d.draft_id === params.draft_id);
   if (!draft) throw new Error('Draft not found');
   return {
-    draft: {
-      draft_id: draft.draft_id,
-      target_character_id: draft.target_character_id,
-      character_create_form: draft.character_create_form ?? { landing_page_urls: [] },
-      updated_at: draft.updated_at,
-      status: draft.status,
-      reject_reason: draft.reject_reason,
-    },
+    draft: toDraftDetail(draft),
+  };
+}
+
+function toDraftDetail(draft: MockDraftRecord): CharacterDraftDetail {
+  return {
+    draft_id: draft.draft_id,
+    target_character_id: draft.target_character_id,
+    character_create_form: draft.character_create_form ?? { landing_page_urls: [] },
+    updated_at: draft.updated_at,
+    status: draft.status,
+    reject_reason: draft.reject_reason,
   };
 }
 
