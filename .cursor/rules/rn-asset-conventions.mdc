@@ -1,0 +1,13 @@
+---
+description: Image and SVG conventions for popop-rn
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# RN 资产约定
+
+- 网络/本地图片：使用 `PopImage`（`src/shared/ui/pop-image.tsx`），禁止 RN `Image` + `{ uri }`
+- SVG 图标：`react-native-svg-transformer` + `PopIcon`
+- 禁止 SVG 作为 Image URI
+- 禁止为迁移批量 PNG 化 SVG
+- 远程 URL 经 `normalizeAssetUrl()`（`src/shared/lib/normalize-asset-url.ts`）

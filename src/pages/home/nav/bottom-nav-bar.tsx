@@ -5,10 +5,12 @@ import IconFlash from '@/shared/assets/feed/icon/white_image-flash-1-Streamline-
 import IconChat from '@/shared/assets/feed/icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.svg'
 import IconCreate from '@/shared/assets/feed/icon/Group 2117131456.svg'
 import IconSkull from '@/shared/assets/feed/icon/black_interface_edit_skull_1_Streamline_Plump.svg'
+import { PopIcon } from '@/shared/ui/pop-icon'
+import type { SvgProps } from 'react-native-svg'
 
 type NavTab = {
   id: string
-  Icon: React.FC<{ width: number; height: number; opacity?: number }>
+  Icon: React.FC<SvgProps>
   label: string
 }
 
@@ -41,9 +43,7 @@ export function BottomNavBar({ currentTab, onTabChange }: BottomNavBarProps) {
               accessibilityRole="button"
               accessibilityState={isActive ? { selected: true } : {}}
             >
-              <View style={{ opacity: isActive ? 1 : 0.3 }}>
-                <tab.Icon width={24} height={24} />
-              </View>
+              <PopIcon icon={tab.Icon} size={24} style={{ opacity: isActive ? 1 : 0.3 }} />
             </Pressable>
           )
         })}

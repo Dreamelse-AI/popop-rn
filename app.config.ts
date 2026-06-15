@@ -42,6 +42,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-dev-client',
     'expo-apple-authentication',
     '@react-native-google-signin/google-signin',
+    [
+      '@stripe/stripe-react-native',
+      {
+        merchantIdentifier: 'merchant.com.popop.app',
+      },
+    ],
     'expo-speech-recognition',
     'expo-audio',
     [
@@ -72,5 +78,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     apiBaseUrl: process.env.API_BASE_URL ?? 'https://i18n-api.imaginewithu.com',
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',
+    stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '',
   },
 })

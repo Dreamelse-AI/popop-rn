@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { Image } from 'expo-image'
 
 import { CharacterAiImageFlow } from '@/features/character-creation/ui/character-ai-image-flow'
+import { MusicPickerSheet } from '@/features/resource/ui/music-picker-sheet'
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
 
 import {
@@ -48,6 +49,9 @@ export function PostDynamicComposePage({
   const [imageSourceOpen, setImageSourceOpen] = useState(false)
   const [aiFlowOpen, setAiFlowOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false)
+  const [musicKey, setMusicKey] = useState<string | null>(null)
+  const [musicTitle, setMusicTitle] = useState('')
 
   const canPublish = (text.trim().length > 0 || imageUrls.length > 0) && !uploading && !publishing
 
@@ -57,6 +61,9 @@ export function PostDynamicComposePage({
     setImageSourceOpen(false)
     setAiFlowOpen(false)
     setUploading(false)
+    setMusicPickerOpen(false)
+    setMusicKey(null)
+    setMusicTitle('')
   }, [])
 
   const handleClose = useCallback(() => {
@@ -117,7 +124,7 @@ export function PostDynamicComposePage({
       await onPublish({
         text: text.trim(),
         imageUrls,
-        musicId: null,
+        musicId: musicKey,
       })
       resetForm()
     } catch {
@@ -193,6 +200,12 @@ export function PostDynamicComposePage({
             )}
 
             <View style={styles.textCard}>
+              <Pressable onPress={() => setMusicPickerOpen(true)} style={styles.musicRow}>
+                <Text style={styles.musicLabel}>{t('character.creation.musicPickerTitle')}</Text>
+                <Text style={styles.musicValue} numberOfLines={1}>
+                  {musicTitle || t('character.creation.musicPickerEmpty')}
+                </Text>
+              </Pressable>
               <TextInput
                 value={text}
                 onChangeText={(v) => setText(v.slice(0, MAX_TEXT_LENGTH))}
@@ -229,6 +242,20 @@ export function PostDynamicComposePage({
           )}
         </View>
       </Modal>
+
+      <MusicPickerSheet
+        open={musicPickerOpen}
+        value={musicKey}
+        onClose={() => setMusicPickerOpen(false)}
+        onSelect={music => {
+          setMusicKey(music.music_key)
+          setMusicTitle(music.title?.trim() || music.music_key)
+        }}
+        onClear={() => {
+          setMusicKey(null)
+          setMusicTitle('')
+        }}
+      />
 
       <PostDynamicImageSourceSheet
         open={imageSourceOpen}
@@ -358,6 +385,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 12,
+  },
+  musicRow: {
+    gap: 4,
+  },
+  musicLabel: {
+    fontSize: 12,
+    color: 'rgba(0,0,0,0.4)',
+  },
+  musicValue: {
+    fontSize: 14,
+    color: '#000000',
   },
   textInput: {
     minHeight: 100,

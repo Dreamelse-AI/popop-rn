@@ -48,7 +48,17 @@ open ios/Popop.xcworkspace
 
 ```bash
 # 类型检查
-npx tsc --noEmit
+npm run typecheck
+
+# API 生成（需 goctl + submodule）
+git submodule update --init external/common-idl
+npm run gen:api
+
+# 从 popop-fe 快速同步 generated（临时）
+npm run sync:generated-from-fe
+
+# IDL 更新
+npm run idl:update && npm run gen:api
 
 # 清除 Metro 缓存
 npx expo start --clear

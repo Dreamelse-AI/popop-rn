@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
+import { useStripe } from '@stripe/stripe-react-native'
 
 import type { RechargeCreateResp } from '@/generated/arca_apiComponents'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
@@ -9,6 +10,7 @@ import {
   savePendingRechargeSession,
   verifyRechargeOrder,
 } from './recharge-api'
+import { stripePublishableKey } from './stripe-provider'
 import { useWalletStore } from './wallet-store'
 
 type PaymentMethodSheetProps = {
@@ -29,6 +31,7 @@ export function PaymentMethodSheet({
   onError,
 }: PaymentMethodSheetProps) {
   const applyVerifyResult = useWalletStore(s => s.applyVerifyResult)
+  const { initPaymentSheet, presentPaymentSheet } = useStripe()
   const [paying, setPaying] = useState(false)
 
   const handlePay = async () => {
@@ -42,8 +45,40 @@ export function PaymentMethodSheet({
     })
 
     try {
-      // TODO: integrate @stripe/stripe-react-native confirmPayment
-      // For now, call verify directly (assumes payment succeeds via native Stripe sheet)
+      const clientSecret = order.client_secret?.trim()
+      if (!clientSecret) {
+        clearPendingRechargeSession()
+        onError('Missing Stripe client secret')
+        return
+      }
+
+      if (!stripePublishableKey) {
+        clearPendingRechargeSession()
+        onError('Stripe publishable key is not configured')
+        return
+      }
+
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'Popop',
+      })
+
+      if (initError) {
+        clearPendingRechargeSession()
+        onError(initError.message)
+        return
+      }
+
+      const { error: presentError } = await presentPaymentSheet()
+
+      if (presentError) {
+        clearPendingRechargeSession()
+        if (presentError.code !== 'Canceled') {
+          onError(presentError.message)
+        }
+        return
+      }
+
       const receipt = order.payment_intent_id
       if (!receipt) {
         clearPendingRechargeSession()
@@ -70,19 +105,21 @@ export function PaymentMethodSheet({
 
         <View style={styles.paymentArea}>
           <Text style={styles.placeholder}>
-            Stripe payment sheet will appear here
+            {stripePublishableKey
+              ? 'Tap Pay to open Stripe Payment Sheet'
+              : 'Set EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY to enable payments'}
           </Text>
         </View>
 
         <Pressable
           onPress={() => void handlePay()}
-          disabled={paying}
-          style={[styles.payButton, paying && styles.payButtonDisabled]}
+          disabled={paying || !stripePublishableKey}
+          style={[styles.payButton, (paying || !stripePublishableKey) && styles.payButtonDisabled]}
         >
           {paying ? (
-            <ActivityIndicator color="#ffffff" size="small" />
+            <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.payButtonText}>Pay Now</Text>
+            <Text style={styles.payButtonText}>Pay</Text>
           )}
         </Pressable>
       </View>
@@ -92,35 +129,33 @@ export function PaymentMethodSheet({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    gap: 16,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
+    fontWeight: '700',
+    color: '#000',
     textAlign: 'center',
-    marginBottom: 16,
   },
   paymentArea: {
-    minHeight: 120,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
+    minHeight: 80,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 16,
   },
   placeholder: {
     fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
+    color: 'rgba(0,0,0,0.45)',
     textAlign: 'center',
   },
   payButton: {
-    marginTop: 16,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -128,8 +163,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   payButtonText: {
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 17,
     fontWeight: '600',
-    color: '#ffffff',
   },
 })
