@@ -14,11 +14,9 @@ import type { CreationCharacterItem } from './types';
 export function mapDraftToCreationItem(draft: CharacterDraftItem): CreationCharacterItem {
   const local = loadLocalDraftForm(draft.draft_id);
   const serverUpdatedAt = draft.updated_at ?? 0;
-  const form = draft.character_create_form;
 
-  let name = form?.name?.trim() ?? '';
-  const mainImage = form?.images?.find(img => img.is_main_pic) ?? form?.images?.[0];
-  let coverUrl = mainImage?.url?.trim() ?? null;
+  let name = draft.name?.trim() ?? '';
+  let coverUrl = draft.media?.url?.trim() ?? null;
 
   if (local?.draftId === draft.draft_id && local.localUpdatedAt > serverUpdatedAt * 1000) {
     const localName = pickDisplayNameFromFormState(local);

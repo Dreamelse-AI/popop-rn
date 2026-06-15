@@ -5,11 +5,11 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { setAudioModeAsync } from 'expo-audio'
 import { RootNavigator } from './navigation'
-import { AppStripeProvider } from '@/shared/wallet/stripe-provider'
 import { useAuthStore } from '@/features/auth/auth-store'
 import { useAppState } from '@/shared/hooks/use-app-state'
 import { apiClient } from '@/shared/api/api-client'
 import { RechargeHost, GlobalToastHost, refreshWallet, useWalletStore } from '@/shared/wallet'
+import { PublishSuccessModalHost } from '@/features/character-creation/ui/publish-success-modal-host'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -53,15 +53,14 @@ export function App() {
   if (!appReady) return null
 
   return (
-    <AppStripeProvider>
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <RootNavigator />
-        </NavigationContainer>
-        <RechargeHost />
-        <GlobalToastHost />
-      </SafeAreaProvider>
-    </AppStripeProvider>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <StatusBar style="auto" />
+        <RootNavigator />
+      </NavigationContainer>
+      <RechargeHost />
+      <GlobalToastHost />
+      <PublishSuccessModalHost />
+    </SafeAreaProvider>
   )
 }

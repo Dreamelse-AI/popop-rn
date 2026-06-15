@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 
-import type { RechargeCreateResp, RechargePackageItem } from '@/generated/arca_apiComponents';
+import type { RechargePackageItem } from '@/generated/arca_apiComponents';
 
-import { createStripeRechargeOrder, rechargePackages } from './recharge-api';
+import { rechargePackages } from './recharge-api';
 import type { PaidActionSource } from './run-paid-action';
 
-export type RechargeStep = 'packages' | 'payment' | 'success';
+export type RechargeStep = 'packages' | 'success';
 
 type RechargeState = {
   isOpen: boolean;
@@ -15,17 +15,18 @@ type RechargeState = {
   packagesLoading: boolean;
   packagesError: string | null;
   selectedPackageId: string | null;
-  pendingOrder: RechargeCreateResp | null;
-  isCreatingOrder: boolean;
+  iapPriceLabels: Record<string, string>;
+  isPurchasing: boolean;
   orderError: string | null;
   successTokenAmount: number;
   open: (opts?: { source?: PaidActionSource }) => void;
   close: () => void;
-  setStep: (step: RechargeStep) => void;
   selectPackage: (packageId: string) => void;
   loadPackages: () => Promise<void>;
-  beginPayment: () => Promise<boolean>;
+  setIapPriceLabels: (labels: Record<string, string>) => void;
   setSuccess: (tokenAmount: number) => void;
+  setPurchaseError: (message: string | null) => void;
+  setPurchasing: (isPurchasing: boolean) => void;
   resetFlow: () => void;
 };
 
@@ -35,8 +36,8 @@ const initialFlowState = {
   packagesLoading: false,
   packagesError: null as string | null,
   selectedPackageId: null as string | null,
-  pendingOrder: null as RechargeCreateResp | null,
-  isCreatingOrder: false,
+  iapPriceLabels: {} as Record<string, string>,
+  isPurchasing: false,
   orderError: null as string | null,
   successTokenAmount: 0,
 };
@@ -66,10 +67,6 @@ export const useRechargeStore = create<RechargeState>((set, get) => ({
     });
   },
 
-  setStep: step => {
-    set({ step });
-  },
-
   selectPackage: packageId => {
     set({ selectedPackageId: packageId, orderError: null });
   },
@@ -90,31 +87,20 @@ export const useRechargeStore = create<RechargeState>((set, get) => ({
     }
   },
 
-  beginPayment: async () => {
-    const packageId = get().selectedPackageId;
-    if (!packageId) return false;
-
-    set({ isCreatingOrder: true, orderError: null });
-    try {
-      const order = await createStripeRechargeOrder(packageId);
-      if (!order.client_secret) {
-        throw new Error('Missing Stripe client secret');
-      }
-      set({
-        pendingOrder: order,
-        isCreatingOrder: false,
-        step: 'payment',
-      });
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create order';
-      set({ isCreatingOrder: false, orderError: message });
-      return false;
-    }
+  setIapPriceLabels: labels => {
+    set({ iapPriceLabels: labels });
   },
 
   setSuccess: tokenAmount => {
-    set({ step: 'success', successTokenAmount: tokenAmount });
+    set({ step: 'success', successTokenAmount: tokenAmount, isPurchasing: false });
+  },
+
+  setPurchaseError: message => {
+    set({ orderError: message, isPurchasing: false });
+  },
+
+  setPurchasing: isPurchasing => {
+    set({ isPurchasing });
   },
 
   resetFlow: () => {

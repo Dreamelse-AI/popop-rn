@@ -1,4 +1,5 @@
 import { AppState } from 'react-native'
+import { useAuthStore } from '@/features/auth/auth-store'
 import { isAccountRegionReady, waitForAccountRegion } from '@/shared/api/account-region-store'
 import { API_BASE, IP_REGION_PATH } from '@/shared/api/api-base'
 import { API_CODE, ApiError, InsufficientBalanceError } from '@/shared/api/api-errors'
@@ -60,6 +61,11 @@ function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Pr
 
 type OnUnauthorizedCallback = () => void
 
+/** 内存 token 优先（自设提交前仅写 apiClient）；否则读 zustand，避免 restoreSession 完成前首屏请求丢 Authorization */
+function resolveApiClientToken(memoryToken: string | null): string | null {
+  return memoryToken ?? useAuthStore.getState().token
+}
+
 class ApiClient {
   #baseUrl: string
   #token: string | null = null
@@ -74,7 +80,7 @@ class ApiClient {
   }
 
   getToken() {
-    return this.#token
+    return resolveApiClientToken(this.#token)
   }
 
   onUnauthorized(callback: OnUnauthorizedCallback) {
@@ -98,8 +104,8 @@ class ApiClient {
       ...buildLocaleHeaders(),
     }
 
-    if (this.#token) {
-      reqHeaders.Authorization = `Bearer ${this.#token}`
+    if (resolveApiClientToken(this.#token)) {
+      reqHeaders.Authorization = `Bearer ${resolveApiClientToken(this.#token)}`
     }
 
     const bodyString = body ? JSON.stringify(body) : ''

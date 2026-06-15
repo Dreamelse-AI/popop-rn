@@ -1,5 +1,6 @@
 import { genAppearanceFromInput, getTaskStatus } from '@/generated/arca_api';
 import type {
+  CharacterCreateForm,
   GenAppearanceFromInputReq,
   GenAppearanceFromInputResp,
   GetTaskStatusResp,
@@ -10,10 +11,23 @@ import { runPaidAction } from '@/shared/wallet';
 import { MOCK_CREATION_LATENCY_MS, USE_CHARACTER_CREATION_MOCK } from '../config';
 import { pollAsyncTask } from '../lib/poll-async-task';
 
+/** 角色创建/编辑：传 draft；发布动态：传 character_id（角色已固定） */
+export type GenerateAppearanceContext =
+  | {
+      mode: 'draft';
+      draft: CharacterCreateForm;
+      scene: 'create_character' | 'update_appearance';
+    }
+  | {
+      mode: 'character';
+      characterId: string;
+    };
+
 export type GenerateAppearanceParams = {
   prompt: string;
   styleKey: string;
   referenceImageUrl?: string | null;
+  context: GenerateAppearanceContext;
 };
 
 const MOCK_IMAGE_URL =
@@ -79,15 +93,23 @@ async function mockGetTaskStatus(taskId: string): Promise<GetTaskStatusResp> {
 }
 
 function buildGenAppearanceRequest(params: GenerateAppearanceParams): GenAppearanceFromInputReq {
-  const req: GenAppearanceFromInputReq = {
-    scene: 'create_character',
-  };
+  const req: GenAppearanceFromInputReq = {};
 
   const userPrompt = params.prompt.trim();
   const styleKey = params.styleKey.trim();
 
-  if (userPrompt) req.description = userPrompt;
-  if (styleKey) req.style_name = styleKey;
+  if (userPrompt) req.user_prompt = userPrompt;
+  if (styleKey) req.style_key = styleKey;
+
+  const referenceUrl = params.referenceImageUrl?.trim();
+  if (referenceUrl) req.reference_images = [referenceUrl];
+
+  if (params.context.mode === 'draft') {
+    req.draft = params.context.draft;
+    req.scene = params.context.scene;
+  } else {
+    req.character_id = params.context.characterId;
+  }
 
   return req;
 }

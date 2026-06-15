@@ -3,6 +3,7 @@ import { View, Text, Pressable, FlatList, StyleSheet, type ListRenderItemInfo } 
 
 import type { BubbleStyleTokens } from '../lib/chat-atmosphere-presets'
 import { getBubbleStyleTokens } from '../lib/chat-atmosphere-presets'
+import { resolveChatImageDisplayUrl } from '../lib/tos-upload'
 import type { ChatMessage } from '../model/types'
 import { BubbleTail } from './bubble-tail'
 import { ChatTypingIndicator } from './chat-typing-indicator'
@@ -213,7 +214,7 @@ function CharacterImageBubble({ avatar, url, bubbleStyle, onAvatarPress }: { ava
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
       <View style={[styles.receivedBubble, { backgroundColor: received.bgColor, padding: 4 }]}>
-        <Image source={{ uri: url }} style={styles.messageImage} />
+        <Image source={{ uri: resolveChatImageDisplayUrl(url) }} style={styles.messageImage} />
         <BubbleTail variant={received.tail} side="left" />
       </View>
     </View>
@@ -227,7 +228,7 @@ function UserImageBubble({ url, status, bubbleStyle }: { url: string; status?: s
       {status === 'pending' && <IconWaiting width={24} height={24} />}
       {status === 'failed' && <IconWarning width={24} height={24} />}
       <View style={[styles.sentBubble, { backgroundColor: sent.bgColor, padding: 4 }]}>
-        <Image source={{ uri: url }} style={styles.messageImage} />
+        <Image source={{ uri: resolveChatImageDisplayUrl(url) }} style={styles.messageImage} />
         <BubbleTail variant={sent.tail} side="right" />
       </View>
     </View>

@@ -17,6 +17,18 @@ export interface AddFriendResp {
 	is_new: boolean
 }
 
+export interface AgreeTermsReq {
+	terms_list: Array<AgreedTermsItem> // 本次同意的条款列表，不可为空
+}
+
+export interface AgreeTermsResp {
+}
+
+export interface AgreedTermsItem {
+	terms_id: string // 条款唯一标识（透传 get_terms 返回值）
+	terms_version?: string // 同意的条款版本（透传 get_terms 返回值）；为空时服务端取该条款当前配置版本
+}
+
 export interface AlipayAppPayReq {
 	biz_content: AppPayBizContent
 }
@@ -102,9 +114,10 @@ export interface AppRTRankingItem {
 }
 
 export interface AppTermsResp {
-	user_agreement: string
-	privacy_policy: string
+	user_agreement: string // 【兼容字段】用户协议链接，新前端请使用 terms_list
+	privacy_policy: string // 【兼容字段】隐私政策链接，新前端请使用 terms_list
 	xhs: string
+	terms_list: Array<TermsInfo> // 按用户地区匹配出的条款列表
 }
 
 export interface AppearanceMedia {
@@ -114,6 +127,7 @@ export interface AppearanceMedia {
 }
 
 export interface AppearanceStyleItem {
+	style_key: string // 画风名称
 	style_name: string // 画风名称
 	style_icon: Media // 画风icon
 }
@@ -186,12 +200,13 @@ export interface BodyConfig {
 }
 
 export interface BodyConfigResp {
-	genders: Array<string> // 性别选项：男/女/其他
-	species: Array<string> // 物种选项：人类/其他
+	genders: Array<string> // 性别选项：男/女/其他（中文原文，作内部 key 用）
+	genders_name: Array<string> // 性别展示名（按 X-Language 翻译，与 genders 一一对应）
+	species: Array<string> // 物种选项：人类/其他（中文原文，作内部 key 用）
+	species_name: Array<string> // 物种展示名（按 X-Language 翻译，与 species 一一对应）
 	relationships: Array<CharacterRelation> // 关系选项列表（包含关系名称、描述等）
 	art_styles: Array<AppearanceStyleItem> // 画风选项列表（包含名称和图标）
 	soul_words: Array<SoulWordOption> // 灵魂词可选项（含颜色/素材等配置）
-	search_tags: Array<CharacterFilterTag> // 搜索标签列表（与/character/list_copyable_characters_tag返回的tags一致）
 }
 
 export interface CharacterAbility {
@@ -236,14 +251,14 @@ export interface CharacterCreateForm {
 	tags?: Array<string>
 	species?: string
 	gender?: 'male' | 'female' | 'other'
-	voice?: CharacterVoice // 音色
+	voice_id?: string // 音色
 	profile?: string // 简介
 	disposition?: string // 性格
 	anonymous_tags?: Array<string> // 匿名身份标签
 	visibility?: 'public' | 'private' // 匿名身份标签
-	customized_settings?: { [key: string]: CustomizedSettingInfo } // 匿名身份标签
+	customized_settings?: { [key: string]: string } // 匿名身份标签: map[content_key]value
 	opening_prologue?: Array<string> // 开场白，一行一句话
-	landing_page_urls: Array<string>
+	landing_page_urls?: Array<string>
 }
 
 export interface CharacterDetailInfo {
@@ -268,31 +283,37 @@ export interface CharacterDetailInfo {
 	pre_made_relations: Array<CharacterRelation> // 大模型生成的预制关系
 	custom_relation?: CharacterRelation // 用户填写的自制关系（单个）
 	splash_img?: Media
-	landing_page_url: string
+	album?: Array<Media> // 角色相册：创建时上传的全部图片（含主图），来自 user_resource_media(usage_type=character_album)
+	landing_page_urls: Array<string>
 	author?: UserInfo // 作者信息
 	like_count: number
 	is_liked?: boolean // 当前用户是否已点赞（reaction 表 target_type=1-character）
 	opening_log_played?: boolean
 	about?: Array<AboutCharacterInfo>
+	customized_settings?: Array<GeneralTagInfo>
 }
 
-export interface CharacterDraftItem {
+export interface CharacterDraftDetail {
 	draft_id: string
-	target_character_id?: string
-	character_create_form: CharacterCreateForm
+	target_character_id?: string // 非空=编辑某已发布角色
+	character_create_form: CharacterCreateForm // 完整表单快照，可任意残缺
 	updated_at: number
 	status: string // draft=编辑中 auditing=审核中 rejected=已拒绝
 	reject_reason?: string // 审核拒绝原因
 	character_id?: string // 预分配(新建)/目标(编辑)角色ID
 }
 
-export interface CharacterFilter {
-	tag: string
+export interface CharacterDraftItem {
+	draft_id: string
+	name?: string
+	media?: Media
+	updated_at: number
+	status: string // draft=编辑中 auditing=审核中 rejected=已拒绝
+	reject_reason?: string // 审核拒绝原因
 }
 
-export interface CharacterFilterTag {
-	name: string // 标签名称
-	value: number // 筛选值（对应请求中的Filter字段）
+export interface CharacterFilter {
+	tag: string
 }
 
 export interface CharacterGroupMemory {
@@ -411,7 +432,7 @@ export interface CharacterVoice {
 	icon?: Media // 音色图标
 	sample?: Media // 试听
 	voice_name?: string // 音色名称
-	voice_tags?: Array<string> // 音色tag数组
+	voice_tags?: Array<GeneralTagInfo> // 音色tag数组
 }
 
 export interface ChatMessage {
@@ -428,7 +449,7 @@ export interface ChatModelOption {
 
 export interface ChatPreferenceCurrent {
 	model_id: string
-	temperature_level: number
+	temperature: number // 当前温度（0-2 小数）
 	is_custom: boolean
 	background_url: string
 	bubble_key: string
@@ -437,7 +458,9 @@ export interface ChatPreferenceCurrent {
 export interface ChatPreferenceOptions {
 	models: Array<ChatModelOption>
 	default_model_id: string
-	temperature_default_level: number
+	temperature_min: number // 温度下限（0）
+	temperature_max: number // 温度上限（2）
+	temperature_default: number // 默认温度
 }
 
 export interface ChatWithCharacterReq {
@@ -498,7 +521,7 @@ export interface CreateAppearanceResp {
 
 export interface CreateCharacterReq {
 	character_create_form: CharacterCreateForm // 角色基本信息
-	source: 'character' | 'system' // character: 在角色创作页创建
+	source: 'character' | 'friend' | 'system' // character: 在角色创作页创建 friend: 添加好友页
 }
 
 export interface CreateCharacterResp {
@@ -529,10 +552,11 @@ export interface CreatePostReq {
 	title?: string
 	content?: string
 	images?: Array<Media> // 客户端上传 TOS 后传 url（其他字段可空）
-	visibility: 1 | 2 | 3
+	visibility: 1 | 2 | 3 // 1公开2好友可见3私密
 	allowlist?: Array<string>
 	blocklist?: Array<string>
-	linked_items?: Array<PostLinkedItem>
+	bgm_music_key?: string
+	linked_items?: Array<PostLinkedItem> // 国内功能，已下线
 }
 
 export interface CreatePostResp {
@@ -569,11 +593,6 @@ export interface CreateUserPersonaReq {
 
 export interface CreateUserPersonaResp {
 	persona: UserPersonaItem
-}
-
-export interface CustomizedSettingInfo {
-	icon: string
-	content: string
 }
 
 export interface DelGenerationTemporaryAssetReq {
@@ -786,6 +805,17 @@ export interface FeedRecommendationResp {
 	entities: Array<RecPopopEntity>
 }
 
+export interface ForwardPostToCharacterReq {
+	character_id: string // 接收转发的角色（须为好友）
+	post_id: string // 被转发的帖子
+	impression_id?: string // feed/search 曝光id, 埋点用(可选)
+}
+
+export interface ForwardPostToCharacterResp {
+	message_id: string // 落库的转发消息 id
+	forward_message: PhoneMessageOutput // 转发消息回显, 供前端乐观渲染（角色回复异步生成，前端轮询历史获取）
+}
+
 export interface FreeQuotaItem {
 	scene: string // 功能点场景，如 chat / gen_image
 	free_count: number // 当前区域每日免费次数配额
@@ -824,12 +854,12 @@ export interface FriendshipItem {
 }
 
 export interface GenAppearanceFromInputReq {
-	description?: string // 描述文本
-	appearance_name?: string // 不填就是初次生成的default皮肤；理论上是情绪词
-	style_name?: string // 画风词
-	character_id?: string // 为某个角色生成形象，传入则引用其默认皮肤
-	outfit_id?: string // 皮肤id
-	scene?: 'create_appearance' | 'create_character' | 'create_outfit' | 'update_appearance' // 暂存场景，存储场景的定义
+	character_id?: string
+	draft?: CharacterCreateForm
+	user_prompt?: string // 描述文本
+	style_key?: string // 画风词
+	reference_images?: Array<string>
+	scene?: 'create_character' | 'update_appearance' // 暂存场景，存储场景的定义
 }
 
 export interface GenAppearanceFromInputResp {
@@ -863,6 +893,7 @@ export interface GeneralTagInfo {
 	tag_key: string
 	tag_icon: string
 	tag_name: string
+	tag_value?: string
 }
 
 export interface GenerateCharacterScheduleReq {
@@ -907,6 +938,16 @@ export interface GetCharacterDetailResp {
 	character: CharacterDetailInfo // 角色详情信息
 }
 
+export interface GetCharacterDraftDetailReq {
+}
+export interface GetCharacterDraftDetailReqParams {
+	draft_id: string // 草稿ID
+}
+
+export interface GetCharacterDraftDetailResp {
+	draft: CharacterDraftDetail
+}
+
 export interface GetCharacterGroupMemoriesReq {
 	character_id?: string // 角色ID（与 group_session_id 二选一）
 }
@@ -925,6 +966,29 @@ export interface GetCharacterGroupMemoryNarrativesResp {
 	memory: CharacterGroupMemory // 回忆详情（含 narratives/resource）
 }
 
+export interface GetCharacterLandingDataReq {
+	character_id: string // 角色ID
+	version_no?: string // 版本号；省略时取最新版本
+}
+
+export interface GetCharacterLandingDataResp {
+	name: string // 角色名
+	aka: string // 称号
+	gender: string // 性别
+	species: string // 物种
+	profile: string // 人设简介
+	personality: string // 性格
+	likes: string // 喜好
+	fears: string // 恐惧
+	backstory: string // 背景故事
+	life_goal: string // 人生目标
+	key_features: string // 关键特征
+	cover_url: string // 封面图 URL（splash 优先、回退 avatar）
+	avatar_url: string // 头像 URL
+	splash_url: string // 立绘大图 URL
+	relationships: Array<LandingRelationship> // 预制关系
+}
+
 export interface GetCharacterMemoriesReq {
 	character_id: string // 角色ID
 }
@@ -936,6 +1000,9 @@ export interface GetCharacterPageConfigResp {
 	genders: Array<GeneralTagInfo> // 性别枚举值：男/女/其他
 	character_tags: Array<GeneralTagInfo> // 角色可选标签
 	setting_options: Array<GeneralTagInfo> // 角色设定选项
+	voices: Array<CharacterVoice> // 音色列表
+	appearance_styles: Array<AppearanceStyleItem> // 形象画风列表
+	landing_page_styles: Array<AppearanceStyleItem> // ；落地页画风列表
 }
 
 export interface GetChatPreferenceReq {
@@ -1396,6 +1463,12 @@ export interface JwtTokenEntity {
 	expires_in: number
 }
 
+export interface LandingRelationship {
+	name: string // 关系对象名
+	relation: string // 关系名称
+	impression: string // 印象
+}
+
 export interface ListAppearanceStylesReq {
 }
 
@@ -1474,8 +1547,6 @@ export interface ListCommentsByPostResp {
 }
 
 export interface ListCopyableCharactersReq {
-	tag?: 1 | 2 | 3 | 4 // 1: 人气 2: 男 3: 女 4: 非人
-	show_friends: boolean
 	keyword?: string // 搜索关键词，可选
 	cursor?: string // 游标，可选，首次请求不传或传空
 	limit?: number // 每页数量，可选，默认10
@@ -1485,13 +1556,6 @@ export interface ListCopyableCharactersResp {
 	characters: Array<CharacterListPageBasicInfo> // 角色列表
 	next_cursor: string // 下一个游标，如果没有更多数据则为空
 	has_more?: boolean // 是否还有更多数据
-}
-
-export interface ListCopyableCharactersTagReq {
-}
-
-export interface ListCopyableCharactersTagResp {
-	tags: Array<CharacterFilterTag> // 可用的筛选tag列表
 }
 
 export interface ListEmojiPanelReq {
@@ -1542,6 +1606,10 @@ export interface ListInboxResp {
 	messages: Array<InboxMessage>
 	next_cursor?: string
 	has_more: boolean
+}
+
+export interface ListMusicResp {
+	musics: Array<MusicInfo> // 最近使用
 }
 
 export interface ListMyDraftPostsReq {
@@ -1712,6 +1780,12 @@ export interface MemorySummary {
 	source_entity?: SourceEntityInfo // 原始实体信息
 }
 
+export interface MusicInfo {
+	music_key: string
+	title?: string
+	media?: Media
+}
+
 export interface MyAnonymousTagsResp {
 	tags: Array<string> // 我的匿名标签（user.my_anonymous_tags），未设置时为空数组
 }
@@ -1773,10 +1847,12 @@ export interface PhoneMessageForward {
 	summary?: string // 列表页预览文案（若干条原消息拼接，客户端列表气泡一行展示）
 	count: number // 条目总数（Items 可能只包含前 N 条预览，Count 是完整总数）
 	items: Array<PhoneForwardItem> // 嵌套消息列表（按发送时间升序）
+	cover: Media
 }
 
 export interface PhoneMessageForwardInput {
 	title?: string // 覆盖默认标题；空则服务端按来源生成
+	media: Media
 	origin_target_id: string // 被转发消息所在的源 session_id（群聊）
 	origin_target_type: 'character' // 被转发消息所在的源 session_id（群聊）
 	origin_msg_ids: Array<string> // 被勾选的原消息 id 列表，按原顺序（长度上限由服务端限定，如 50 条）
@@ -1827,7 +1903,7 @@ export interface PhoneMessageInput {
 	emoji?: PhoneMessageEmoji // 表情消息内容（当 msg_type = 'emoji' 时使用）
 	gift?: PhoneMessageGiftInput // 礼物消息内容（当 msg_type = 'gift' 时使用）
 	invitation?: PhoneMessageInvitation // 邀约消息内容（当 msg_type = 'invitation' 时使用）
-	forward?: PhoneMessageForwardInput // 合并转发（当 msg_type = 'forward' 时使用）
+	media_forward?: PhoneMessageForwardInput // 合并转发（当 msg_type = 'forward' 时使用）
 	friend_request?: PhoneMessageFriendRequestInput // 好友请求/回应好友请求
 }
 
@@ -1858,7 +1934,8 @@ export interface PhoneMessageOutput {
 	gift?: PhoneMessageGift // 礼物消息内容（当 msg_type = 'gift' 时使用）
 	invitation?: PhoneMessageInvitation // 邀约消息内容（当 msg_type = 'invitation' 时使用）
 	html_file?: PhoneMessageHtml // HTML文件消息内容（当 msg_type = 'html_file' 时使用）
-	forward?: PhoneMessageForward // 合并转发（当 msg_type = 'forward' 时使用）
+	chat_forward?: PhoneMessageForward // 合并转发（当 msg_type = 'forward' 时使用）
+	media_forward?: PhoneMessageForward // 合并转发（当 msg_type = 'forward' 时使用）
 	friend_request?: PhoneMessageFriendRequest // 好友请求
 	is_read?: boolean // 是否已读，true:已读 false:未读
 	is_click?: boolean // 是否已点击，true:已点击 false:未点击
@@ -1971,14 +2048,15 @@ export interface PostInfo {
 export interface PostLinkedItem {
 	item_type: 1 | 2 | 3 // 1-character 2-script 3-group_chat
 	item_id: string // character_id / script_id / group_chat_template_id
-	cover: Media
-	title: string
+	cover?: Media
+	title?: string
 	content: string
 	play_id?: string
 	group_session_id?: string
 	script_opening_id?: string
 	reachable?: boolean // 用户是否有权限访问
-	tags?: Array<string>
+	tags?: Array<string> // 标签（character 关联项为性格标签中文原文，作内部 key 用）
+	tags_name?: Array<string> // 标签展示名（character 关联项按 X-Language 翻译，与 tags 一一对应；group_chat 关联项为简介自由文本，不翻译）
 }
 
 export interface PrefetchReqEntity {
@@ -2056,6 +2134,7 @@ export interface QueryPlayLastCursorResp {
 
 export interface RandomMatchCharacterReq {
 	tags: Array<string> // 用户自由输入的匹配标签，命中任一即可
+	gender?: 'male' | 'female' | 'other' // 性别筛选：male/female/other，空则不限
 }
 
 export interface RandomMatchCharacterResp {
@@ -2124,7 +2203,8 @@ export interface RecCharacterEntity {
 	appearance_media?: Media // 角色大图
 	name: string // 角色名
 	desc: string // 描述
-	tags: Array<string> // 左下角标签
+	tags: Array<string> // 左下角标签（中文原文，作内部 key 用，提交/查询用此值）
+	tags_name: Array<string> // 左下角标签的展示名（按 X-Language 翻译，仅用于前端展示，与 tags 一一对应）
 	liked_count?: number // 点赞数
 	is_liked: boolean // 是否点赞
 	rec_type: string
@@ -2136,7 +2216,8 @@ export interface RecGroupEntity {
 	title: string // 标题
 	cover_member_count: number // 封面成员人数
 	appearance_medias?: Array<Media>
-	tags: Array<string> // 左下角标签 // TODO 不知道逻辑
+	tags: Array<string> // 左下角标签（中文原文，作内部 key 用）
+	tags_name: Array<string> // 左下角标签的展示名（按 X-Language 翻译，与 tags 一一对应）
 	liked_count?: number // 点赞数
 	is_liked: boolean // 是否点赞
 }
@@ -2227,7 +2308,7 @@ export interface RechargeOrdersReqParams {
 
 export interface RechargeOrdersResp {
 	orders: Array<RechargeOrderItem>
-	next_cursor: string // 0 = 没有更多
+	next_cursor: string // 空字符串 = 没有更多
 }
 
 export interface RechargePackageItem {
@@ -2264,7 +2345,7 @@ export interface RechargeRefundsReqParams {
 
 export interface RechargeRefundsResp {
 	refunds: Array<RechargeRefundItem>
-	next_cursor: string // 0 = 没有更多
+	next_cursor: string // 空字符串 = 没有更多
 }
 
 export interface RechargeVerifyReq {
@@ -2434,7 +2515,6 @@ export interface SendMessageToAnonymousCharacterReq {
 export interface SendMessageToAnonymousCharacterResp {
 	current_messages: Array<PhoneMessageOutput> // 用户发送的消息列表（带 cursor id）
 	character_messages: Array<PhoneMessageOutput> // 角色回复的消息列表（可能有多条，每条都带 cursor id）
-	character_status: CharacterStatus // 角色当前状态
 	friend_request_pending: boolean // 角色是否发起好友请求
 }
 
@@ -2454,7 +2534,7 @@ export interface SendPushSyncResp {
 export interface SetChatPreferenceReq {
 	character_id: string
 	model_id?: string
-	temperature_level?: number
+	temperature: number // 温度（0-2 小数）；0 为合法值，缺省 -1 表示不修改
 	background_url?: string
 	clear_background?: boolean
 	bubble_key?: string
@@ -2464,7 +2544,7 @@ export interface SetChatPreferenceReq {
 export interface SetChatPreferenceResp {
 	character_save_id: string
 	model_id: string
-	temperature_level: number
+	temperature: number
 	background_url: string
 	bubble_key: string
 }
@@ -2512,7 +2592,8 @@ export interface SourceEntityInfo {
 }
 
 export interface StoryCommentReq {
-	story_id: string
+	story_id?: string
+	post_id?: string
 	content: string
 }
 
@@ -2621,6 +2702,15 @@ export interface TOSObject {
 	url?: string // 可选，对象URL，用于直接访问对象
 	face?: Rect // 脸部定位框（可选，仅 AIGC 生成的图片会带）
 	description?: string // 资源描述（AIGC 上游返回的 description，前端透传）
+}
+
+export interface TermsInfo {
+	terms_id: string // 条款唯一标识，同意后透传给 /app/agree_terms
+	type: string // 条款类型：user_agreement / privacy_policy / marketing 等
+	title: string // 条款展示文案（按条款适用地区的语言配置，如 KR 为韩文）
+	version: string // 条款版本号
+	link: string // 条款内容链接
+	required: boolean // 是否必须同意才能使用
 }
 
 export interface UnfavouriteScriptReq {
@@ -2819,6 +2909,7 @@ export interface UserUploadImage {
 	image_type: 'aigc' | 'upload'
 	url: string
 	is_main_pic?: boolean
+	tags?: Array<string>
 }
 
 export interface VerifyCodeReq {
@@ -2946,8 +3037,11 @@ export interface VoiceTone {
 export interface WalletInfoResp {
 	free_tokens: number // 免费币余额
 	paid_tokens: number // 付费币余额
+	forzen_tokens: number // 已冻结代币
 	total_tokens: number // 可用合计（免费 + 付费）
 	low_balance: boolean // true：余额不够 N 次 chat 消费 → 前端限时气泡提示充值
+	next_grant_at: number // 下一次每日恢复发放UTC时间（unix 秒，UTC 自然日 0 点）；0=当前区域未启用每日恢复，前端隐藏倒计时
+	server_time: number // 服务器当前时间（unix 秒），前端用 next_grant_at - server_time 起倒计时，避免客户端时钟偏差
 }
 
 export interface WalletStatusInfo {
@@ -2975,7 +3069,7 @@ export interface WalletTransactionsReq {
 export interface WalletTransactionsResp {
 	bill_category: 'income' | 'expense' // 流水分类
 	items: Array<WalletTransactionItem>
-	next_cursor: string // 0 表示没有更多
+	next_cursor: string // 空字符串表示没有更多
 }
 
 export interface ListCharacterScheduleByDayReq {

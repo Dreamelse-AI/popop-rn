@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, ScrollView, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 
 import { NewUserRewardModal } from '@/features/auth/components/new-user-reward-modal'
 import { takePendingNewUserReward } from '@/features/auth/new-user-reward'
@@ -10,6 +11,7 @@ import {
   shouldRefreshFeedOnReturn,
 } from '@/features/feed/feed-session'
 import type { FeedRefreshOutcome } from '@/features/feed/hooks/use-feed'
+import { takePostDynamicPublishSuccess } from '@/features/post-dynamic'
 import { Toast, useToast } from '@/shared/ui/toast'
 import { BottomNavBar } from './nav/bottom-nav-bar'
 import { TagFeed, type TagFeedRef } from './feed/tag-feed'
@@ -40,11 +42,11 @@ function showOutcomeToast(outcome: FeedRefreshOutcome, showToast: (msg: string) 
 
 export function HomePage() {
   const insets = useSafeAreaInsets()
+  const { t } = useTranslation()
   const [searchOpen, setSearchOpen] = useState(false)
   const [bottomTab, setBottomTab] = useState('home')
   const [reopenDrawer] = useState(takeReopenCharacterDrawer)
   const [returnToCharacterTab] = useState(takeReturnToCharacterTab)
-  const [createHasCharacter, setCreateHasCharacter] = useState(false)
   const [newUserRewardCoins, setNewUserRewardCoins] = useState<number | null>(null)
   const feedScrollRef = useRef<ScrollView>(null)
   const tagFeedRef = useRef<TagFeedRef>(null)
@@ -106,6 +108,18 @@ export function HomePage() {
     prevBottomTabRef.current = bottomTab
   }, [bottomTab, scrollFeedToTopAndRefresh])
 
+  const handleNavigateToFeedAfterPost = useCallback(() => {
+    setBottomTab('home')
+    showToast(t('character.creation.postPublishSuccess'))
+    void scrollFeedToTopAndRefresh()
+  }, [scrollFeedToTopAndRefresh, showToast, t])
+
+  useEffect(() => {
+    if (takePostDynamicPublishSuccess()) {
+      handleNavigateToFeedAfterPost()
+    }
+  }, [handleNavigateToFeedAfterPost])
+
   const handleTabChange = useCallback(
     (tabId: string) => {
       if (tabId === bottomTab) {
@@ -165,8 +179,8 @@ export function HomePage() {
         {/* Create tab — always mounted, hidden via display */}
         <View style={[styles.tabPanel, styles.absoluteFill, bottomTab !== 'create' && styles.hidden]}>
           <CreatePage
-            hasCharacter={createHasCharacter}
-            onHasCharacterChange={setCreateHasCharacter}
+            isActive={bottomTab === 'create'}
+            onNavigateToFeed={() => setBottomTab('home')}
           />
         </View>
       </View>

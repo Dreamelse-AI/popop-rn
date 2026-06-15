@@ -18,11 +18,13 @@ function createDefaultPreference(): GetChatPreferenceResp {
     options: {
       models: [...MOCK_MODELS],
       default_model_id: 'shake',
-      temperature_default_level: 2,
+      temperature_min: 0,
+      temperature_max: 2,
+      temperature_default: 2,
     },
     current: {
       model_id: 'shake',
-      temperature_level: 2,
+      temperature: 2,
       is_custom: false,
       background_url: '',
       bubble_key: '',
@@ -54,14 +56,12 @@ export async function setChatPreferenceMock(
   const pref = getOrCreatePreference(req.character_id);
   const nextModelId = req.model_id ?? pref.current.model_id;
   const nextTemperature =
-    req.temperature_level !== undefined
-      ? req.temperature_level
-      : pref.current.temperature_level;
+    req.temperature >= 0 ? req.temperature : pref.current.temperature;
 
   pref.current = {
     ...pref.current,
     model_id: nextModelId,
-    temperature_level: nextTemperature,
+    temperature: nextTemperature,
     background_url: req.clear_background
       ? ''
       : (req.background_url ?? pref.current.background_url),
@@ -73,7 +73,7 @@ export async function setChatPreferenceMock(
   return {
     character_save_id: `save-${req.character_id}`,
     model_id: pref.current.model_id,
-    temperature_level: pref.current.temperature_level,
+    temperature: pref.current.temperature,
     background_url: pref.current.background_url,
     bubble_key: pref.current.bubble_key,
   };

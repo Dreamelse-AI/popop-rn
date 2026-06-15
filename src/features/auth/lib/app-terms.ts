@@ -1,32 +1,31 @@
-import type { AppTermsResp } from '@/generated/arca_apiComponents';
+import type { AppTermsResp, TermsInfo } from '@/generated/arca_apiComponents';
 import { API_BASE } from '@/shared/api/api-base';
 import { buildLocaleHeaders } from '@/shared/api/locale-headers';
 import { buildRequestSignHeaders } from '@/shared/api/request-sign';
 
-import type { AccountRegion, AgreementKey } from '../auth-types';
+import type { AccountRegion } from '../auth-types';
 import { REGION_TO_LANGUAGE } from '../region-config';
 
 const TERMS_PATH = '/app/terms';
 
-export type AppTermsLinks = Partial<Record<AgreementKey, string>>;
+export type { TermsInfo };
 
-function mapTermsResponse(resp: AppTermsResp): AppTermsLinks {
-  const links: AppTermsLinks = {};
-
-  if (resp.user_agreement) {
-    links.terms = resp.user_agreement;
-  }
-  if (resp.privacy_policy) {
-    links.privacy = resp.privacy_policy;
-  }
-  if (resp.xhs) {
-    links.personalInfoConsent = resp.xhs;
-  }
-
-  return links;
+function mapTermsResponse(resp: AppTermsResp): TermsInfo[] {
+  return resp.terms_list ?? [];
 }
 
-async function requestTermsForRegion(region: AccountRegion): Promise<AppTermsResp> {
+export function getRequiredTerms(terms: TermsInfo[]): TermsInfo[] {
+  return terms.filter(term => term.required);
+}
+
+export function canSubmitTerms(
+  terms: TermsInfo[],
+  checks: Partial<Record<string, boolean>>,
+): boolean {
+  return getRequiredTerms(terms).every(term => checks[term.terms_id]);
+}
+
+async function requestTermsForRegion(region: AccountRegion): Promise<TermsInfo[]> {
   const method = 'GET';
   const bodyString = '';
   const headers: Record<string, string> = {
@@ -51,13 +50,13 @@ async function requestTermsForRegion(region: AccountRegion): Promise<AppTermsRes
     throw new Error(json?.msg ?? 'Failed to load terms');
   }
 
-  return json.data;
+  return mapTermsResponse(json.data);
 }
 
-const cache = new Map<AccountRegion, AppTermsLinks>();
-const inflight = new Map<AccountRegion, Promise<AppTermsLinks>>();
+const cache = new Map<AccountRegion, TermsInfo[]>();
+const inflight = new Map<AccountRegion, Promise<TermsInfo[]>>();
 
-export function fetchAppTermsLinks(region: AccountRegion): Promise<AppTermsLinks> {
+export function fetchAppTerms(region: AccountRegion): Promise<TermsInfo[]> {
   const cached = cache.get(region);
   if (cached) {
     return Promise.resolve(cached);
@@ -66,10 +65,9 @@ export function fetchAppTermsLinks(region: AccountRegion): Promise<AppTermsLinks
   let promise = inflight.get(region);
   if (!promise) {
     promise = requestTermsForRegion(region)
-      .then(resp => {
-        const links = mapTermsResponse(resp);
-        cache.set(region, links);
-        return links;
+      .then(terms => {
+        cache.set(region, terms);
+        return terms;
       })
       .finally(() => {
         inflight.delete(region);
@@ -80,6 +78,13 @@ export function fetchAppTermsLinks(region: AccountRegion): Promise<AppTermsLinks
   return promise;
 }
 
-export function getCachedAppTermsLinks(region: AccountRegion): AppTermsLinks | null {
+export function getCachedAppTerms(region: AccountRegion): TermsInfo[] | null {
   return cache.get(region) ?? null;
+}
+
+/** 启动阶段预取条款，登录页可直接读缓存展示协议弹窗 */
+export function prefetchAppTerms(region: AccountRegion): void {
+  void fetchAppTerms(region).catch(err => {
+    console.error('[app-terms] prefetch failed:', err);
+  });
 }

@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg'
 import type { RechargePackageItem } from '@/generated/arca_apiComponents'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 
+import { getProviderProductId } from './iap-utils'
 import { useWalletStore } from './wallet-store'
 
 type RechargeSheetProps = {
@@ -13,7 +14,8 @@ type RechargeSheetProps = {
   packagesLoading: boolean
   packagesError: string | null
   selectedPackageId: string | null
-  isCreatingOrder: boolean
+  iapPriceLabels: Record<string, string>
+  isPurchasing: boolean
   orderError: string | null
   onClose: () => void
   onSelectPackage: (packageId: string) => void
@@ -36,14 +38,22 @@ function formatPackageAmount(pkg: RechargePackageItem): string {
   return String(pkg.tokens)
 }
 
-function getPackagePriceLabel(pkg: RechargePackageItem): string {
+function getPackagePriceLabel(
+  pkg: RechargePackageItem,
+  iapPriceLabels: Record<string, string>,
+): string {
+  const productId = getProviderProductId(pkg)
+  if (productId && iapPriceLabels[productId]) {
+    return iapPriceLabels[productId]
+  }
+
   const dollarSuffix = pkg.name.match(/([\d.]+)\s*\$/)
-  if (dollarSuffix?.[1]) return dollarSuffix[1]
+  if (dollarSuffix?.[1]) return `$${dollarSuffix[1]}`
 
   const dollarPrefix = pkg.name.match(/\$\s*([\d.]+)/)
-  if (dollarPrefix?.[1]) return dollarPrefix[1]
+  if (dollarPrefix?.[1]) return `$${dollarPrefix[1]}`
 
-  return String(Math.round(pkg.tokens / 100))
+  return pkg.name
 }
 
 function AgreeCheckbox({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
@@ -69,7 +79,8 @@ export function RechargeSheet({
   packagesLoading,
   packagesError,
   selectedPackageId,
-  isCreatingOrder,
+  iapPriceLabels,
+  isPurchasing,
   orderError,
   onClose,
   onSelectPackage,
@@ -88,20 +99,24 @@ export function RechargeSheet({
   const packageRows = useMemo(() => chunkPackages(packages, 3), [packages])
 
   const handleContinue = () => {
-    if (!agreed || !selectedPackage || isCreatingOrder) return
+    if (!agreed || !selectedPackage || isPurchasing) return
     onContinue()
   }
 
+  const selectedPriceLabel = selectedPackage
+    ? getPackagePriceLabel(selectedPackage, iapPriceLabels)
+    : null
+
   const rechargeButtonLabel = (() => {
-    if (isCreatingOrder) return 'Processing...'
+    if (isPurchasing) return 'Processing...'
     if (!selectedPackage) return 'Recharge Now'
-    if (isOutOfCubes) {
-      return `Recharge $${getPackagePriceLabel(selectedPackage)} Now`
+    if (isOutOfCubes && selectedPriceLabel) {
+      return `Recharge ${selectedPriceLabel} Now`
     }
     return `Recharge ${formatPackageAmount(selectedPackage)} Now`
   })()
 
-  const canPay = agreed && !!selectedPackage && !packagesLoading && !isCreatingOrder
+  const canPay = agreed && !!selectedPackage && !packagesLoading && !isPurchasing
 
   return (
     <BottomSheet open={open} onClose={onClose}>
@@ -154,7 +169,7 @@ export function RechargeSheet({
                         <Text style={styles.packageAmount}>{formatPackageAmount(pkg)}</Text>
                       </View>
                       <Text style={styles.packagePrice}>
-                        {isOutOfCubes ? `${getPackagePriceLabel(pkg)}$` : pkg.name}
+                        {getPackagePriceLabel(pkg, iapPriceLabels)}
                       </Text>
                     </Pressable>
                   )

@@ -109,11 +109,14 @@ export function useOutboundQueue(characterId: string, playback: ReplyPlaybackCon
       if (resp === null) return;
       if (!isActiveChatSession(characterId)) return;
 
-      applyApiCurrentMessages(resp.current_messages, pendingIds);
+      const hasCharacterReply = resp.character_messages.length > 0;
+      applyApiCurrentMessages(resp.current_messages, pendingIds, {
+        ignoreServerFailed: !hasCharacterReply,
+      });
       clearPendingByLocalIds(pendingIds);
       setCharacterStatus(resp.character_status);
 
-      if (resp.character_messages.length > 0) {
+      if (hasCharacterReply) {
         // 当前仍停留在该角色聊天页（可能是切出去又回来后的新实例）：逐条播放回复。
         // 否则（真正离开了该会话）一次性写入并安排 follow-up。
         if (mountedRef.current || isChatScreenMounted(characterId)) {

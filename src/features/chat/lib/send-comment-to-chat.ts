@@ -57,11 +57,16 @@ export function sendCommentToChat(characterId: string, text: string) {
     useChatSessionStore.getState().setTyping(true)
   }
 
-  const settleOptimistic = (currentMessages?: PhoneMessageOutput[]) => {
+  const settleOptimistic = (
+    currentMessages?: PhoneMessageOutput[],
+    hasCharacterReply = true,
+  ) => {
     if (!optimisticId || !isActiveChatSession(characterId)) return
     const store = useChatSessionStore.getState()
     if (currentMessages && currentMessages.length > 0) {
-      store.applyApiCurrentMessages(currentMessages, [optimisticId])
+      store.applyApiCurrentMessages(currentMessages, [optimisticId], {
+        ignoreServerFailed: !hasCharacterReply,
+      })
     }
     store.clearPendingByLocalIds([optimisticId])
   }
@@ -72,9 +77,10 @@ export function sendCommentToChat(characterId: string, text: string) {
     messages: [{ msg_type: 'text', text: { text: trimmed } }],
   })
     .then(resp => {
-      settleOptimistic(resp.current_messages)
+      const hasCharacterReply = resp.character_messages.length > 0
+      settleOptimistic(resp.current_messages, hasCharacterReply)
 
-      if (resp.character_messages.length === 0) {
+      if (!hasCharacterReply) {
         if (isActiveChatSession(characterId)) {
           const store = useChatSessionStore.getState()
           store.setTyping(false)

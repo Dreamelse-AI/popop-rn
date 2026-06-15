@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useStoryReadStore } from '@/features/story/story-store'
+
 import { storyApi } from './api'
 import { mapStoryHeadlineList } from './mapper'
 import type { StoryHeadlineList } from './types'
@@ -25,7 +27,9 @@ export function useStoryHeadline(): UseStoryHeadlineResult {
     try {
       const resp = await storyApi.getHeadlineList()
       if (requestId !== requestIdRef.current) return
-      setData(mapStoryHeadlineList(resp))
+      const mapped = mapStoryHeadlineList(resp)
+      useStoryReadStore.getState().syncHeadlineReadStateFromServer(mapped.items)
+      setData(mapped)
     } catch (e) {
       if (requestId !== requestIdRef.current) return
       console.error('[useStoryHeadline] fetch failed:', e)

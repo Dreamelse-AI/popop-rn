@@ -12,7 +12,7 @@ description: Use when writing storage, auth, media, navigation, or payment code 
 | Tailwind | StyleSheet + safe area | `useSafeAreaInsets` |
 | bottom-sheet (DOM) | BottomSheet (Modal) | `src/shared/ui/bottom-sheet.tsx` |
 | Google/Apple OAuth web | Google Sign-In + Apple Auth | `src/features/auth/hooks/` |
-| `@stripe/react-stripe-js` | `@stripe/stripe-react-native` | `src/shared/wallet/stripe-provider.tsx` |
+| `@stripe/react-stripe-js`（H5） | `expo-iap`（RN 商店 IAP） | `src/shared/wallet/recharge-host.tsx` |
 | vConsole | Reactotron | `src/shared/dev/reactotron.ts` |
 | SVG as URL + `<img>` | svg-transformer + `PopIcon` | `metro.config.js` |
 | `<img object-cover>` | `PopImage contentFit="cover"` | `src/shared/ui/pop-image.tsx` |
@@ -31,4 +31,4 @@ description: Use when writing storage, auth, media, navigation, or payment code 
 | 变量 | 用途 |
 | --- | --- |
 | `API_BASE_URL` | API 根地址 |
-| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Payment Sheet |
+| App Store / Play Console 商品 ID | IAP 充值（`provider_products`） |

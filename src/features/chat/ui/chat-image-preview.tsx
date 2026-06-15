@@ -1,6 +1,8 @@
 import { Modal, View, Pressable, Text, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 
+import { resolveChatImageDisplayUrl } from '../lib/tos-upload'
+
 type ChatImagePreviewProps = {
   imageUrl: string | null
   onClose: () => void
@@ -22,7 +24,7 @@ export function ChatImagePreview({ imageUrl, onClose }: ChatImagePreviewProps) {
         </Pressable>
         <Pressable onPress={(e) => e.stopPropagation()}>
           <Image
-            source={{ uri: imageUrl }}
+            source={{ uri: resolveChatImageDisplayUrl(imageUrl) }}
             style={styles.image}
             contentFit="contain"
           />

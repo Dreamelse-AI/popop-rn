@@ -1,4 +1,5 @@
 import type {
+  CharacterVoice,
   GeneralTagInfo,
   GetCharacterPageConfigResp,
 } from '@/generated/arca_apiComponents';
@@ -205,4 +206,29 @@ export async function fetchVisibilityOptions(): Promise<
     console.warn('[fetchVisibilityOptions] page_config failed:', error);
     return [];
   }
+}
+
+export async function fetchPageConfigVoices(): Promise<CharacterVoice[]> {
+  try {
+    const resp = await fetchCharacterPageConfig();
+    return resp.voices ?? [];
+  } catch (error) {
+    console.warn('[fetchPageConfigVoices] page_config failed:', error);
+    return [];
+  }
+}
+
+function resolveVoiceTagKey(tag: GeneralTagInfo | string): string {
+  if (typeof tag === 'string') return tag.trim().toLowerCase();
+  return tag.tag_key?.trim().toLowerCase() ?? '';
+}
+
+export function filterVoicesByGender(
+  voices: CharacterVoice[],
+  gender: GenderValue,
+): CharacterVoice[] {
+  return voices.filter((voice) => {
+    const tagKeys = (voice.voice_tags ?? []).map(resolveVoiceTagKey);
+    return tagKeys.some((key) => normalizeGenderValue(key) === gender);
+  });
 }

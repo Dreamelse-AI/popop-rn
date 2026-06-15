@@ -6,9 +6,12 @@ import type {
   DeleteCharacterDraftResp,
   DeleteCharacterReq,
   DeleteCharacterResp,
+  GetCharacterDraftDetailReqParams,
+  GetCharacterDraftDetailResp,
   ListCharacterDraftsResp,
   ListUserCharactersReq,
   ListUserCharactersResp,
+  Media,
   SaveCharacterDraftReq,
   SaveCharacterDraftResp,
   SubmitCharacterDraftReq,
@@ -61,11 +64,19 @@ const mockDrafts: MockDraftRecord[] = [
   },
 ];
 
+function pickCoverMedia(form: CharacterCreateForm): Media | undefined {
+  const image = form.images?.find(img => img.is_main_pic) ?? form.images?.[0];
+  if (!image?.url) return undefined;
+  return { id: 'cover', url: image.url, media_type: 'image' };
+}
+
 function toDraftListItem(draft: MockDraftRecord): CharacterDraftItem {
+  const form = draft.character_create_form;
+  const name = form.name?.trim();
   return {
     draft_id: draft.draft_id,
-    target_character_id: draft.target_character_id,
-    character_create_form: draft.character_create_form ?? { landing_page_urls: [] },
+    name: name || undefined,
+    media: pickCoverMedia(form),
     updated_at: draft.updated_at,
     status: draft.status,
     reject_reason: draft.reject_reason,
@@ -90,13 +101,6 @@ function nextPublishedId() {
   return `mock-char-${publishedSeq}`;
 }
 
-export type GetCharacterDraftDetailReqParams = {
-  draft_id: string;
-};
-
-export type GetCharacterDraftDetailResp = {
-  draft: CharacterDraftItem;
-};
 
 export async function listCharacterDrafts(): Promise<ListCharacterDraftsResp> {
   await delay();
@@ -361,7 +365,32 @@ export async function getCharacterPageConfig() {
       { tag_key: 'worldview', tag_icon: '🧿', tag_name: '特殊背景/世界观' },
       { tag_key: 'wishlist', tag_icon: '💝', tag_name: '愿望清单' },
     ],
-    voices: [],
+    voices: [
+      {
+        voice_id: 'mock-voice-male-1',
+        voice_name: '그는 언제나',
+        voice_tags: [{ tag_key: 'male', tag_icon: '', tag_name: '男性' }],
+        sample: { id: 's1', url: '', media_type: 'audio' },
+      },
+      {
+        voice_id: 'mock-voice-male-2',
+        voice_name: '정말 피곤하시겠어요',
+        voice_tags: [{ tag_key: 'male', tag_icon: '', tag_name: '男性' }],
+        sample: { id: 's2', url: '', media_type: 'audio' },
+      },
+      {
+        voice_id: 'mock-voice-female-1',
+        voice_name: '친구 추가',
+        voice_tags: [{ tag_key: 'female', tag_icon: '', tag_name: '女性' }],
+        sample: { id: 's3', url: '', media_type: 'audio' },
+      },
+      {
+        voice_id: 'mock-voice-other-1',
+        voice_name: 'ENFP',
+        voice_tags: [{ tag_key: 'other', tag_icon: '', tag_name: '其他' }],
+        sample: { id: 's4', url: '', media_type: 'audio' },
+      },
+    ],
     appearance_styles: MOCK_PAGE_CONFIG_STYLES,
     landing_page_styles: [],
   };

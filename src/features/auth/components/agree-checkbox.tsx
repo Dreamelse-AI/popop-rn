@@ -1,18 +1,18 @@
 import { View, Text, Pressable, StyleSheet, Linking } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
-import type { AccountRegion } from '../auth-types'
-import { AGREEMENT_LINKS, getAgreementsByRegion } from '../region-config'
+import type { TermsInfo } from '@/generated/arca_apiComponents'
+import { getRequiredTerms } from '../lib/app-terms'
 
 type AgreeCheckboxProps = {
   checked: boolean
-  region: AccountRegion
+  termsList: TermsInfo[]
   tone?: 'dark' | 'light'
   onChange: (checked: boolean) => void
 }
 
-export function AgreeCheckbox({ checked, region, tone = 'dark', onChange }: AgreeCheckboxProps) {
-  const agreements = getAgreementsByRegion(region)
+export function AgreeCheckbox({ checked, termsList, tone = 'dark', onChange }: AgreeCheckboxProps) {
+  const requiredTerms = getRequiredTerms(termsList)
   const { t } = useTranslation()
   const isDark = tone === 'dark'
 
@@ -39,22 +39,20 @@ export function AgreeCheckbox({ checked, region, tone = 'dark', onChange }: Agre
 
       <Text style={[styles.text, isDark ? styles.textDark : styles.textLight]}>
         {t('login.iAgreePrefix')}
-        {agreements.map((agreement, index) => {
-          const label = t(`agreement.${agreement}`)
-          const href = AGREEMENT_LINKS[agreement]
-          const suffix = index === agreements.length - 1 ? '' : ', '
+        {requiredTerms.map((term, index) => {
+          const suffix = index === requiredTerms.length - 1 ? '' : ', '
 
-          if (!href) {
-            return <Text key={agreement}>{label}{suffix}</Text>
+          if (!term.link) {
+            return <Text key={term.terms_id}>{term.title}{suffix}</Text>
           }
 
           return (
-            <Text key={agreement}>
+            <Text key={term.terms_id}>
               <Text
                 style={[styles.link, isDark ? styles.linkDark : styles.linkLight]}
-                onPress={() => Linking.openURL(href)}
+                onPress={() => Linking.openURL(term.link!)}
               >
-                {label}
+                {term.title}
               </Text>
               {suffix ? <Text>{suffix}</Text> : null}
             </Text>

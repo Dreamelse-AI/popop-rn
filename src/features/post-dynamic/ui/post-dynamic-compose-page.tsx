@@ -267,6 +267,7 @@ export function PostDynamicComposePage({
         open={aiFlowOpen}
         onClose={() => setAiFlowOpen(false)}
         onConfirm={(url) => appendImages([url])}
+        getGenerationContext={() => ({ mode: 'character', characterId })}
       />
     </>
   )

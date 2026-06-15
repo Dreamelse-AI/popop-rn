@@ -72,7 +72,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       const resp = await chatPreferenceApi.get(saveId);
 
       const temperatureDefault = clampTemperatureLevel(
-        resp.options.temperature_default_level ?? DEFAULT_TEMPERATURE_LEVEL,
+        resp.options.temperature_default ?? DEFAULT_TEMPERATURE_LEVEL,
       );
       defaultTemperatureRef.current = temperatureDefault;
       setDefaultTemperatureLevel(temperatureDefault);
@@ -85,7 +85,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const existing = getChatModelSessionConfig(characterSaveIdRef.current, activeModelId);
         if (!existing) {
           setChatModelSessionConfig(characterSaveIdRef.current, activeModelId, {
-            temperatureLevel: clampTemperatureLevel(resp.current.temperature_level),
+            temperatureLevel: clampTemperatureLevel(resp.current.temperature),
             customInstructions: '',
           });
         }
@@ -151,7 +151,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const resp = await chatPreferenceApi.set({
           character_id: characterId,
           model_id: modelId,
-          temperature_level: normalized.temperatureLevel,
+          temperature: normalized.temperatureLevel,
         });
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
@@ -186,12 +186,12 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         const resp = await chatPreferenceApi.set({
           character_id: characterId,
           model_id: model.modelId,
-          temperature_level: targetSettings.temperatureLevel,
+          temperature: targetSettings.temperatureLevel,
         });
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
         setChatModelSessionConfig(characterSaveIdRef.current, model.modelId, {
-          temperatureLevel: clampTemperatureLevel(resp.temperature_level),
+          temperatureLevel: clampTemperatureLevel(resp.temperature),
           customInstructions: targetSettings.customInstructions,
         });
         onApplied?.();
