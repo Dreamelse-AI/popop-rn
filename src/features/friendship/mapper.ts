@@ -3,6 +3,7 @@ import {
   pickLatestPhoneMessage,
 } from '@/features/chat/lib/phone-message-adapter';
 import type { FriendshipBasicInfo, ListFriendshipResp } from '@/generated';
+import { toEpochMs } from '@/shared/lib/epoch-ms';
 
 import type {
   CharacterListItem,
@@ -10,14 +11,8 @@ import type {
   MessageScene,
 } from '@/pages/home/messages/types';
 
-/** Unix 秒/毫秒混用时统一为毫秒（与 story-viewer-mapper 一致） */
-function toEpochMs(timestamp?: number): number | undefined {
-  if (!timestamp) return undefined;
-  return timestamp > 1e12 ? timestamp : timestamp * 1000;
-}
-
 function formatConversationTime(timestamp?: number): string {
-  const lastActiveAtMs = toEpochMs(timestamp);
+  const lastActiveAtMs = timestamp ? toEpochMs(timestamp) : undefined;
   if (!lastActiveAtMs) return '';
 
   const date = new Date(lastActiveAtMs);

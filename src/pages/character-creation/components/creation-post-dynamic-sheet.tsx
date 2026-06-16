@@ -13,7 +13,7 @@ import {
   PostDynamicEntryButton,
   type PostDynamicComposePayload,
 } from '@/features/post-dynamic'
-import { CharacterProfilePostsList } from '@/pages/character/components/character-profile-posts-list'
+import { CharacterProfilePostsList, type CharacterProfileCellAnchor } from '@/pages/character/components/character-profile-posts-list'
 import { CharacterProfilePostsOverlay } from '@/pages/character/components/character-profile-posts-overlay'
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 import { showGlobalToast } from '@/shared/wallet'
@@ -45,6 +45,7 @@ export function CreationPostDynamicSheet({
   const [publishing, setPublishing] = useState(false)
   const [postsOverlayOpen, setPostsOverlayOpen] = useState(false)
   const [initialPostId, setInitialPostId] = useState<string | undefined>()
+  const [anchorRect, setAnchorRect] = useState<CharacterProfileCellAnchor | undefined>()
 
   const profileFallback = useMemo<CharacterProfileData | null>(() => {
     if (!open || !characterId) return null
@@ -71,14 +72,16 @@ export function CreationPostDynamicSheet({
     refresh,
   } = useCharacterProfilePage(open ? characterId : '', { profileFallback })
 
-  const openPostsOverlay = useCallback((postId: string) => {
+  const openPostsOverlay = useCallback((postId: string, anchor: CharacterProfileCellAnchor) => {
     setInitialPostId(postId)
+    setAnchorRect(anchor)
     setPostsOverlayOpen(true)
   }, [])
 
   const closePostsOverlay = useCallback(() => {
     setPostsOverlayOpen(false)
     setInitialPostId(undefined)
+    setAnchorRect(undefined)
   }, [])
 
   const handleScroll = useCallback(
@@ -102,8 +105,6 @@ export function CreationPostDynamicSheet({
       try {
         await publishCharacterPost({
           characterId,
-          characterName,
-          characterCoverUrl,
           content: payload.text,
           imageUrls: payload.imageUrls,
           bgmMusicKey: payload.musicId,
@@ -120,7 +121,7 @@ export function CreationPostDynamicSheet({
         setPublishing(false)
       }
     },
-    [characterCoverUrl, characterId, characterName, onClose, onPublishSuccess, t],
+    [characterId, onClose, onPublishSuccess, t],
   )
 
   if (!open) return null
@@ -181,6 +182,7 @@ export function CreationPostDynamicSheet({
             characterName={characterName}
             posts={posts}
             initialPostId={initialPostId}
+            anchorRect={anchorRect}
             loadingMore={loadingMore}
             hasMore={hasMore}
             onLoadMore={loadMore}

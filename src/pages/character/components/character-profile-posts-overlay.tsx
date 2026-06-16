@@ -1,45 +1,164 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Modal, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+  Animated,
+  useWindowDimensions,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
 
 import type { CharacterPostView } from '@/features/post/post-mapper'
-import { formatCharacterProfilePostTime, postReactionApi } from '@/features/post'
+import { formatCharacterProfilePostTime, postReactionApi, usePostBgmPlayer } from '@/features/post'
+import { characterMainAssets } from '@/shared/assets/character/main'
+import { PopImage } from '@/shared/ui/pop-image'
 
 import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
-import { Image } from 'expo-image'
+
+import type { CharacterProfileCellAnchor } from './character-profile-posts-list'
+
+const HEADER_HEIGHT = 56
+const BGM_SPIN_DURATION_MS = 3000
+const IconMusic = characterMainAssets.iconMusic
 
 type CharacterProfilePostsOverlayProps = {
   characterName: string
   posts: CharacterPostView[]
   initialPostId?: string
+  anchorRect?: CharacterProfileCellAnchor
   loadingMore?: boolean
   hasMore?: boolean
   onLoadMore?: () => void
   onClose: () => void
 }
 
+function SpinningMusicIcon({ spinning }: { spinning: boolean }) {
+  const spinAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (!spinning) {
+      spinAnim.setValue(0)
+      return
+    }
+
+    const animation = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: BGM_SPIN_DURATION_MS,
+        useNativeDriver: true,
+      }),
+    )
+    animation.start()
+    return () => animation.stop()
+  }, [spinAnim, spinning])
+
+  const rotate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  })
+
+  return (
+    <Animated.View style={{ transform: [{ rotate }] }}>
+      <IconMusic width={16} height={16} />
+    </Animated.View>
+  )
+}
+
+function PostImageCarousel({
+  images,
+  hasBgm,
+  isPlaying,
+  onBgmClick,
+}: {
+  images: string[]
+  hasBgm: boolean
+  isPlaying: boolean
+  onBgmClick: () => void
+}) {
+  const { width: screenWidth } = useWindowDimensions()
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const hasMultipleImages = images.length > 1
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!hasMultipleImages) return
+      const offsetX = event.nativeEvent.contentOffset.x
+      const index = Math.min(
+        images.length - 1,
+        Math.max(0, Math.round(offsetX / screenWidth)),
+      )
+      setCurrentIndex(index)
+    },
+    [hasMultipleImages, images.length, screenWidth],
+  )
+
+  if (images.length === 0) return null
+
+  return (
+    <View style={styles.postImageContainer}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEnabled={hasMultipleImages}
+        onMomentumScrollEnd={handleScroll}
+        style={styles.carousel}
+      >
+        {images.map((image, index) => (
+          <View key={`${image}-${index}`} style={{ width: screenWidth }}>
+            <PopImage uri={image} style={styles.postImage} contentFit="cover" />
+          </View>
+        ))}
+      </ScrollView>
+
+      {hasMultipleImages ? (
+        <View style={styles.imageCounter} pointerEvents="none">
+          <Text style={styles.imageCounterText}>
+            {currentIndex + 1}/{images.length}
+          </Text>
+        </View>
+      ) : null}
+
+      {hasBgm ? (
+        <Pressable
+          onPress={onBgmClick}
+          style={styles.bgmButton}
+          accessibilityLabel={isPlaying ? '正在播放背景音乐' : '播放背景音乐'}
+        >
+          <SpinningMusicIcon spinning={isPlaying} />
+        </Pressable>
+      ) : null}
+    </View>
+  )
+}
+
 function PostFeedItem({
   post,
   isLiked,
+  isBgmPlaying,
   onToggleLike,
+  onBgmClick,
 }: {
   post: CharacterPostView
   isLiked: boolean
+  isBgmPlaying: boolean
   onToggleLike: () => void
+  onBgmClick: () => void
 }) {
   return (
     <View style={styles.postItem}>
-      {post.images.length > 0 && (
-        <View style={styles.postImageContainer}>
-          <Image source={{ uri: post.images[0] }} style={styles.postImage} />
-          {post.images.length > 1 && (
-            <View style={styles.imageCounter}>
-              <Text style={styles.imageCounterText}>1/{post.images.length}</Text>
-            </View>
-          )}
-        </View>
-      )}
+      <PostImageCarousel
+        images={post.images}
+        hasBgm={post.hasBgm}
+        isPlaying={isBgmPlaying}
+        onBgmClick={onBgmClick}
+      />
 
       {post.content ? (
         <View style={styles.postContent}>
@@ -71,16 +190,34 @@ export function CharacterProfilePostsOverlay({
   characterName,
   posts,
   initialPostId,
+  anchorRect,
   loadingMore = false,
   hasMore = false,
   onLoadMore,
   onClose,
 }: CharacterProfilePostsOverlayProps) {
   const insets = useSafeAreaInsets()
+  const scrollRef = useRef<ScrollView>(null)
+  const contentRef = useRef<View>(null)
+  const postRefs = useRef<Record<string, View | null>>({})
   const pendingLikeRef = useRef<Set<string>>(new Set())
+  const { playingPostId, play: playBgm, stop: stopBgm } = usePostBgmPlayer()
+  const [contentReady, setContentReady] = useState(false)
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(posts.map(post => [post.postId, post.isLiked])),
   )
+
+  const headerOffset = HEADER_HEIGHT + insets.top
+
+  useEffect(() => {
+    return () => {
+      stopBgm()
+    }
+  }, [stopBgm])
+
+  useEffect(() => {
+    setContentReady(false)
+  }, [initialPostId, anchorRect])
 
   useEffect(() => {
     setLikedMap(prev => {
@@ -93,6 +230,32 @@ export function CharacterProfilePostsOverlay({
       return next
     })
   }, [posts])
+
+  const scrollToInitialPost = useCallback(() => {
+    if (!initialPostId) {
+      setContentReady(true)
+      return
+    }
+
+    const postView = postRefs.current[initialPostId]
+    const contentView = contentRef.current
+    if (!postView || !contentView) {
+      setContentReady(true)
+      return
+    }
+
+    postView.measureLayout(
+      contentView,
+      (_x, y) => {
+        const scrollY = anchorRect
+          ? Math.max(0, y + headerOffset - anchorRect.y)
+          : Math.max(0, y)
+        scrollRef.current?.scrollTo({ y: scrollY, animated: false })
+        setContentReady(true)
+      },
+      () => setContentReady(true),
+    )
+  }, [anchorRect, headerOffset, initialPostId])
 
   const toggleLike = useCallback(async (postId: string) => {
     if (pendingLikeRef.current.has(postId)) return
@@ -119,6 +282,19 @@ export function CharacterProfilePostsOverlay({
     }
   }, [])
 
+  const handleBgmClick = useCallback(
+    (post: CharacterPostView) => {
+      if (!post.bgmUrl) return
+      playBgm(post.postId, post.bgmUrl)
+    },
+    [playBgm],
+  )
+
+  const handleClose = useCallback(() => {
+    stopBgm()
+    onClose()
+  }, [onClose, stopBgm])
+
   const handleScroll = useCallback((event: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
     if (!onLoadMore || !hasMore || loadingMore) return
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
@@ -129,29 +305,39 @@ export function CharacterProfilePostsOverlay({
   }, [hasMore, loadingMore, onLoadMore])
 
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.backButton} accessibilityLabel="返回">
-            <IconBack width={36} height={36} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>{characterName}</Text>
-        </View>
+    <View style={[styles.overlay, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Pressable onPress={handleClose} style={styles.backButton} accessibilityLabel="返回">
+          <IconBack width={36} height={36} />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>{characterName}</Text>
+      </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          onScroll={handleScroll}
-          scrollEventThrottle={100}
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView
+        ref={scrollRef}
+        style={[styles.scrollView, !contentReady && styles.scrollHidden]}
+        contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
+        showsVerticalScrollIndicator={false}
+      >
+        <View ref={contentRef} collapsable={false} onLayout={scrollToInitialPost}>
           {posts.map(post => (
-            <PostFeedItem
+            <View
               key={post.postId}
-              post={post}
-              isLiked={likedMap[post.postId] ?? post.isLiked}
-              onToggleLike={() => void toggleLike(post.postId)}
-            />
+              ref={node => {
+                postRefs.current[post.postId] = node
+              }}
+              collapsable={false}
+            >
+              <PostFeedItem
+                post={post}
+                isLiked={likedMap[post.postId] ?? post.isLiked}
+                isBgmPlaying={playingPostId === post.postId}
+                onToggleLike={() => void toggleLike(post.postId)}
+                onBgmClick={() => handleBgmClick(post)}
+              />
+            </View>
           ))}
 
           {loadingMore && (
@@ -159,19 +345,21 @@ export function CharacterProfilePostsOverlay({
               <ActivityIndicator size="small" color="rgba(0,0,0,0.4)" />
             </View>
           )}
-        </ScrollView>
-      </View>
-    </Modal>
+        </View>
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 50,
+    elevation: 50,
     backgroundColor: '#ffffff',
   },
   header: {
-    height: 56,
+    height: HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -194,18 +382,24 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollHidden: {
+    opacity: 0,
+  },
   scrollContent: {
-    gap: 12,
     paddingBottom: 32,
   },
   postItem: {
     backgroundColor: '#ffffff',
+    marginBottom: 12,
   },
   postImageContainer: {
     width: '100%',
     aspectRatio: 390 / 292,
     overflow: 'hidden',
     backgroundColor: '#ffffff',
+  },
+  carousel: {
+    flex: 1,
   },
   postImage: {
     width: '100%',
@@ -224,6 +418,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  bgmButton: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(48,48,48,0.9)',
   },
   postContent: {
     paddingHorizontal: 12,

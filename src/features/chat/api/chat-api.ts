@@ -18,6 +18,7 @@ import type {
   UpdateMessageReadStatusResp,
 } from '@/generated/arca_apiComponents';
 import * as real from '@/generated/arca_api';
+import { arcaWebapi } from '@/shared/api/arca-webapi';
 
 export function chatWithCharacter(req: ChatWithCharacterReq): Promise<ChatWithCharacterResp> {
   return real.chatWithCharacter(req);
@@ -38,7 +39,7 @@ export function markEmojiUsed(req: MarkEmojiUsedReq): Promise<MarkEmojiUsedResp>
 }
 
 export function memoryRollback(req: MemoryRollbackReq): Promise<MemoryRollbackResp> {
-  return real.memoryRollback(req);
+  return arcaWebapi.post<MemoryRollbackResp>('/character/memory_rollback', req);
 }
 
 export function updateMessageClickStatus(

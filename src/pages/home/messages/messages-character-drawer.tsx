@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { View, Text, Pressable, ScrollView, Modal, StyleSheet, Animated } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { View, Text, Pressable, ScrollView, Modal, StyleSheet, Animated, Easing } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -17,6 +17,10 @@ import { MessagesRowMenu } from './messages-row-menu'
 import { markReopenCharacterDrawer } from './drawer-return-flag'
 import type { CharacterListItem } from './types'
 import { Image } from 'expo-image'
+
+const DRAWER_WIDTH = 300
+const SLIDE_DURATION_MS = 300
+const BACKDROP_DURATION_MS = 200
 
 type MessagesCharacterDrawerProps = {
   open: boolean
@@ -117,6 +121,51 @@ export function MessagesCharacterDrawer({
   const [manageMode, setManageMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
+  const [mounted, setMounted] = useState(open)
+  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current
+  const backdropAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true)
+      slideAnim.setValue(-DRAWER_WIDTH)
+      backdropAnim.setValue(0)
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: SLIDE_DURATION_MS,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: BACKDROP_DURATION_MS,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start()
+      return
+    }
+
+    if (!mounted) return
+
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -DRAWER_WIDTH,
+        duration: SLIDE_DURATION_MS,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: BACKDROP_DURATION_MS,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) setMounted(false)
+    })
+  }, [backdropAnim, mounted, open, slideAnim])
 
   const resetManageState = useCallback(() => {
     setManageMode(false)
@@ -167,14 +216,21 @@ export function MessagesCharacterDrawer({
     }
   }, [deleting, onDeleteCharacters, resetManageState, selectedIds])
 
-  if (!open) return null
+  if (!mounted) return null
 
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="关闭角色列表" />
+        </Animated.View>
 
-        <View style={[styles.drawer, { paddingTop: insets.top + 48 }]}>
+        <Animated.View
+          style={[
+            styles.drawer,
+            { paddingTop: insets.top + 48, transform: [{ translateX: slideAnim }] },
+          ]}
+        >
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Random match card */}
             <Pressable style={styles.randomMatchCard} onPress={() => { navigation.navigate('RandomMatch'); onClose() }}>
@@ -270,7 +326,7 @@ export function MessagesCharacterDrawer({
               onEndRelation={() => { void onEndRelation?.(menuRowKey).finally(() => setMenuRowKey(null)) }}
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
@@ -290,7 +346,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   drawer: {
-    width: 300,
+    width: DRAWER_WIDTH,
     backgroundColor: '#f7f7f7',
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },

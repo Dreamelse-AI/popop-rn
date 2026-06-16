@@ -2,6 +2,7 @@
  * POST /post/list_by_character 响应 → FeedPostViewer UI 模型
  */
 import type { PostInfo } from '@/generated';
+import { toEpochMs } from '@/shared/lib/epoch-ms';
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url';
 
 import { hasPostBgm, resolvePostBgm } from './post-bgm';
@@ -72,7 +73,7 @@ export function mapCharacterPosts(posts: PostInfo[]): CharacterPostView[] {
         postId: post.post_id,
         content: post.content?.trim() ?? '',
         images: resolvePostImages(post),
-        publishedAtMs: post.published_at ?? post.created_at,
+        publishedAtMs: toEpochMs(post.published_at ?? post.created_at),
         isLiked: post.is_liked ?? false,
         hasBgm: hasPostBgm(post),
         bgmUrl: bgm.bgmUrl,
@@ -109,7 +110,7 @@ export function mapPostDetail(post: PostInfo): PostDetailView {
     characterName: post.author?.display_name ?? '',
     characterAvatar: post.author?.avatar?.url ?? '',
     characterId: post.author?.author_type === 2 ? post.author.author_id : '',
-    publishedAtMs: post.published_at ?? post.created_at,
+    publishedAtMs: toEpochMs(post.published_at ?? post.created_at),
     isLiked: post.is_liked ?? false,
     bgmUrl: bgm.bgmUrl,
     bgmName: bgm.bgmName,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -21,11 +21,18 @@ const GRID_COLUMNS = 3
 const IconGallery = characterMainAssets.iconGallery
 const IconMusic = characterMainAssets.iconMusic
 
+export type CharacterProfileCellAnchor = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 type CharacterProfilePostsListProps = {
   cells: CharacterProfileGridCell[]
   loading?: boolean
   loadingMore?: boolean
-  onCellClick?: (postId: string) => void
+  onCellClick?: (postId: string, anchor: CharacterProfileCellAnchor) => void
   /** 角色主页：独立 FlatList 滚动 */
   scrollable?: boolean
   headerSpacerHeight?: number
@@ -46,13 +53,32 @@ function GridCell({
   cell: CharacterProfileGridCell
   cellWidth: number
   cellHeight: number
-  onClick?: () => void
+  onClick?: (anchor: CharacterProfileCellAnchor) => void
 }) {
+  const cellRef = useRef<View>(null)
+
+  const handlePress = useCallback(() => {
+    const node = cellRef.current
+    if (!node) {
+      onClick?.({ x: 0, y: 0, width: cellWidth, height: cellHeight })
+      return
+    }
+
+    node.measureInWindow((x, y, width, height) => {
+      onClick?.({ x, y, width, height })
+    })
+  }, [cellHeight, cellWidth, onClick])
+
   return (
-    <Pressable
-      onPress={onClick}
-      style={[styles.cell, { width: cellWidth, height: cellHeight }]}
+    <View
+      ref={cellRef}
+      collapsable={false}
+      style={{ width: cellWidth, height: cellHeight }}
     >
+      <Pressable
+        onPress={handlePress}
+        style={[styles.cell, StyleSheet.absoluteFill]}
+      >
       <PopImage uri={cell.image} style={styles.cellImage} contentFit="cover" />
       {cell.overlay ? (
         <PopImage uri={cell.overlay} style={styles.cellImage} contentFit="cover" />
@@ -69,7 +95,8 @@ function GridCell({
           <IconMusic width={16} height={16} />
         </View>
       ) : null}
-    </Pressable>
+      </Pressable>
+    </View>
   )
 }
 
@@ -133,7 +160,7 @@ export function CharacterProfilePostsList({
         cell={item}
         cellWidth={cellWidth}
         cellHeight={cellHeight}
-        onClick={() => onCellClick?.(item.id)}
+        onClick={anchor => onCellClick?.(item.id, anchor)}
       />
     ),
     [cellHeight, cellWidth, onCellClick],
@@ -177,7 +204,7 @@ export function CharacterProfilePostsList({
               cell={cell}
               cellWidth={cellWidth}
               cellHeight={cellHeight}
-              onClick={() => onCellClick?.(cell.id)}
+              onClick={anchor => onCellClick?.(cell.id, anchor)}
             />
           ))}
         </View>

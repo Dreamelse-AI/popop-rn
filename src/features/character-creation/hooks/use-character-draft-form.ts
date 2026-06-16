@@ -208,7 +208,7 @@ export function useCharacterDraftForm(
         ...form,
         draftId: resp.draft_id,
         serverUpdatedAt: resp.updated_at,
-        localUpdatedAt: resp.updated_at * 1000,
+        localUpdatedAt: resp.updated_at,
       };
 
       skipLocalSaveRef.current = true;

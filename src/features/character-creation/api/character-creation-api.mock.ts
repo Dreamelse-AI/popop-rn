@@ -42,7 +42,7 @@ const mockDrafts: MockDraftRecord[] = [
       name: '',
       landing_page_urls: [],
     },
-    updated_at: Math.floor(Date.now() / 1000) - 3600,
+    updated_at: Date.now() - 3600 * 1000,
     status: 'draft',
   },
   {
@@ -59,7 +59,7 @@ const mockDrafts: MockDraftRecord[] = [
       ],
       landing_page_urls: [],
     },
-    updated_at: Math.floor(Date.now() / 1000) - 120,
+    updated_at: Date.now() - 120 * 1000,
     status: 'draft',
   },
 ];
@@ -141,7 +141,7 @@ export async function saveCharacterDraft(
   req: SaveCharacterDraftReq,
 ): Promise<SaveCharacterDraftResp> {
   await delay();
-  const now = Math.floor(Date.now() / 1000);
+  const now = Date.now();
   const existing = req.draft_id
     ? mockDrafts.find(d => d.draft_id === req.draft_id)
     : undefined;

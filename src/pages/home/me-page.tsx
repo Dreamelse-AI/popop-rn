@@ -47,12 +47,12 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-function formatFreeIceCountdown(nextGrantAt: number | null, nowSec: number): string {
+function formatFreeIceCountdown(nextGrantAt: number | null, nowMs: number): string {
   if (!nextGrantAt) return '--:--:--'
-  const remain = Math.max(0, nextGrantAt - nowSec)
-  const h = Math.floor(remain / 3600)
-  const m = Math.floor((remain % 3600) / 60)
-  const s = remain % 60
+  const remain = Math.max(0, nextGrantAt - nowMs)
+  const h = Math.floor(remain / 3_600_000)
+  const m = Math.floor((remain % 3_600_000) / 60_000)
+  const s = Math.floor((remain % 60_000) / 1000)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(h)}:${pad(m)}:${pad(s)}`
 }
@@ -78,10 +78,10 @@ export function MePage() {
   const [showAbout, setShowAbout] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showPersona, setShowPersona] = useState(false)
-  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000))
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const currentLangLabel = LANGUAGE_OPTIONS.find(l => l.code === i18n.language)?.label ?? 'English'
-  const freeIceCountdown = formatFreeIceCountdown(nextGrantAt, nowSec)
+  const freeIceCountdown = formatFreeIceCountdown(nextGrantAt, nowMs)
   const remoteAvatarUrl = isRemoteAvatarUrl(avatarUrl) ? avatarUrl : null
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function MePage() {
   useEffect(() => {
     if (!nextGrantAt) return
     const timer = setInterval(() => {
-      setNowSec(Math.floor(Date.now() / 1000))
+      setNowMs(Date.now())
     }, 1000)
     return () => clearInterval(timer)
   }, [nextGrantAt])

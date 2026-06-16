@@ -8,6 +8,7 @@ export interface AboutCharacterInfo {
 
 export interface AddFriendReq {
 	character_id: string
+	source?: 'proative' | 'instant_interact' // 1-主动 2-即时互动
 }
 
 export interface AddFriendResp {
@@ -259,6 +260,7 @@ export interface CharacterCreateForm {
 	customized_settings?: { [key: string]: string } // 匿名身份标签: map[content_key]value
 	opening_prologue?: Array<string> // 开场白，一行一句话
 	landing_page_urls?: Array<string>
+	creators_note?: string // 创作者引导玩家的提示语
 }
 
 export interface CharacterDetailInfo {
@@ -377,8 +379,8 @@ export interface CharacterSchedule {
 	schedule_id: string // 日程全局ID
 	character_id?: string // 角色ID
 	schedule_name?: string // 日程名称
-	schedule_start_time?: string // 日程开始时间
-	schedule_end_time?: string // 日程结束时间
+	schedule_start_time?: number // 日程开始时间（UTC 毫秒时间戳）
+	schedule_end_time?: number // 日程结束时间（UTC 毫秒时间戳）
 	event_type?: string // 事件类型(常规/突发)
 	character_state?: string // 角色状态
 	character_loc?: string // 角色地点
@@ -549,6 +551,7 @@ export interface CreateCustomRelation {
 }
 
 export interface CreatePostReq {
+	character_id?: string // 创建帖子的角色ID
 	title?: string
 	content?: string
 	images?: Array<Media> // 客户端上传 TOS 后传 url（其他字段可空）
@@ -561,15 +564,6 @@ export interface CreatePostReq {
 
 export interface CreatePostResp {
 	post_id: string
-}
-
-export interface CreateScriptReq {
-	script_info: ScriptInputEntity // 剧本输入全部信息
-}
-
-export interface CreateScriptResp {
-	script_id: string // 返回剧本id
-	version: string // 返回剧本版本号
 }
 
 export interface CreateStylePromptReq {
@@ -689,6 +683,7 @@ export interface DeregisterResp {
 export interface DraftChatReq {
 	draft_id: string
 	messages: Array<PhoneMessageInput> // 本轮用户消息（复用聊天消息体）
+	chat_history?: Array<PhoneMessageOutput> // 之前的历史消息（按时间顺序）。服务端仅用 msg_direction(user/character) 与文本：user→user、character→assistant，方向为空/system 或非文本条目会被忽略
 }
 
 export interface DraftChatResp {
@@ -805,6 +800,14 @@ export interface FeedRecommendationResp {
 	entities: Array<RecPopopEntity>
 }
 
+export interface ForwardPostReq {
+	post_id: string
+}
+
+export interface ForwardPostResp {
+	url: string
+}
+
 export interface ForwardPostToCharacterReq {
 	character_id: string // 接收转发的角色（须为好友）
 	post_id: string // 被转发的帖子
@@ -881,11 +884,19 @@ export interface GenCharacterFromSoulResp {
 export interface GenLandingPageReq {
 	character_id?: string // 目标角色ID（可选，不传则直接按 user_prompt + style_key 生成并返回）
 	user_prompt: string
-	style_key: string
+	style_key: 'y2k' | 'cutesy' | 'indie_zine' | 'cyber_future'
 }
 
 export interface GenLandingPageResp {
 	url: string // AIGC 生成的 landing page URL
+}
+
+export interface GenLandingPreviewReq {
+	character_create_form: CharacterCreateForm // 草稿表单快照，可任意残缺；landing_page_urls[0] 作预览基底
+}
+
+export interface GenLandingPreviewResp {
+	preview_url: string // 草稿预览落地页公网链接（CDN，永久公开直链）
 }
 
 export interface GeneralTagInfo {
@@ -967,7 +978,9 @@ export interface GetCharacterGroupMemoryNarrativesResp {
 }
 
 export interface GetCharacterLandingDataReq {
-	character_id: string // 角色ID
+}
+export interface GetCharacterLandingDataReqParams {
+	character_id: string // 角色ID（GET query）
 	version_no?: string // 版本号；省略时取最新版本
 }
 
@@ -1077,6 +1090,26 @@ export interface GetPostDetailReq {
 
 export interface GetPostDetailResp {
 	post: PostInfo
+}
+
+export interface GetPostLandingDataReq {
+}
+export interface GetPostLandingDataReqParams {
+	post_id: string // 帖子ID（GET query）
+}
+
+export interface GetPostLandingDataResp {
+	post_id: string
+	author: PostAuthor // 公开作者信息
+	title?: string
+	content?: string
+	images?: Array<Media>
+	bgm?: Media
+	linked_items?: Array<PostLinkedItem>
+	like_count: number
+	comment_count: number
+	published_at?: number
+	created_at: number
 }
 
 export interface GetPushSettingsReq {
@@ -1452,6 +1485,12 @@ export interface InternalToolMockReportAppStateReq {
 	is_exit?: boolean
 }
 
+export interface InviteInfoResp {
+	invite_code: string // 我的邀请码（首次调用懒生成、可复用）
+	invited_count: number // 已成功邀请的人数
+	total_reward_tokens: number // 累计获得的邀请奖励免费币
+}
+
 export interface ItemReportEntity {
 	impression_id: string
 	entity_type: 'post' | 'character' | 'promo' // 实体类型
@@ -1609,7 +1648,7 @@ export interface ListInboxResp {
 }
 
 export interface ListMusicResp {
-	recent: Array<MusicInfo> // 最近使用
+	musics: Array<MusicInfo> // 最近使用
 }
 
 export interface ListMyDraftPostsReq {
@@ -2104,16 +2143,6 @@ export interface PublishPostResp {
 	published_at: number
 }
 
-export interface PublishScriptReq {
-	script_id: string // 剧本ID
-	version: string // 发布的版本
-}
-
-export interface PublishScriptResp {
-	script_id: string // 剧本ID
-	version: string // 剧本发布后版本号
-}
-
 export interface QueryAchievementAppearanceReq {
 	play_id: string
 	narrative_id: string
@@ -2134,6 +2163,7 @@ export interface QueryPlayLastCursorResp {
 
 export interface RandomMatchCharacterReq {
 	tags: Array<string> // 用户自由输入的匹配标签，命中任一即可
+	gender?: 'male' | 'female' | 'other' // 性别筛选：male/female/other，空则不限
 }
 
 export interface RandomMatchCharacterResp {
@@ -2242,6 +2272,8 @@ export interface RecPostEntity {
 	author_portrait?: Media // 发帖人的头像
 	liked_count?: number // 点赞数
 	is_liked: boolean // 是否点赞
+	published_at: number // 发布时间（UTC 毫秒时间戳）
+	bgm?: Media // 背景音乐（resource_media），无则为空
 }
 
 export interface RecPostFilter {
@@ -2463,30 +2495,6 @@ export interface ScheduledPrintResp {
 
 export interface ScriptFilter {
 	tag: string
-}
-
-export interface ScriptInputEntity {
-	title: string // 剧本标题，必填
-	role_arrangement_type: 1 | 2 // 1:我来安排 2:用户安排
-	story: string // 剧本正文，必填
-	story_types: Array<string> // 多个标签，逗号拼接
-	// Ending              string        `json:"ending,optional"` // 结局，选填
-	opening_story?: string // 开场剧情设计
-	story_flow?: Array<string> // 剧情走向示意
-	fixed_roles?: Array<ScriptRole> // 固定的角色槽位
-	tbd_roles?: Array<ScriptRole> // 开放的角色槽位
-	npc_roles?: Array<ScriptRole> // NPC角色槽位
-	script_scene_tags?: Array<string> // 剧本场景标签，对应 script_version.script_scene_tags
-}
-
-export interface ScriptRole {
-	identities: Array<string> // 身份
-	background?: string // 角色故事，选填
-	extra_background?: string // 额外背景，用户自定义
-	goal?: string // 角色目标
-	secret?: string // 角色目标，选填
-	character_info?: CharacterShowInfo // 槽位绑定的演员信息
-	role_id?: string // 槽位的id
 }
 
 export interface ScriptRoleCharacterBind {
@@ -2833,17 +2841,6 @@ export interface UpdateScheduleViewedStatusReq {
 export interface UpdateScheduleViewedStatusResp {
 }
 
-export interface UpdateScriptReq {
-	script_id: string // 剧本ID，必填
-	version: string // 编辑的版本
-	script_info: ScriptInputEntity // 剧本输入全部信息
-}
-
-export interface UpdateScriptResp {
-	script_id: string // 剧本ID
-	version: string // 剧本当前版本号
-}
-
 export interface UpdateStylePromptReq {
 	id: number // 主键ID（必填）
 	style_name: string // 画风名称（可选）
@@ -2916,6 +2913,7 @@ export interface VerifyCodeReq {
 	code: string // 用户输入的验证码
 	scene: 'login' | 'deregister' // 场景，注册登录/注销
 	temp_auth_token?: string // 三方登录临时认证token
+	invite_code?: string // 邀请码（仅首次注册有效，被邀请人填写，双向发放免费币奖励）
 }
 
 export interface VerifyCodeResp {

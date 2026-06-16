@@ -6,7 +6,7 @@ import { useCharacterProfilePage } from '@/features/character/hooks/use-characte
 
 import { characterFixedNavHeaderOffsetHeight } from './components/character-fixed-nav-header'
 import { CharacterProfileHeader } from './components/character-profile-header'
-import { CharacterProfilePostsList } from './components/character-profile-posts-list'
+import { CharacterProfilePostsList, type CharacterProfileCellAnchor } from './components/character-profile-posts-list'
 import { CharacterProfilePostsOverlay } from './components/character-profile-posts-overlay'
 import {
   getCharacterProfileScrollSlotHeight,
@@ -29,6 +29,7 @@ export function CharacterProfilePage({
   const [collapseProgress, setCollapseProgress] = useState(0)
   const [postsOverlayOpen, setPostsOverlayOpen] = useState(false)
   const [initialPostId, setInitialPostId] = useState<string | undefined>()
+  const [anchorRect, setAnchorRect] = useState<CharacterProfileCellAnchor | undefined>()
 
   const heroTopOffset = characterFixedNavHeaderOffsetHeight(insets.top)
   const scrollSlotHeight = getCharacterProfileScrollSlotHeight(insets.top)
@@ -46,14 +47,16 @@ export function CharacterProfilePage({
     loadMore,
   } = useCharacterProfilePage(characterId)
 
-  const openPostsOverlay = useCallback((postId: string) => {
+  const openPostsOverlay = useCallback((postId: string, anchor: CharacterProfileCellAnchor) => {
     setInitialPostId(postId)
+    setAnchorRect(anchor)
     setPostsOverlayOpen(true)
   }, [])
 
   const closePostsOverlay = useCallback(() => {
     setPostsOverlayOpen(false)
     setInitialPostId(undefined)
+    setAnchorRect(undefined)
   }, [])
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -127,6 +130,7 @@ export function CharacterProfilePage({
           characterName={profile.name}
           posts={posts}
           initialPostId={initialPostId}
+          anchorRect={anchorRect}
           loadingMore={loadingMore}
           hasMore={hasMore}
           onLoadMore={loadMore}

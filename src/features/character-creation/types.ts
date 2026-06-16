@@ -5,6 +5,7 @@ export type CreationCharacterItem = {
   name: string;
   coverUrl: string | null;
   status: CreationListTab;
+  /** 最近更新时间（毫秒） */
   updatedAt: number;
 };
 

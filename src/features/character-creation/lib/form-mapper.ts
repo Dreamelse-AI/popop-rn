@@ -77,7 +77,7 @@ export function apiFormToDraftState(
     openingPrologue: form.opening_prologue ?? [],
     customizedSettings,
     landingPageUrls: form.landing_page_urls ?? [],
-    localUpdatedAt: serverUpdatedAt * 1000,
+    localUpdatedAt: serverUpdatedAt,
     serverUpdatedAt,
   };
 }
@@ -161,7 +161,7 @@ export function mergeDraftFormState(
   local: CharacterDraftFormState | null,
 ): CharacterDraftFormState {
   if (!local || local.draftId !== server.draftId) return server;
-  if (local.localUpdatedAt > server.serverUpdatedAt * 1000) {
+  if (local.localUpdatedAt > server.serverUpdatedAt) {
     return {
       ...local,
       serverUpdatedAt: server.serverUpdatedAt,

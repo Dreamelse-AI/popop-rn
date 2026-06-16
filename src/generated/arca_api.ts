@@ -6,6 +6,22 @@ export * from "./arca_apiComponents"
  * @description 
  * @param params
  */
+export function landingDataCharacter(params: components.GetCharacterLandingDataReqParams) {
+	return arcaWebapi.get<components.GetCharacterLandingDataResp>(`/landing_data/character`, params)
+}
+
+/**
+ * @description 
+ * @param params
+ */
+export function landingDataPost(params: components.GetPostLandingDataReqParams) {
+	return arcaWebapi.get<components.GetPostLandingDataResp>(`/landing_data/post`, params)
+}
+
+/**
+ * @description 
+ * @param params
+ */
 export function appLoginRedirect(params: components.AppLoginRedirectRequestParams) {
 	return arcaWebapi.post<components.AppLoginRedirectResponse>(`/auth/app_login_redirect`, params)
 }
@@ -269,7 +285,7 @@ export function deleteCharacterDraft(req: components.DeleteCharacterDraftReq) {
  * @param req
  */
 export function getCharacterDetail(req: components.GetCharacterDetailReq) {
-	return arcaWebapi.get<components.GetCharacterDetailResp>(`/character/detail`, req)
+	return arcaWebapi.post<components.GetCharacterDetailResp>(`/character/detail`, req)
 }
 
 /**
@@ -316,32 +332,16 @@ export function genLandingPage(req: components.GenLandingPageReq) {
  * @description 
  * @param req
  */
+export function genLandingPreview(req: components.GenLandingPreviewReq) {
+	return arcaWebapi.post<components.GenLandingPreviewResp>(`/character/gen_landing_preview`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function generateCharacterSchedule(req: components.GenerateCharacterScheduleReq) {
 	return arcaWebapi.post<components.GenerateCharacterScheduleResp>(`/character/generate_schedule`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getCharacterMemories(req: components.GetCharacterMemoriesReq) {
-	return arcaWebapi.post<components.GetCharacterGroupMemoriesResp>(`/character/get_memories`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getSoulWordEvaluation(req: components.GetSoulWordEvaluationReq) {
-	return arcaWebapi.post<components.GetSoulWordEvaluationResp>(`/character/get_soul_word_evaluation`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listCharacterAppearances(req: components.ListCharacterAppearancesReq) {
-	return arcaWebapi.post<components.ListCharacterAppearancesResp>(`/character/list_appearances`, req)
 }
 
 /**
@@ -385,14 +385,6 @@ export function listCharacterScheduleByDay(req: components.ListCharacterSchedule
 
 /**
  * @description 
- * @param req
- */
-export function memoryRollback(req: components.MemoryRollbackReq) {
-	return arcaWebapi.post<components.MemoryRollbackResp>(`/character/memory_rollback`, req)
-}
-
-/**
- * @description 
  */
 export function getCharacterPageConfig() {
 	return arcaWebapi.get<components.GetCharacterPageConfigResp>(`/character/page_config`)
@@ -420,14 +412,6 @@ export function saveCharacterDraft(req: components.SaveCharacterDraftReq) {
  */
 export function submitCharacterDraft(req: components.SubmitCharacterDraftReq) {
 	return arcaWebapi.post<components.SubmitCharacterDraftResp>(`/character/submit_draft`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function switchCharacterOutfit(req: components.SwitchOutfitReq) {
-	return arcaWebapi.post<components.SwitchOutfitResp>(`/character/switch_outfit`, req)
 }
 
 /**
@@ -484,22 +468,6 @@ export function updateMessageReadStatus(req: components.UpdateMessageReadStatusR
  */
 export function updateScheduleViewedStatus(req: components.UpdateScheduleViewedStatusReq) {
 	return arcaWebapi.post<components.UpdateScheduleViewedStatusResp>(`/character/update_schedule_viewed_status`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function deleteMemory(req: components.DeleteMemoryReq) {
-	return arcaWebapi.post<components.DeleteMemoryResp>(`/memory/delete`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getMemoryNarratives(req: components.GetMemoryNarrativesReq) {
-	return arcaWebapi.post<components.GetMemoryNarrativesResp>(`/memory/get_narratives`, req)
 }
 
 /**
@@ -812,6 +780,13 @@ export function walletTransactions(req: components.WalletTransactionsReq) {
 
 /**
  * @description 
+ */
+export function inviteInfo() {
+	return arcaWebapi.get<components.InviteInfoResp>(`/invite/info`)
+}
+
+/**
+ * @description 
  * @param req
  */
 export function deleteUserEmoji(req: components.DeleteUserEmojiReq) {
@@ -995,6 +970,14 @@ export function getPostDetail(req: components.GetPostDetailReq) {
  * @description 
  * @param req
  */
+export function forwardPost(req: components.ForwardPostReq) {
+	return arcaWebapi.post<components.ForwardPostResp>(`/post/forward`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function listPostsByCharacter(req: components.ListPostsByCharacterReq) {
 	return arcaWebapi.post<components.ListPostsByCharacterResp>(`/post/list_by_character`, req)
 }
@@ -1013,14 +996,6 @@ export function listMyDraftPosts(req: components.ListMyDraftPostsReq) {
  */
 export function listPublishedPosts(req: components.ListPublishedPostsReq) {
 	return arcaWebapi.post<components.ListPublishedPostsResp>(`/post/list_published`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function publishPost(req: components.PublishPostReq) {
-	return arcaWebapi.post<components.PublishPostResp>(`/post/publish`, req)
 }
 
 /**
