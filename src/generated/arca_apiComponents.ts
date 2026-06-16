@@ -1609,7 +1609,7 @@ export interface ListInboxResp {
 }
 
 export interface ListMusicResp {
-	musics: Array<MusicInfo> // 最近使用
+	recent: Array<MusicInfo> // 最近使用
 }
 
 export interface ListMyDraftPostsReq {
@@ -2134,7 +2134,6 @@ export interface QueryPlayLastCursorResp {
 
 export interface RandomMatchCharacterReq {
 	tags: Array<string> // 用户自由输入的匹配标签，命中任一即可
-	gender?: 'male' | 'female' | 'other' // 性别筛选：male/female/other，空则不限
 }
 
 export interface RandomMatchCharacterResp {

@@ -269,7 +269,7 @@ export function deleteCharacterDraft(req: components.DeleteCharacterDraftReq) {
  * @param req
  */
 export function getCharacterDetail(req: components.GetCharacterDetailReq) {
-	return arcaWebapi.post<components.GetCharacterDetailResp>(`/character/detail`, req)
+	return arcaWebapi.get<components.GetCharacterDetailResp>(`/character/detail`, req)
 }
 
 /**
