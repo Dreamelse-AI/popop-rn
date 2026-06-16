@@ -1,11 +1,14 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CharacterShareButton } from '@/features/share'
 
 import IconClose from '@/shared/assets/character/main/character-close.svg'
 
-import { CHARACTER_PROFILE_HEADER_HEIGHT } from './character-profile-scroll'
+import {
+  CHARACTER_PROFILE_HEADER_HEIGHT,
+  getCharacterProfileHeroTopOffset,
+} from './character-profile-scroll'
 
 export type CharacterFixedNavHeaderProps = {
   characterId: string
@@ -25,7 +28,16 @@ export function CharacterFixedNavHeader({
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: bgColor }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          height: CHARACTER_PROFILE_HEADER_HEIGHT + insets.top,
+          backgroundColor: bgColor,
+        },
+      ]}
+    >
       <Pressable onPress={onClose} style={styles.button} accessibilityLabel="关闭">
         <IconClose width={36} height={36} />
       </Pressable>
@@ -40,12 +52,15 @@ export function CharacterFixedNavHeader({
 }
 
 export function characterFixedNavHeaderOffsetHeight(safeTop: number): number {
-  return CHARACTER_PROFILE_HEADER_HEIGHT + safeTop
+  return getCharacterProfileHeroTopOffset(safeTop)
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: CHARACTER_PROFILE_HEADER_HEIGHT,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

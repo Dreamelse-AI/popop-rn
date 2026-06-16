@@ -13,7 +13,7 @@ import {
   PostDynamicEntryButton,
   type PostDynamicComposePayload,
 } from '@/features/post-dynamic'
-import { CharacterProfileGrid } from '@/pages/character/components/character-profile-grid'
+import { CharacterProfilePostsList } from '@/pages/character/components/character-profile-posts-list'
 import { CharacterProfilePostsOverlay } from '@/pages/character/components/character-profile-posts-overlay'
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 import { showGlobalToast } from '@/shared/wallet'
@@ -125,7 +125,7 @@ export function CreationPostDynamicSheet({
 
   if (!open) return null
 
-  const showEmptyState = !postsLoading && cells.length === 0
+  const showEmptyState = !postsLoading && !error && cells.length === 0
 
   return (
     <>
@@ -156,18 +156,18 @@ export function CreationPostDynamicSheet({
           </View>
 
           {error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{t('character.creation.loadFailed')}</Text>
-              <Pressable onPress={() => void refresh()} style={styles.retryButton}>
-                <Text style={styles.retryButtonText}>{t('character.creation.retry')}</Text>
-              </Pressable>
-            </View>
+            <CharacterProfilePostsList
+              cells={[]}
+              error
+              errorText={t('character.creation.loadFailed')}
+              onRetry={() => void refresh()}
+            />
           ) : showEmptyState ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>{t('character.creation.noDynamics')}</Text>
             </View>
           ) : (
-            <CharacterProfileGrid
+            <CharacterProfilePostsList
               cells={cells}
               loading={postsLoading}
               loadingMore={loadingMore}

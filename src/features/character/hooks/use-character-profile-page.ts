@@ -83,7 +83,20 @@ export function useCharacterProfilePage(
   const initialLoadIdRef = useRef(0)
 
   const loadInitial = useCallback(async () => {
-    if (!characterId) return
+    if (!characterId) {
+      initialLoadIdRef.current += 1
+      cursorRef.current = undefined
+      setProfile(null)
+      setCells([])
+      setPosts([])
+      setImageCount(0)
+      setLoading(false)
+      setPostsLoading(false)
+      setLoadingMore(false)
+      setError(false)
+      setHasMore(false)
+      return
+    }
 
     const loadId = ++initialLoadIdRef.current
     setLoading(true)
@@ -105,6 +118,15 @@ export function useCharacterProfilePage(
               character_id: characterId,
               source: 'character_page',
             })
+          } else {
+            postsResp = await dedupeRequest(
+              `character-profile-posts:${characterId}`,
+              () =>
+                storyApi.listCharacterPosts({
+                  character_id: characterId,
+                  limit: PAGE_SIZE,
+                }),
+            )
           }
         } catch (detailError) {
           console.warn('[useCharacterProfilePage] detail API failed in mock mode:', detailError)
@@ -159,12 +181,22 @@ export function useCharacterProfilePage(
       setProfile(mappedProfile)
 
       if (useMockPosts) {
-        const { rawPosts, mappedPosts, imageCount: mockImageCount } = applyMockPosts(characterId)
-        setPosts(mappedPosts)
-        setCells(mapPostsToProfileGridCells(rawPosts))
-        setImageCount(mockImageCount)
-        cursorRef.current = undefined
-        setHasMore(false)
+        if (postsOnly && postsResp) {
+          const rawPosts = postsResp.posts ?? []
+          const mappedPosts = mapCharacterPosts(rawPosts)
+          setPosts(mappedPosts)
+          setCells(mapPostsToProfileGridCells(rawPosts))
+          setImageCount(countCharacterPostImages(rawPosts))
+          cursorRef.current = postsResp.next_cursor || undefined
+          setHasMore(Boolean(postsResp.has_more && postsResp.next_cursor))
+        } else {
+          const { rawPosts, mappedPosts, imageCount: mockImageCount } = applyMockPosts(characterId)
+          setPosts(mappedPosts)
+          setCells(mapPostsToProfileGridCells(rawPosts))
+          setImageCount(mockImageCount)
+          cursorRef.current = undefined
+          setHasMore(false)
+        }
       } else {
         const rawPosts = postsResp?.posts ?? []
         const mappedPosts = mapCharacterPosts(rawPosts)

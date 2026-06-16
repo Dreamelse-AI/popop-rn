@@ -9,6 +9,7 @@ import type { CharacterDetailSource } from '@/features/character/types'
 import { CharacterDetailFooter } from './components/character-detail-footer'
 import { CharacterDetailHeader } from './components/character-detail-header'
 import { CharacterDetailHtmlView } from './components/character-detail-html-view'
+import { characterFixedNavHeaderOffsetHeight } from './components/character-fixed-nav-header'
 
 const DETAIL_SOURCES: CharacterDetailSource[] = [
   'feed', 'user_page', 'character_page', 'notification', 'direct',
@@ -73,7 +74,12 @@ export function CharacterDetailPage({
         onClose={onClose}
       />
 
-      <View style={styles.contentScroll}>
+      <View
+        style={[
+          styles.contentScroll,
+          { paddingTop: characterFixedNavHeaderOffsetHeight(insets.top) },
+        ]}
+      >
         <CharacterDetailHtmlView html={data.htmlContent} />
       </View>
 
