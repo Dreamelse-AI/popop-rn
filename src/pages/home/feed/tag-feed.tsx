@@ -29,6 +29,7 @@ import { RecommendedSection } from '../recommended-section'
 
 export type TagFeedRef = {
   refresh: () => Promise<FeedRefreshOutcome>
+  tryLoadMore: () => void
 }
 
 function FeedLayoutList({
@@ -123,7 +124,18 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
     return refreshFeedItems()
   }, [refreshFeedItems])
 
-  useImperativeHandle(ref, () => ({ refresh }), [refresh])
+  useImperativeHandle(
+    ref,
+    () => ({
+      refresh,
+      tryLoadMore: () => {
+        if (hasMore && !loadingMore && !loading) {
+          void loadMore()
+        }
+      },
+    }),
+    [hasMore, loadMore, loading, loadingMore, refresh],
+  )
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 

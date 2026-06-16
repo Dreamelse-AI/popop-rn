@@ -3,6 +3,7 @@ import { Pressable, Text, StyleSheet } from 'react-native';
 import { useAudioPlayer } from 'expo-audio';
 
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url';
+import { safeAudioPlayerAction } from '@/features/chat/lib/safe-audio-player';
 
 type AudioPreviewButtonProps = {
   url?: string;
@@ -16,8 +17,10 @@ export function AudioPreviewButton({ url, size = 32 }: AudioPreviewButtonProps) 
   const urlRef = useRef<string | undefined>(undefined);
 
   const stop = useCallback(() => {
-    player.pause();
-    player.seekTo(0);
+    safeAudioPlayerAction(player, () => {
+      player.pause();
+      player.seekTo(0);
+    });
     setPlaying(false);
     urlRef.current = undefined;
   }, [player]);
@@ -45,8 +48,10 @@ export function AudioPreviewButton({ url, size = 32 }: AudioPreviewButtonProps) 
     stop();
 
     try {
-      player.replace({ uri: normalizeAssetUrl(url) });
-      player.play();
+      safeAudioPlayerAction(player, () => {
+        player.replace({ uri: normalizeAssetUrl(url) });
+        player.play();
+      });
       urlRef.current = url;
       setPlaying(true);
     } catch {

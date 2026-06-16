@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAudioPlayer, type AudioPlayer } from 'expo-audio'
+import { useAudioPlayer } from 'expo-audio'
+
+import { safeAudioPlayerAction } from '../lib/safe-audio-player'
 
 export type VoicePlaybackControls = {
   play: (messageId: string, url: string) => void
@@ -23,8 +25,10 @@ export function useVoicePlayback(): VoicePlaybackControls {
   }, [player])
 
   const stop = useCallback(() => {
-    player.pause()
-    player.seekTo(0)
+    safeAudioPlayerAction(player, () => {
+      player.pause()
+      player.seekTo(0)
+    })
     playingIdRef.current = null
     setPlayingMessageId(null)
   }, [player])
@@ -41,8 +45,10 @@ export function useVoicePlayback(): VoicePlaybackControls {
       stop()
 
       try {
-        player.replace({ uri: url })
-        player.play()
+        safeAudioPlayerAction(player, () => {
+          player.replace({ uri: url })
+          player.play()
+        })
         playingIdRef.current = messageId
         setPlayingMessageId(messageId)
       } catch {

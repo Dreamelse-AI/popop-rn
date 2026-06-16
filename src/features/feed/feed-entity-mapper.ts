@@ -2,6 +2,7 @@
  * feed 推荐实体响应 → 首页 Feed UI 模型
  */
 import type { RecPopopEntity } from '@/generated';
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url';
 
 import type { HomeFeedCharacter, HomeFeedPost, HomeFeedPromo, FeedStreamItem } from './feed-types';
 
@@ -39,9 +40,9 @@ function mapPostEntity(entity: RecPopopEntity): HomeFeedPost | null {
     impressionId: entity.impression_id,
     characterId,
     characterName: post.author_name ?? '',
-    characterAvatar: post.author_portrait?.url ?? '',
+    characterAvatar: post.author_portrait?.url ? normalizeAssetUrl(post.author_portrait.url) : '',
     content: post.body?.trim() || post.title?.trim() || '',
-    imageUrl,
+    imageUrl: imageUrl ? normalizeAssetUrl(imageUrl) : null,
     likeCount: post.liked_count ?? 0,
     isLiked: post.is_liked ?? false,
   };
@@ -58,7 +59,7 @@ function mapCharacterEntity(entity: RecPopopEntity): HomeFeedCharacter | null {
     characterId: character.character_id,
     impressionId: entity.impression_id,
     name: character.name ?? '',
-    image,
+    image: normalizeAssetUrl(image),
     tags: formatCharacterTags(character.tags),
     desc: character.desc ?? '',
     rawTags: character.tags ?? [],

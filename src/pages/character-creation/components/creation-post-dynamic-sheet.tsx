@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCharacterProfilePage } from '@/features/character/hooks/use-character-profile-page'
+import type { CharacterProfileData } from '@/features/character/types'
 import { uploadCharacterAppearanceImage } from '@/features/character-creation/lib/upload-character-image'
 import { publishCharacterPost } from '@/features/post/lib/publish-character-post'
 import {
@@ -45,6 +46,20 @@ export function CreationPostDynamicSheet({
   const [postsOverlayOpen, setPostsOverlayOpen] = useState(false)
   const [initialPostId, setInitialPostId] = useState<string | undefined>()
 
+  const profileFallback = useMemo<CharacterProfileData | null>(() => {
+    if (!open || !characterId) return null
+    const cover = characterCoverUrl?.trim() || ''
+    return {
+      id: characterId,
+      name: characterName,
+      avatar: cover,
+      heroImage: cover,
+      heroImageOverlay: cover,
+      tags: '',
+      chatCount: '0',
+    }
+  }, [characterCoverUrl, characterId, characterName, open])
+
   const {
     cells,
     posts,
@@ -54,7 +69,7 @@ export function CreationPostDynamicSheet({
     hasMore,
     loadMore,
     refresh,
-  } = useCharacterProfilePage(open ? characterId : '')
+  } = useCharacterProfilePage(open ? characterId : '', { profileFallback })
 
   const openPostsOverlay = useCallback((postId: string) => {
     setInitialPostId(postId)

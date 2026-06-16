@@ -13,6 +13,7 @@ import IconVoiceReceive from '@/shared/assets/dialog/dialog-message-voice-receiv
 import IconVoiceSend from '@/shared/assets/dialog/dialog-message-voice-send.svg'
 import IconWaiting from '@/shared/assets/dialog/dialog-waiting.svg'
 import IconWarning from '@/shared/assets/dialog/dialog-warning.svg'
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 import { Image } from 'expo-image'
 
 type ChatMessageListProps = {
@@ -184,8 +185,8 @@ function CharacterEmojiBubble({ avatar, url, bubbleStyle, onAvatarPress }: { ava
       <Pressable onPress={onAvatarPress}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
-      <View style={[styles.receivedBubble, { backgroundColor: received.bgColor, padding: 4 }]}>
-        <Image source={{ uri: url }} style={styles.emojiImage} />
+      <View style={[styles.receivedBubble, styles.emojiBubble, { backgroundColor: received.bgColor }]}>
+        <Image source={{ uri: normalizeAssetUrl(url) }} style={styles.emojiImage} contentFit="cover" />
         <BubbleTail variant={received.tail} side="left" />
       </View>
     </View>
@@ -198,8 +199,8 @@ function UserEmojiBubble({ url, status, bubbleStyle }: { url: string; status?: s
     <View style={styles.userRow}>
       {status === 'pending' && <IconWaiting width={24} height={24} />}
       {status === 'failed' && <IconWarning width={24} height={24} />}
-      <View style={[styles.sentBubble, { backgroundColor: sent.bgColor, padding: 4 }]}>
-        <Image source={{ uri: url }} style={styles.emojiImage} />
+      <View style={[styles.sentBubble, styles.emojiBubble, { backgroundColor: sent.bgColor }]}>
+        <Image source={{ uri: normalizeAssetUrl(url) }} style={styles.emojiImage} contentFit="cover" />
         <BubbleTail variant={sent.tail} side="right" />
       </View>
     </View>
@@ -323,6 +324,10 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
+  },
+  emojiBubble: {
+    overflow: 'hidden',
+    padding: 4,
   },
   userRow: {
     flexDirection: 'row',
