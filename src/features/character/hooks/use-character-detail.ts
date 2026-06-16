@@ -42,7 +42,7 @@ export function useCharacterDetail(
       if (requestId !== requestIdRef.current) return
 
       const mapped = mapCharacterDetailPage(resp)
-      if (!mapped.htmlContent) {
+      if (!mapped.landingPageUrl) {
         setError(true)
         setData(null)
         return

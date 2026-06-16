@@ -6,10 +6,8 @@ import {
   type ListCopyableCharactersReq,
 } from '@/generated';
 
-/** 落地页 HTML 字段，待 IDL 同步后可移除扩展 */
-export type GetCharacterDetailPageResp = GetCharacterDetailResp & {
-  html_content?: string;
-};
+/** 角色详情 API 响应（与 GetCharacterDetailResp 一致） */
+export type GetCharacterDetailPageResp = GetCharacterDetailResp;
 
 export const characterApi = {
   /** 拉取可复制角色（添加好友页数据源，后端做可见性筛选） */

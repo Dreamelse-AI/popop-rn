@@ -1,37 +1,46 @@
-import { View, StyleSheet, Dimensions } from 'react-native'
+import { useMemo } from 'react'
+import { View, StyleSheet } from 'react-native'
 import { WebView } from 'react-native-webview'
 
+import { appendLandingPageLocaleQuery } from '@/features/character/lib/landing-page-url'
+
 type CharacterDetailHtmlViewProps = {
-  html: string
+  landingPageUrl: string
+  /** 顶导总高度（px），传给落地页 HTML 作顶部留白 */
+  navHeight: number
 }
 
-export function CharacterDetailHtmlView({ html }: CharacterDetailHtmlViewProps) {
-  const source = {
-    html: `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<style>body{margin:0;padding:0;} img{max-width:100%;height:auto;}</style>
-</head><body>${html}</body></html>`,
-  }
+/**
+ * 落地页 WebView 容器（对齐 FE iframe）。
+ * 不能用 inline HTML：脚本不会执行，而落地页依赖 JS 请求接口填充数据。
+ * WebView 直接加载 CDN URL，不受浏览器 fetch CORS 限制。
+ */
+export function CharacterDetailHtmlView({ landingPageUrl, navHeight }: CharacterDetailHtmlViewProps) {
+  const webViewUri = useMemo(
+    () => appendLandingPageLocaleQuery(landingPageUrl, { navHeight }),
+    [landingPageUrl, navHeight],
+  )
 
   return (
     <View style={styles.container}>
       <WebView
-        source={source}
+        source={{ uri: webViewUri }}
         style={styles.webview}
-        scrollEnabled={false}
-        showsVerticalScrollIndicator={false}
+        javaScriptEnabled
+        domStorageEnabled
+        originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+        setSupportMultipleWindows={false}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
       />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    minHeight: 400,
-  },
+  container: StyleSheet.absoluteFill,
   webview: {
     flex: 1,
     backgroundColor: 'transparent',

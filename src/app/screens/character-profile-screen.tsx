@@ -17,7 +17,7 @@ export function CharacterProfileScreen() {
   }, [navigation])
 
   const handleOpenDetail = useCallback(() => {
-    navigation.navigate('CharacterDetail', { characterId })
+    navigation.navigate('CharacterDetail', { characterId, source: 'character_page' })
   }, [navigation, characterId])
 
   return (

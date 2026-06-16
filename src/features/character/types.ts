@@ -22,7 +22,8 @@ export type CharacterDetailSource =
 export type CharacterDetailPageData = {
   characterId: string;
   characterName: string;
-  htmlContent: string;
+  /** 角色落地页 CDN 地址，来自 character.landing_page_urls[0] */
+  landingPageUrl: string;
 };
 
 export type CharacterProfileData = {

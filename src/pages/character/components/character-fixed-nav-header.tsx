@@ -14,7 +14,11 @@ export type CharacterFixedNavHeaderProps = {
   characterId: string
   characterName: string
   onClose: () => void
+  /** bar：实体顶栏；overlay：无背景、浮在 WebView 内容之上 */
+  variant?: 'bar' | 'overlay'
+  /** 顶栏背景，仅 bar 模式生效 */
   bgColor?: string
+  /** 深色背景页使用浅色图标 */
   iconTone?: 'default' | 'light'
 }
 
@@ -22,23 +26,31 @@ export function CharacterFixedNavHeader({
   characterId,
   characterName,
   onClose,
+  variant = 'bar',
   bgColor = '#f7f7f7',
   iconTone = 'default',
 }: CharacterFixedNavHeaderProps) {
   const insets = useSafeAreaInsets()
+  const isOverlay = variant === 'overlay'
 
   return (
     <View
+      pointerEvents={isOverlay ? 'box-none' : 'auto'}
       style={[
         styles.container,
         {
           paddingTop: insets.top,
           height: CHARACTER_PROFILE_HEADER_HEIGHT + insets.top,
-          backgroundColor: bgColor,
+          backgroundColor: isOverlay ? 'transparent' : bgColor,
         },
       ]}
     >
-      <Pressable onPress={onClose} style={styles.button} accessibilityLabel="关闭">
+      <Pressable
+        onPress={onClose}
+        style={styles.button}
+        accessibilityLabel="关闭"
+        pointerEvents="auto"
+      >
         <IconClose width={36} height={36} />
       </Pressable>
 
@@ -53,6 +65,11 @@ export function CharacterFixedNavHeader({
 
 export function characterFixedNavHeaderOffsetHeight(safeTop: number): number {
   return getCharacterProfileHeroTopOffset(safeTop)
+}
+
+/** 顶导总高度（px）：导航条 + safe-area top */
+export function getCharacterFixedNavHeightPx(safeTop: number): number {
+  return CHARACTER_PROFILE_HEADER_HEIGHT + safeTop
 }
 
 const styles = StyleSheet.create({
