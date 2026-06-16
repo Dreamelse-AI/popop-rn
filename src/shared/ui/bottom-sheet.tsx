@@ -1,5 +1,14 @@
-import { type ReactNode } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from 'react-native'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  Animated,
+  Dimensions,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type BottomSheetProps = {
@@ -10,7 +19,14 @@ type BottomSheetProps = {
   header?: ReactNode
   showCloseButton?: boolean
   closeIcon?: ReactNode
+  /** 顶部拖拽条，默认关闭（与 FE 一致） */
+  showHandle?: boolean
 }
+
+const SLIDE_DISTANCE = Dimensions.get('window').height
+const OPEN_DURATION = 280
+const CLOSE_DURATION = 240
+const FADE_DURATION = 200
 
 function DefaultCloseIcon() {
   return (
@@ -44,23 +60,84 @@ export function BottomSheet({
   header,
   showCloseButton = true,
   closeIcon,
+  showHandle = false,
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
+  const [mounted, setMounted] = useState(open)
+  const slideAnim = useRef(new Animated.Value(SLIDE_DISTANCE)).current
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const closingRef = useRef(false)
 
-  if (!open) return null
+  useEffect(() => {
+    if (open) {
+      setMounted(true)
+      closingRef.current = false
+      slideAnim.setValue(SLIDE_DISTANCE)
+      fadeAnim.setValue(0)
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: FADE_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: OPEN_DURATION,
+          useNativeDriver: true,
+        }),
+      ]).start()
+      return
+    }
+
+    if (!mounted) return
+
+    closingRef.current = true
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: FADE_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: SLIDE_DISTANCE,
+        duration: CLOSE_DURATION,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setMounted(false)
+        closingRef.current = false
+      }
+    })
+  }, [fadeAnim, mounted, open, slideAnim])
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) return
+    onClose()
+  }, [onClose])
+
+  if (!mounted && !open) return null
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={handleClose}>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom }]}>
-          <View style={styles.handle} />
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        </Animated.View>
 
-          {showCloseButton && (
-            <Pressable style={styles.closeButton} onPress={onClose} accessibilityLabel="Close">
+        <Animated.View
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom, transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          {showHandle ? <View style={styles.handle} /> : null}
+
+          {showCloseButton ? (
+            <Pressable style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close">
               {closeIcon ?? <DefaultCloseIcon />}
             </Pressable>
-          )}
+          ) : null}
 
           {header}
 
@@ -73,7 +150,7 @@ export function BottomSheet({
           </ScrollView>
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
@@ -85,11 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
@@ -111,8 +184,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    right: 12,
-    top: 12,
+    right: 15,
+    top: 15,
     zIndex: 20,
   },
   scrollArea: {

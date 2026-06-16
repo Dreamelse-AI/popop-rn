@@ -107,7 +107,7 @@ export function CreationPostDynamicSheet({
           characterId,
           content: payload.text,
           imageUrls: payload.imageUrls,
-          bgmMusicKey: payload.musicId,
+          bgmMusicKey: payload.musicKey,
         })
         setComposeOpen(false)
         markPostDynamicPublishSuccess()
@@ -195,6 +195,7 @@ export function CreationPostDynamicSheet({
         open={composeOpen}
         characterId={characterId}
         characterName={characterName}
+        includeSafeAreaTop={includeSafeAreaTop}
         publishing={publishing}
         onClose={() => {
           if (publishing) return
