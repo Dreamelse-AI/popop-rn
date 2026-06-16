@@ -124,8 +124,8 @@ export function MusicPickerSheet({
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 20,

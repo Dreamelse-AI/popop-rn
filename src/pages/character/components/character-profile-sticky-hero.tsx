@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import Svg, { Line } from 'react-native-svg'
 
 import { characterMainAssets } from '@/shared/assets/character/main'
 import { PopImage } from '@/shared/ui/pop-image'
@@ -46,26 +45,6 @@ function ChatCountBadge({ count, opacity }: { count: string; opacity: number }) 
         </View>
         <Text style={styles.badgeText}>{count}</Text>
       </View>
-    </View>
-  )
-}
-
-function CardBottomDivider({ width, opacity }: { width: number; opacity: number }) {
-  if (width <= 0) return null
-
-  return (
-    <View style={[styles.dividerWrap, { opacity, width }]}>
-      <Svg height={1} width={width}>
-        <Line
-          x1={0}
-          y1={0.5}
-          x2={width}
-          y2={0.5}
-          stroke="rgba(0,0,0,0.12)"
-          strokeWidth={1}
-          strokeDasharray="4 4"
-        />
-      </Svg>
     </View>
   )
 }
@@ -258,7 +237,6 @@ export function CharacterProfileStickyHero({
   const buttonLeftCollapsed = layoutWidth - CHARACTER_PROFILE_HERO.buttonWidth
   const buttonLeft = lerp(buttonLeftExpanded, buttonLeftCollapsed, progress)
   const textMaxWidth = lerp(layoutWidth, layoutWidth - 120, progress)
-  const dividerOpacity = lerp(1, 0, progress)
 
   return (
     <View
@@ -328,8 +306,6 @@ export function CharacterProfileStickyHero({
       >
         <Text style={styles.viewInfoText}>{t('character.viewInfo')}</Text>
       </Pressable>
-
-      <CardBottomDivider width={layoutWidth} opacity={dividerOpacity} />
     </View>
   )
 }
@@ -449,11 +425,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: 'rgba(0,0,0,0.8)',
-  },
-  dividerWrap: {
-    position: 'absolute',
-    left: 0,
-    bottom: CHARACTER_PROFILE_HERO.dividerBottomInset,
-    alignItems: 'center',
   },
 })
