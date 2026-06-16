@@ -200,6 +200,8 @@ export function CharacterChatScreen({
         open={showEmojiPanel}
         panel={emojiPanel}
         loading={emojiLoading}
+        fetchFailed={emojiFetchFailed}
+        onRetry={onEmojiRetry}
         onSelect={onEmojiSelect}
       />
 

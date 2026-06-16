@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native'
+import { Image } from 'expo-image'
+import Svg, { Circle, Path } from 'react-native-svg'
 
 import type { EmojiItem, ListEmojiPanelResp } from '@/generated/arca_apiComponents'
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 
+import { EMOJI_PANEL } from '../config/chat-config'
 import { getEmojiLabel } from '../lib/character-adapter'
 import {
   buildEmojiPanelTabs,
@@ -10,7 +22,6 @@ import {
   resolveEmojiPanelTabEmojis,
   type EmojiPanelTab,
 } from '../lib/emoji-panel-utils'
-import { Image } from 'expo-image'
 
 type ChatEmojiBottomSheetProps = {
   open: boolean
@@ -31,6 +42,8 @@ export function ChatEmojiBottomSheet({
 }: ChatEmojiBottomSheetProps) {
   const tabs = useMemo(() => (panel ? buildEmojiPanelTabs(panel) : []), [panel])
   const [activeTabId, setActiveTabId] = useState<string>('')
+  const [showScrollFade, setShowScrollFade] = useState(false)
+  const tabScrollRef = useRef<ScrollView>(null)
 
   useEffect(() => {
     if (!open || tabs.length === 0) return
@@ -39,6 +52,16 @@ export function ChatEmojiBottomSheet({
       setActiveTabId(firstPack?.id ?? tabs[0]?.id ?? '')
     }
   }, [activeTabId, open, tabs])
+
+  useEffect(() => {
+    if (!open) {
+      setShowScrollFade(false)
+    }
+  }, [open])
+
+  const handleGridScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setShowScrollFade(event.nativeEvent.contentOffset.y > 4)
+  }, [])
 
   if (!open) return null
 
@@ -50,149 +73,356 @@ export function ChatEmojiBottomSheet({
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
-        {/* Tab bar */}
         {tabs.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
-            {tabs.map(tab => {
-              const active = tab.id === activeTabId
-              return (
-                <Pressable
-                  key={tab.id}
-                  onPress={() => setActiveTabId(tab.id)}
-                  style={styles.tabButton}
-                >
-                  <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                    {tab.label.slice(0, 4)}
-                  </Text>
-                  {active && <View style={styles.tabIndicator} />}
-                </Pressable>
-              )
-            })}
-          </ScrollView>
+          <EmojiPanelTabBar
+            tabs={tabs}
+            panel={panel}
+            activeTabId={activeTabId}
+            scrollRef={tabScrollRef}
+            onSelect={setActiveTabId}
+          />
         )}
 
-        <View style={styles.divider} />
+        <View style={styles.gridArea}>
+          <ScrollView
+            style={styles.gridScroll}
+            contentContainerStyle={styles.gridContent}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleGridScroll}
+            scrollEventThrottle={16}
+          >
+            {showSkeleton ? (
+              <EmojiGridSkeleton />
+            ) : fetchFailed && !panel ? (
+              <EmojiPanelError onRetry={onRetry} />
+            ) : !activeTab || activeEmojis.length === 0 ? (
+              <EmojiPanelEmpty kind={activeTab?.kind ?? 'recent'} isEmpty={isEmpty} />
+            ) : (
+              <EmojiGrid emojis={activeEmojis} onSelect={onSelect} />
+            )}
+          </ScrollView>
 
-        {/* Emoji grid */}
-        <ScrollView style={styles.gridScroll} contentContainerStyle={styles.gridContent}>
-          {showSkeleton ? (
-            <View style={styles.grid}>
-              {Array.from({ length: 16 }).map((_, i) => (
-                <View key={i} style={styles.skeletonItem} />
-              ))}
-            </View>
-          ) : fetchFailed && !panel ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>表情加载失败</Text>
-              {onRetry && (
-                <Pressable onPress={onRetry} style={styles.retryButton}>
-                  <Text style={styles.retryText}>重试</Text>
-                </Pressable>
-              )}
-            </View>
-          ) : !activeTab || activeEmojis.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>暂无表情</Text>
-            </View>
-          ) : (
-            <View style={styles.grid}>
-              {activeEmojis.map(emoji => (
-                <Pressable
-                  key={emoji.emoji_id}
-                  onPress={() => onSelect(emoji)}
-                  style={styles.emojiButton}
-                  accessibilityLabel={getEmojiLabel(emoji)}
-                >
-                  {emoji.media.url ? (
-                    <Image source={{ uri: emoji.media.url }} style={styles.emojiImage} />
-                  ) : (
-                    <Text style={styles.emojiPlaceholder}>{getEmojiLabel(emoji).slice(0, 2)}</Text>
-                  )}
-                </Pressable>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+          {showScrollFade ? <View style={styles.scrollFade} pointerEvents="none" /> : null}
+        </View>
       </View>
     </View>
   )
 }
 
+type EmojiPanelTabBarProps = {
+  tabs: EmojiPanelTab[]
+  panel: ListEmojiPanelResp | null
+  activeTabId: string
+  scrollRef: React.RefObject<ScrollView | null>
+  onSelect: (tabId: string) => void
+}
+
+function EmojiPanelTabBar({
+  tabs,
+  panel,
+  activeTabId,
+  scrollRef,
+  onSelect,
+}: EmojiPanelTabBarProps) {
+  const tabBarSpacerHeight =
+    EMOJI_PANEL.tabBarHeightPx - EMOJI_PANEL.tabRowHeightPx - 1
+
+  return (
+    <View style={[styles.tabBarContainer, { height: EMOJI_PANEL.tabBarHeightPx }]}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabBarContent}
+      >
+        {tabs.map(tab => {
+          const emojis = panel ? resolveEmojiPanelTabEmojis(tab, panel) : []
+          const active = tab.id === activeTabId
+
+          return (
+            <Pressable
+              key={tab.id}
+              onPress={() => onSelect(tab.id)}
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: active }}
+              style={[styles.tabButton, { height: EMOJI_PANEL.tabRowHeightPx }]}
+            >
+              <EmojiPanelTabIcon tab={tab} emojis={emojis} />
+              {active ? (
+                <View
+                  style={[
+                    styles.tabIndicator,
+                    {
+                      width: EMOJI_PANEL.activeIndicatorWidthPx,
+                      height: EMOJI_PANEL.activeIndicatorHeightPx,
+                    },
+                  ]}
+                />
+              ) : null}
+            </Pressable>
+          )
+        })}
+      </ScrollView>
+
+      <View style={[styles.tabDivider, { top: EMOJI_PANEL.tabRowHeightPx }]} />
+      <View style={{ height: tabBarSpacerHeight }} />
+    </View>
+  )
+}
+
+function EmojiPanelTabIcon({
+  tab,
+  emojis,
+}: {
+  tab: EmojiPanelTab
+  emojis: EmojiItem[]
+}) {
+  const iconUrl =
+    tab.kind === 'pack'
+      ? tab.coverUrl || emojis[0]?.media.url
+      : emojis[0]?.media.url
+
+  if (iconUrl) {
+    return (
+      <Image
+        source={{ uri: normalizeAssetUrl(iconUrl) }}
+        style={styles.tabIconImage}
+        contentFit="contain"
+      />
+    )
+  }
+
+  if (tab.kind === 'recent') {
+    return <RecentTabIcon />
+  }
+
+  if (tab.kind === 'my') {
+    return <MyTabIcon />
+  }
+
+  return <Text style={styles.tabFallbackLabel}>{tab.label.slice(0, 2)}</Text>
+}
+
+function RecentTabIcon() {
+  return (
+    <Svg
+      width={EMOJI_PANEL.tabIconMaxWidthPx}
+      height={EMOJI_PANEL.tabIconMaxHeightPx}
+      viewBox="0 0 48 48"
+    >
+      <Circle cx="24" cy="24" r="14" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={2} />
+      <Path
+        d="M24 16v8l5 3"
+        fill="none"
+        stroke="rgba(0,0,0,0.35)"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+function MyTabIcon() {
+  return (
+    <Svg
+      width={EMOJI_PANEL.tabIconMaxWidthPx}
+      height={EMOJI_PANEL.tabIconMaxHeightPx}
+      viewBox="0 0 48 48"
+    >
+      <Circle cx="24" cy="18" r="6" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={2} />
+      <Path
+        d="M12 38c0-6.6 5.4-10 12-10s12 3.4 12 10"
+        fill="none"
+        stroke="rgba(0,0,0,0.35)"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  )
+}
+
+function EmojiGrid({
+  emojis,
+  onSelect,
+}: {
+  emojis: EmojiItem[]
+  onSelect: (emoji: EmojiItem) => void
+}) {
+  return (
+    <View style={styles.grid}>
+      {emojis.map(emoji => (
+        <Pressable
+          key={emoji.emoji_id}
+          onPress={() => onSelect(emoji)}
+          style={styles.emojiButton}
+          accessibilityLabel={getEmojiLabel(emoji)}
+        >
+          <EmojiSticker emoji={emoji} />
+        </Pressable>
+      ))}
+    </View>
+  )
+}
+
+function EmojiGridSkeleton() {
+  return (
+    <View style={styles.grid}>
+      {Array.from({ length: 16 }).map((_, index) => (
+        <View key={index} style={styles.skeletonItem} />
+      ))}
+    </View>
+  )
+}
+
+function EmojiPanelError({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>表情加载失败</Text>
+      {onRetry ? (
+        <Pressable onPress={onRetry} style={styles.retryButton}>
+          <Text style={styles.retryText}>重试</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  )
+}
+
+function EmojiPanelEmpty({
+  kind,
+  isEmpty,
+}: {
+  kind: EmojiPanelTab['kind']
+  isEmpty: boolean
+}) {
+  const message =
+    kind === 'recent'
+      ? '暂无最近使用的表情'
+      : kind === 'my'
+        ? '暂无上传的表情'
+        : isEmpty
+          ? '暂无表情'
+          : '该分组暂无表情'
+
+  return (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>{message}</Text>
+    </View>
+  )
+}
+
+function EmojiSticker({ emoji }: { emoji: EmojiItem }) {
+  const label = getEmojiLabel(emoji)
+
+  if (!emoji.media.url) {
+    return <Text style={styles.emojiPlaceholder}>{label}</Text>
+  }
+
+  return (
+    <Image
+      source={{ uri: normalizeAssetUrl(emoji.media.url) }}
+      style={styles.emojiStickerImage}
+      contentFit="contain"
+    />
+  )
+}
+
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
+    paddingHorizontal: EMOJI_PANEL.horizontalInsetPx,
     paddingTop: 4,
     paddingBottom: 8,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   panel: {
+    maxWidth: EMOJI_PANEL.maxWidthPx,
+    width: '100%',
+    alignSelf: 'center',
     height: 328,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
     overflow: 'hidden',
   },
-  tabBar: {
+  tabBarContainer: {
+    position: 'relative',
+  },
+  tabBarContent: {
     paddingHorizontal: 16,
     gap: 20,
-    height: 48,
     alignItems: 'center',
   },
   tabButton: {
-    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 2,
   },
-  tabLabel: {
+  tabIconImage: {
+    width: EMOJI_PANEL.tabIconMaxWidthPx,
+    height: EMOJI_PANEL.tabIconMaxHeightPx,
+  },
+  tabFallbackLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: 'rgba(0,0,0,0.4)',
-  },
-  tabLabelActive: {
-    color: '#000000',
-    fontWeight: '700',
+    color: 'rgba(0,0,0,0.6)',
   },
   tabIndicator: {
     position: 'absolute',
     bottom: 0,
-    width: 16,
-    height: 3,
-    borderRadius: 1.5,
+    borderRadius: 9999,
     backgroundColor: '#000000',
   },
-  divider: {
+  tabDivider: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
     height: 1,
-    marginHorizontal: 16,
     backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  gridArea: {
+    flex: 1,
+    position: 'relative',
   },
   gridScroll: {
     flex: 1,
   },
   gridContent: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  scrollFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: EMOJI_PANEL.scrollFadeHeightPx,
+    backgroundColor: 'rgba(255,255,255,0.95)',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    columnGap: 12,
+    rowGap: 16,
   },
   emojiButton: {
-    width: '23%',
+    width: '22%',
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emojiImage: {
+  emojiStickerImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
   },
   emojiPlaceholder: {
+    paddingHorizontal: 4,
     fontSize: 10,
+    lineHeight: 14,
     color: 'rgba(0,0,0,0.4)',
     textAlign: 'center',
   },
   skeletonItem: {
-    width: '23%',
+    width: '22%',
     aspectRatio: 1,
     borderRadius: 8,
     backgroundColor: 'rgba(0,0,0,0.04)',

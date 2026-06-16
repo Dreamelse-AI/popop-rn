@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, ScrollView, StyleSheet } from 'react-native'
+import { View, ScrollView, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 
@@ -133,6 +133,14 @@ export function HomePage() {
     [bottomTab, scrollFeedToTopAndRefresh],
   )
 
+  const handleFeedScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
+    const remaining = contentSize.height - layoutMeasurement.height - contentOffset.y
+    if (remaining < 400) {
+      tagFeedRef.current?.tryLoadMore()
+    }
+  }, [])
+
   const showHomeChrome = !searchOpen && isFeedTab
   const showMeChrome = !searchOpen && bottomTab === 'me'
 
@@ -157,6 +165,8 @@ export function HomePage() {
             contentContainerStyle={styles.feedScrollContent}
             refreshControl={refreshControl}
             showsVerticalScrollIndicator={false}
+            onScroll={handleFeedScroll}
+            scrollEventThrottle={16}
           >
             <TagFeed ref={tagFeedRef} />
           </ScrollView>

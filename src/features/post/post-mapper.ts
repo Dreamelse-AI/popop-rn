@@ -2,6 +2,7 @@
  * POST /post/list_by_character 响应 → FeedPostViewer UI 模型
  */
 import type { PostInfo } from '@/generated';
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url';
 
 import { hasPostBgm, resolvePostBgm } from './post-bgm';
 
@@ -26,7 +27,8 @@ function isRenderableImageUrl(value: string | undefined): value is string {
 function resolvePostImages(post: PostInfo): string[] {
   return (post.images ?? [])
     .map(media => media?.url)
-    .filter(isRenderableImageUrl);
+    .filter(isRenderableImageUrl)
+    .map(normalizeAssetUrl);
 }
 
 /** 无 images 的帖子视为脏数据，不参与展示 */

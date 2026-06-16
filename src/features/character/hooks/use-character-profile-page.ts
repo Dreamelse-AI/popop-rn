@@ -42,6 +42,14 @@ function applyMockPosts(characterId: string) {
 
 const PAGE_SIZE = 30
 
+export type UseCharacterProfilePageOptions = {
+  /**
+   * 发布动态页等场景：角色信息已由 list_my_characters 提供，
+   * 仅拉取帖子列表，避免 getDetail 失败或缺图导致整页报错。
+   */
+  profileFallback?: CharacterProfileData | null
+}
+
 type UseCharacterProfilePageResult = {
   profile: CharacterProfileData | null
   cells: CharacterProfileGridCell[]
@@ -56,7 +64,11 @@ type UseCharacterProfilePageResult = {
   refresh: () => Promise<void>
 }
 
-export function useCharacterProfilePage(characterId: string): UseCharacterProfilePageResult {
+export function useCharacterProfilePage(
+  characterId: string,
+  options?: UseCharacterProfilePageOptions,
+): UseCharacterProfilePageResult {
+  const profileFallback = options?.profileFallback ?? null
   const [profile, setProfile] = useState<CharacterProfileData | null>(null)
   const [cells, setCells] = useState<CharacterProfileGridCell[]>([])
   const [posts, setPosts] = useState<CharacterPostView[]>([])
@@ -80,6 +92,7 @@ export function useCharacterProfilePage(characterId: string): UseCharacterProfil
     cursorRef.current = undefined
 
     const useMockPosts = shouldUseMockCharacterPosts()
+    const postsOnly = profileFallback != null
 
     try {
       let detailResp: Awaited<ReturnType<typeof characterApi.getDetail>> | null = null
@@ -87,13 +100,24 @@ export function useCharacterProfilePage(characterId: string): UseCharacterProfil
 
       if (useMockPosts) {
         try {
-          detailResp = await characterApi.getDetail({
-            character_id: characterId,
-            source: 'character_page',
-          })
+          if (!postsOnly) {
+            detailResp = await characterApi.getDetail({
+              character_id: characterId,
+              source: 'character_page',
+            })
+          }
         } catch (detailError) {
           console.warn('[useCharacterProfilePage] detail API failed in mock mode:', detailError)
         }
+      } else if (postsOnly) {
+        postsResp = await dedupeRequest(
+          `character-profile-posts:${characterId}`,
+          () =>
+            storyApi.listCharacterPosts({
+              character_id: characterId,
+              limit: PAGE_SIZE,
+            }),
+        )
       } else {
         const result = await dedupeRequest(
           `character-profile-page:${characterId}`,
@@ -118,6 +142,7 @@ export function useCharacterProfilePage(characterId: string): UseCharacterProfil
       if (loadId !== initialLoadIdRef.current) return
 
       const mappedProfile =
+        profileFallback ??
         (detailResp ? mapCharacterProfile(detailResp.character) : null) ??
         (useMockPosts ? mapMockProfile(characterId) : null)
 
@@ -189,7 +214,7 @@ export function useCharacterProfilePage(characterId: string): UseCharacterProfil
         setPostsLoading(false)
       }
     }
-  }, [characterId])
+  }, [characterId, profileFallback])
 
   const loadMore = useCallback(async () => {
     if (shouldUseMockCharacterPosts()) return
