@@ -1,0 +1,11 @@
+# RN Bottom Sheet 规范
+
+新建或修改底部弹窗时：
+
+- 使用 `BottomSheet`（`src/shared/ui/bottom-sheet.tsx`），禁止手写 `Modal` 底部壳
+- 例外：`PostDynamicImagePickerSheet` 等可变高度交互可保留自定义壳，须引用 `SHEET` token 对齐视觉
+- 标题/内容/列表行/确认按钮用 `sheet-primitives`：`SheetHeader`、`SheetBody`、`SheetListRow`、`SheetFooterButton`
+- 含 `FlatList` 时 `scrollable={false}`；固定高度内容用 `fitContent`
+- 侧滑抽屉、全屏层、居中对话框不在此规范范围
+
+参考实现：`src/features/resource/ui/music-picker-sheet.tsx`

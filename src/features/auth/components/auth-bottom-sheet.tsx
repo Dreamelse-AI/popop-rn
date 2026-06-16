@@ -8,6 +8,7 @@ type AuthBottomSheetProps = {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
+  header?: ReactNode
   showLogo?: boolean
 }
 
@@ -16,20 +17,22 @@ export function AuthBottomSheet({
   onClose,
   children,
   footer,
+  header,
   showLogo = true,
 }: AuthBottomSheetProps) {
+  const sheetHeader =
+    header ??
+    (showLogo ? (
+      <View style={styles.logoWrapper}>
+        <PopopLogo width={130} height={100} />
+      </View>
+    ) : undefined)
+
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
-      showCloseButton
-      header={
-        showLogo ? (
-          <View style={styles.logoWrapper}>
-            <PopopLogo width={130} height={100} />
-          </View>
-        ) : undefined
-      }
+      header={sheetHeader}
       footer={footer}
     >
       {children}

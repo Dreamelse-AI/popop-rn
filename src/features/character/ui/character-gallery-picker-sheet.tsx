@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { fetchCharacterGalleryImages } from '@/features/character/api/fetch-character-gallery-images'
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
 import { addCharacterCreateAssets } from '@/shared/assets/character/add-character'
-import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
-import { PopIcon } from '@/shared/ui/pop-icon'
 import { PopImage } from '@/shared/ui/pop-image'
+import {
+  SheetBody,
+  SheetEmpty,
+  SheetFooterButton,
+  SheetHeader,
+  SheetRetry,
+} from '@/shared/ui/sheet-primitives'
 
 type CharacterGalleryPickerSheetProps = {
   open: boolean
@@ -86,28 +91,21 @@ export function CharacterGalleryPickerSheet({
     <BottomSheet
       open={open}
       onClose={onClose}
-      closeIcon={<PopIcon icon={dialogPageStyleSettingsAssets.close} size={28} />}
       header={
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('character.createPage.imagePickerGalleryTitle')}</Text>
-        </View>
+        <SheetHeader title={t('character.createPage.imagePickerGalleryTitle')} />
       }
       footer={
-        <Pressable
+        <SheetFooterButton
+          label={t('character.createPage.imagePickerConfirm', {
+            count: selectedCount,
+            max: maxSelectable,
+          })}
           disabled={selectedCount === 0}
           onPress={handleConfirm}
-          style={[styles.confirmButton, selectedCount === 0 && styles.confirmButtonDisabled]}
-        >
-          <Text style={styles.confirmText}>
-            {t('character.createPage.imagePickerConfirm', {
-              count: selectedCount,
-              max: maxSelectable,
-            })}
-          </Text>
-        </Pressable>
+        />
       }
     >
-      <View style={styles.content}>
+      <SheetBody style={styles.content}>
         {loading ? (
           <View style={styles.grid}>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -115,14 +113,13 @@ export function CharacterGalleryPickerSheet({
             ))}
           </View>
         ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{t('character.createPage.imagePickerLoadFailed')}</Text>
-            <Pressable onPress={() => void loadImages()} style={styles.retryButton}>
-              <Text style={styles.retryText}>{t('character.creation.retry')}</Text>
-            </Pressable>
-          </View>
+          <SheetRetry
+            message={t('character.createPage.imagePickerLoadFailed')}
+            retryLabel={t('character.creation.retry')}
+            onRetry={() => void loadImages()}
+          />
         ) : images.length === 0 ? (
-          <Text style={styles.emptyText}>{t('character.createPage.imagePickerEmpty')}</Text>
+          <SheetEmpty message={t('character.createPage.imagePickerEmpty')} />
         ) : (
           <View style={styles.grid}>
             {images.map((url) => {
@@ -145,25 +142,14 @@ export function CharacterGalleryPickerSheet({
             })}
           </View>
         )}
-      </View>
+      </SheetBody>
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
   content: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   grid: {
     flexDirection: 'row',
@@ -175,32 +161,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 16,
     backgroundColor: 'rgba(0,0,0,0.06)',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 48,
-  },
-  errorText: {
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.5)',
-  },
-  retryButton: {
-    borderRadius: 9999,
-    backgroundColor: '#fdeab3',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  retryText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  emptyText: {
-    paddingVertical: 48,
-    textAlign: 'center',
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
   },
   imageButton: {
     width: '31%',
@@ -231,20 +191,5 @@ const styles = StyleSheet.create({
   },
   checkCircleSelected: {
     backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-  confirmButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.4,
-  },
-  confirmText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

@@ -11,6 +11,7 @@ import { uploadCharacterAppearanceImage } from '@/features/character-creation/li
 import { walletFreeQuotas } from '@/generated/arca_api';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
 import { BottomSheet } from '@/shared/ui/bottom-sheet';
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives';
 
 import { CharacterAppearanceStyleSheet } from './character-appearance-style-sheet';
 
@@ -141,29 +142,19 @@ export function CharacterAiImageSheet({
       <BottomSheet
         open={open}
         onClose={onClose}
-        header={
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>
-              {t('character.createPage.imageAiTitle')}
-            </Text>
-          </View>
-        }
+        header={<SheetHeader title={t('character.createPage.imageAiTitle')} />}
         footer={
           <View style={styles.footerContainer}>
-            <Pressable
-              disabled={!canGenerate || generating}
-              onPress={() => void handleGenerate()}
-              style={[
-                styles.generateButton,
-                (!canGenerate || generating) ? styles.generateButtonDisabled : undefined,
-              ]}
-            >
-              <Text style={styles.generateButtonText}>
-                {generating
+            <SheetFooterButton
+              label={
+                generating
                   ? t('character.createPage.imageAiGenerating')
-                  : t('character.createPage.imageAiGenerate')}
-              </Text>
-            </Pressable>
+                  : t('character.createPage.imageAiGenerate')
+              }
+              onPress={() => void handleGenerate()}
+              disabled={!canGenerate || generating}
+              loading={generating}
+            />
             {freeRemaining !== null && (
               <Text style={styles.quotaText}>
                 {t('character.createPage.imageAiFreeQuota', { count: freeRemaining })}
@@ -172,7 +163,7 @@ export function CharacterAiImageSheet({
           </View>
         }
       >
-        <View style={styles.content}>
+        <SheetBody style={styles.content}>
           <View style={styles.promptCard}>
             <TextInput
               value={prompt}
@@ -242,7 +233,7 @@ export function CharacterAiImageSheet({
               </Pressable>
             </View>
           </View>
-        </View>
+        </SheetBody>
       </BottomSheet>
 
       <CharacterAppearanceStyleSheet
@@ -256,20 +247,8 @@ export function CharacterAiImageSheet({
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 21,
-    color: '#000000',
-  },
   content: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 4,
   },
   promptCard: {
     borderRadius: 20,
@@ -392,23 +371,6 @@ const styles = StyleSheet.create({
   footerContainer: {
     flexDirection: 'column',
     gap: 8,
-  },
-  generateButton: {
-    height: 60,
-    width: '100%',
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  generateButtonDisabled: {
-    opacity: 0.5,
-  },
-  generateButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 24,
-    color: '#ffffff',
   },
   quotaText: {
     textAlign: 'center',

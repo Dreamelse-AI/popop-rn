@@ -10,6 +10,7 @@ import {
   type ChatAtmosphereConfig,
 } from '@/features/chat/lib/chat-atmosphere-presets'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 import { ChatBackgroundPage } from './chat-background-page'
 import { Image } from 'expo-image'
@@ -55,13 +56,21 @@ export function ChatPageStyleSheet({
 
   return (
     <>
-      <BottomSheet open={open} onClose={onClose}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>{t('chatPageStyleSheet.title')}</Text>
-            <View style={styles.headerDivider} />
-          </View>
-
+      <BottomSheet
+        open={open}
+        onClose={onClose}
+        scrollable={false}
+        header={<SheetHeader title={t('chatPageStyleSheet.title')} />}
+        footer={
+          <SheetFooterButton
+            label={t('chatPageStyleSheet.confirm')}
+            onPress={() => void handleConfirm()}
+            disabled={confirming}
+            loading={confirming}
+          />
+        }
+      >
+        <SheetBody>
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
             {/* Background */}
             <View style={styles.section}>
@@ -96,15 +105,7 @@ export function ChatPageStyleSheet({
               </View>
             </View>
           </ScrollView>
-
-          <Pressable
-            onPress={() => void handleConfirm()}
-            disabled={confirming}
-            style={[styles.confirmButton, confirming && styles.confirmButtonDisabled]}
-          >
-            <Text style={styles.confirmText}>{t('chatPageStyleSheet.confirm')}</Text>
-          </Pressable>
-        </View>
+        </SheetBody>
       </BottomSheet>
 
       <ChatBackgroundPage
@@ -118,24 +119,6 @@ export function ChatPageStyleSheet({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 12,
-    paddingBottom: 24,
-  },
-  header: {
-    paddingTop: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
-    lineHeight: 21,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-  },
-  headerDivider: {
-    marginTop: 12,
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
   scrollView: {
     maxHeight: 400,
   },
@@ -195,20 +178,5 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     alignSelf: 'flex-end',
-  },
-  confirmButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.6,
-  },
-  confirmText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

@@ -23,6 +23,8 @@ import {
   hasPhotoAccess,
   type DevicePhotoAsset,
 } from '@/features/post-dynamic/lib/use-device-photo-album'
+import { SHEET } from '@/shared/ui/sheet-tokens'
+import { SheetCloseIcon, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 import { IconGalleryStack, IconSparkles } from './post-dynamic-icons'
 
@@ -188,15 +190,14 @@ export function PostDynamicImagePickerSheet({
           </Pressable>
 
           <Pressable onPress={onClose} style={styles.closeButton} accessibilityLabel="Close">
-            <View style={styles.closeCircle}>
-              <Text style={styles.closeText}>×</Text>
-            </View>
+            <SheetCloseIcon />
           </Pressable>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('character.createPage.imagePickerAddTitle')}</Text>
-            <Text style={styles.hint}>{t('character.createPage.imagePickerAddHint')}</Text>
-          </View>
+          <SheetHeader
+            title={t('character.createPage.imagePickerAddTitle')}
+            hint={t('character.createPage.imagePickerAddHint')}
+            style={styles.header}
+          />
 
           <View style={styles.actionRow}>
             <Pressable onPress={handleAiPress} style={styles.actionButton}>
@@ -349,12 +350,12 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: SHEET.backdrop,
   },
   sheet: {
-    backgroundColor: '#f7f7f7',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: SHEET.background,
+    borderTopLeftRadius: SHEET.radius,
+    borderTopRightRadius: SHEET.radius,
     overflow: 'hidden',
   },
   handleArea: {
@@ -363,43 +364,19 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    width: SHEET.handle.width,
+    height: SHEET.handle.height,
+    borderRadius: SHEET.handle.radius,
+    backgroundColor: SHEET.handle.bg,
   },
   closeButton: {
     position: 'absolute',
-    right: 15,
-    top: 15,
+    right: SHEET.close.right,
+    top: SHEET.close.top,
     zIndex: 20,
   },
-  closeCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    fontSize: 18,
-    color: '#333333',
-    marginTop: -2,
-  },
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  hint: {
-    marginTop: 6,
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
+    paddingBottom: 0,
   },
   actionRow: {
     flexDirection: 'row',
@@ -583,18 +560,18 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   confirmButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
+    height: SHEET.confirm.height,
+    borderRadius: SHEET.confirm.radius,
+    backgroundColor: SHEET.confirm.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   confirmButtonDisabled: {
-    opacity: 0.6,
+    opacity: SHEET.confirm.disabledOpacity,
   },
   confirmText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
+    fontSize: SHEET.confirm.fontSize,
+    fontWeight: SHEET.confirm.fontWeight,
+    color: SHEET.confirm.textColor,
   },
 })

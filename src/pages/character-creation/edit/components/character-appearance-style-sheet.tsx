@@ -7,6 +7,7 @@ import { fetchAppearanceStyles } from '@/features/character-creation/api/appeara
 import type { AppearanceStyleItem } from '@/features/character-creation/api/appearance-styles-api';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
 import { BottomSheet } from '@/shared/ui/bottom-sheet';
+import { SheetBody, SheetFooterButton, SheetHeader, SheetLoading } from '@/shared/ui/sheet-primitives';
 
 type CharacterAppearanceStyleSheetProps = {
   open: boolean;
@@ -50,30 +51,18 @@ export function CharacterAppearanceStyleSheet({
     <BottomSheet
       open={open}
       onClose={onClose}
-      header={
-        <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>
-            {t('character.createPage.imageAiStyleTitle')}
-          </Text>
-        </View>
-      }
+      header={<SheetHeader title={t('character.createPage.imageAiStyleTitle')} />}
       footer={
-        <Pressable
-          disabled={!draftStyleKey || loading}
+        <SheetFooterButton
+          label={t('character.createPage.imageAiStyleConfirm')}
           onPress={handleConfirm}
-          style={[styles.confirmButton, (!draftStyleKey || loading) ? styles.confirmButtonDisabled : undefined]}
-        >
-          <Text style={styles.confirmButtonText}>
-            {t('character.createPage.imageAiStyleConfirm')}
-          </Text>
-        </Pressable>
+          disabled={!draftStyleKey || loading}
+        />
       }
     >
-      <View style={styles.content}>
+      <SheetBody style={styles.content}>
         {loading && styles2.length === 0 ? (
-          <Text style={styles.loadingText}>
-            {t('character.creation.loading')}
-          </Text>
+          <SheetLoading message={t('character.creation.loading')} />
         ) : (
           <View style={styles.grid}>
             {styles2.map((style) => {
@@ -102,32 +91,14 @@ export function CharacterAppearanceStyleSheet({
             })}
           </View>
         )}
-      </View>
+      </SheetBody>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 21,
-    color: '#000000',
-  },
   content: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  loadingText: {
-    paddingVertical: 40,
-    textAlign: 'center',
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 4,
   },
   grid: {
     flexDirection: 'row',
@@ -161,22 +132,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#000000',
-  },
-  confirmButton: {
-    height: 60,
-    width: '100%',
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.5,
-  },
-  confirmButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 24,
-    color: '#ffffff',
   },
 });

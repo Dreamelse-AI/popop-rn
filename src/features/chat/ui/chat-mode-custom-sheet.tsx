@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 export type ChatModeCustomSettings = {
   temperatureLevel: number
@@ -39,13 +40,18 @@ export function ChatModeCustomSheet({
   }, [open, initialSettings])
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('chatModeCustomSheet.title')}</Text>
-          <View style={styles.headerDivider} />
-        </View>
-
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={<SheetHeader title={t('chatModeCustomSheet.title')} />}
+      footer={
+        <SheetFooterButton
+          label={t('chatModeCustomSheet.confirm')}
+          onPress={() => onConfirm(draftSettings)}
+        />
+      }
+    >
+      <SheetBody>
         <View style={styles.content}>
           {/* Temperature slider */}
           <View style={styles.section}>
@@ -87,34 +93,12 @@ export function ChatModeCustomSheet({
             </Text>
           </View>
         </View>
-
-        <Pressable onPress={() => onConfirm(draftSettings)} style={styles.confirmButton}>
-          <Text style={styles.confirmText}>{t('chatModeCustomSheet.confirm')}</Text>
-        </Pressable>
-      </View>
+      </SheetBody>
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 12,
-    paddingBottom: 24,
-  },
-  header: {
-    paddingTop: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
-    lineHeight: 21,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-  },
-  headerDivider: {
-    marginTop: 12,
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
   content: {
     gap: 24,
     paddingVertical: 12,
@@ -165,17 +149,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: 'rgba(0,0,0,0.3)',
-  },
-  confirmButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

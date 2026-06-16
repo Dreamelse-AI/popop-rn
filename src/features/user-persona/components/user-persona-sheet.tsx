@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 
 import { useTranslation } from 'react-i18next'
 
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { showGlobalToast } from '@/shared/wallet'
 
 import { useUserPersona } from '../hooks/use-user-persona'
@@ -42,13 +43,20 @@ export function UserPersonaSheet({ open, onClose, fallbackAvatar }: UserPersonaS
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('persona.title')}</Text>
-        </View>
-        <View style={styles.headerDivider} />
-
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={<SheetHeader title={t('persona.title')} />}
+      footer={
+        <SheetFooterButton
+          label={saving ? t('persona.saving') : t('persona.goChat')}
+          onPress={() => void handleSave()}
+          disabled={saving}
+          loading={saving}
+        />
+      }
+    >
+      <SheetBody style={styles.container}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <Pressable
@@ -131,36 +139,14 @@ export function UserPersonaSheet({ open, onClose, fallbackAvatar }: UserPersonaS
         {loading && (
           <Text style={styles.loadingText}>{t('persona.loading')}</Text>
         )}
-
-        {/* Footer */}
-        <Pressable onPress={() => void handleSave()} disabled={saving} style={[styles.submitButton, saving && styles.submitButtonDisabled]}>
-          <Text style={styles.submitText}>
-            {saving ? t('persona.saving') : t('persona.goChat')}
-          </Text>
-        </Pressable>
-      </View>
+      </SheetBody>
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  header: {
-    paddingHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-  },
-  headerDivider: {
-    marginTop: 12,
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    paddingHorizontal: 0,
   },
   avatarSection: {
     alignItems: 'center',
@@ -281,21 +267,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(0,0,0,0.3)',
     textAlign: 'center',
-  },
-  submitButton: {
-    marginTop: 16,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })
