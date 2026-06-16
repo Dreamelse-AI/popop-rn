@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import Svg, { Line } from 'react-native-svg'
 
 import { characterMainAssets } from '@/shared/assets/character/main'
 import { PopImage } from '@/shared/ui/pop-image'
@@ -49,6 +50,26 @@ function ChatCountBadge({ count, opacity }: { count: string; opacity: number }) 
   )
 }
 
+function CardBottomDivider({ width, opacity }: { width: number; opacity: number }) {
+  if (width <= 0) return null
+
+  return (
+    <View style={[styles.dividerWrap, { opacity, width }]}>
+      <Svg height={1} width={width}>
+        <Line
+          x1={0}
+          y1={0.5}
+          x2={width}
+          y2={0.5}
+          stroke="rgba(0,0,0,0.12)"
+          strokeWidth={1}
+          strokeDasharray="4 4"
+        />
+      </Svg>
+    </View>
+  )
+}
+
 function AnimatedAvatarGroup({
   progress,
   avatar,
@@ -69,15 +90,18 @@ function AnimatedAvatarGroup({
     CHARACTER_PROFILE_AVATAR.collapsed,
     progress,
   )
-  const scale = avatarSize / CHARACTER_PROFILE_AVATAR.expanded
+  const scale = Math.round((avatarSize / CHARACTER_PROFILE_AVATAR.expanded) * 1000) / 1000
   const expandedCenterX = contentWidth / 2
   const collapsedCenterX =
     CHARACTER_PROFILE_HERO.horizontalInset + CHARACTER_PROFILE_AVATAR.collapsed / 2
   const centerX = lerp(expandedCenterX, collapsedCenterX, progress)
-  const avatarTop = lerp(0, (CHARACTER_PROFILE_HERO.collapsedHeight - avatarSize) / 2, progress)
+  const avatarTop = lerp(
+    CHARACTER_PROFILE_HERO.expandedTopGap,
+    (CHARACTER_PROFILE_HERO.collapsedHeight - avatarSize) / 2,
+    progress,
+  )
   const groupLeft = centerX - CHARACTER_PROFILE_AVATAR.expanded / 2
   const badgeOpacity = lerp(1, 0, progress)
-  const heroOpacity = lerp(1, 0, progress)
 
   return (
     <View
@@ -85,8 +109,9 @@ function AnimatedAvatarGroup({
       style={[
         styles.avatarGroup,
         {
-          left: groupLeft,
-          top: avatarTop,
+          left: Math.round(groupLeft),
+          top: Math.round(avatarTop),
+          transformOrigin: 'top center',
           transform: [{ scale }],
         },
       ]}
@@ -97,7 +122,6 @@ function AnimatedAvatarGroup({
           {
             left: CHARACTER_PROFILE_AVATAR.expanded / 2 + 9 - HERO_WIDTH / 2,
             top: -HERO_MASK_OFFSET_Y,
-            opacity: heroOpacity,
           },
         ]}
       >
@@ -154,10 +178,13 @@ export function CharacterProfileStickyHero({
 }: CharacterProfileStickyHeroProps) {
   const { t } = useTranslation()
   const [contentWidth, setContentWidth] = useState(0)
+  const [titleWidth, setTitleWidth] = useState(0)
+  const [subtitleWidth, setSubtitleWidth] = useState(0)
   const tagLine = `${tags}  #${imageCount}张图`
 
   const handleLayout = (event: LayoutChangeEvent) => {
-    setContentWidth(event.nativeEvent.layout.width)
+    const outerWidth = event.nativeEvent.layout.width
+    setContentWidth(outerWidth - CHARACTER_PROFILE_HERO.horizontalInset * 2)
   }
 
   const heroHeight = Math.round(
@@ -182,10 +209,14 @@ export function CharacterProfileStickyHero({
   )
 
   const layoutWidth = contentWidth || 366
+  const titleCenterX = layoutWidth / 2
   const titleCollapsedX =
     CHARACTER_PROFILE_HERO.horizontalInset +
     CHARACTER_PROFILE_AVATAR.collapsed +
     CHARACTER_PROFILE_HERO.avatarTextGap
+  const titleLeft = lerp(titleCenterX, titleCollapsedX, progress)
+  const titleTranslateX = lerp(-titleWidth / 2, 0, progress)
+  const subtitleTranslateX = lerp(-subtitleWidth / 2, 0, progress)
 
   const titleTopExpanded =
     CHARACTER_PROFILE_HERO.expandedHeight -
@@ -204,7 +235,11 @@ export function CharacterProfileStickyHero({
     CHARACTER_PROFILE_AVATAR.collapsed,
     progress,
   )
-  const avatarTop = lerp(0, (CHARACTER_PROFILE_HERO.collapsedHeight - avatarSize) / 2, progress)
+  const avatarTop = lerp(
+    CHARACTER_PROFILE_HERO.expandedTopGap,
+    (CHARACTER_PROFILE_HERO.collapsedHeight - avatarSize) / 2,
+    progress,
+  )
   const titleTopCollapsed = avatarTop + (CHARACTER_PROFILE_AVATAR.collapsed - collapsedTextHeight) / 2
   const titleTop = lerp(titleTopExpanded, titleTopCollapsed, progress)
 
@@ -223,11 +258,18 @@ export function CharacterProfileStickyHero({
   const buttonLeftCollapsed = layoutWidth - CHARACTER_PROFILE_HERO.buttonWidth
   const buttonLeft = lerp(buttonLeftExpanded, buttonLeftCollapsed, progress)
   const textMaxWidth = lerp(layoutWidth, layoutWidth - 120, progress)
+  const dividerOpacity = lerp(1, 0, progress)
 
   return (
     <View
       onLayout={handleLayout}
-      style={[styles.container, { top: topOffset, height: heroHeight }]}
+      style={[
+        styles.container,
+        {
+          top: topOffset,
+          height: heroHeight,
+        },
+      ]}
     >
       <AnimatedAvatarGroup
         progress={progress}
@@ -239,16 +281,16 @@ export function CharacterProfileStickyHero({
       />
 
       <Text
+        onLayout={event => setTitleWidth(event.nativeEvent.layout.width)}
         style={[
           styles.title,
           {
-            top: titleTop,
-            maxWidth: textMaxWidth,
-            fontSize: titleSize,
-            lineHeight: titleLineHeight,
-            left: progress < 0.5 ? 0 : titleCollapsedX,
-            right: progress < 0.5 ? 0 : undefined,
-            textAlign: progress < 0.5 ? 'center' : 'left',
+            top: Math.round(titleTop),
+            maxWidth: Math.round(textMaxWidth),
+            fontSize: Math.round(titleSize * 10) / 10,
+            lineHeight: Math.round(titleLineHeight * 10) / 10,
+            left: Math.round(titleLeft),
+            transform: [{ translateX: titleTranslateX }],
           },
         ]}
         numberOfLines={1}
@@ -257,16 +299,16 @@ export function CharacterProfileStickyHero({
       </Text>
 
       <Text
+        onLayout={event => setSubtitleWidth(event.nativeEvent.layout.width)}
         style={[
           styles.subtitle,
           {
-            top: subtitleTop,
-            maxWidth: textMaxWidth,
-            fontSize: subtitleSize,
-            lineHeight: subtitleLineHeight,
-            left: progress < 0.5 ? 0 : titleCollapsedX,
-            right: progress < 0.5 ? 0 : undefined,
-            textAlign: progress < 0.5 ? 'center' : 'left',
+            top: Math.round(subtitleTop),
+            maxWidth: Math.round(textMaxWidth),
+            fontSize: Math.round(subtitleSize * 10) / 10,
+            lineHeight: Math.round(subtitleLineHeight * 10) / 10,
+            left: Math.round(titleLeft),
+            transform: [{ translateX: subtitleTranslateX }],
           },
         ]}
         numberOfLines={1}
@@ -276,10 +318,18 @@ export function CharacterProfileStickyHero({
 
       <Pressable
         onPress={onViewInfo}
-        style={[styles.viewInfoButton, { left: buttonLeft, top: buttonTop }]}
+        style={[
+          styles.viewInfoButton,
+          {
+            left: Math.round(buttonLeft),
+            top: Math.round(buttonTop),
+          },
+        ]}
       >
         <Text style={styles.viewInfoText}>{t('character.viewInfo')}</Text>
       </Pressable>
+
+      <CardBottomDivider width={layoutWidth} opacity={dividerOpacity} />
     </View>
   )
 }
@@ -287,11 +337,12 @@ export function CharacterProfileStickyHero({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 12,
-    right: 12,
+    left: 0,
+    right: 0,
     zIndex: 20,
     overflow: 'hidden',
     backgroundColor: '#f7f7f7',
+    paddingHorizontal: CHARACTER_PROFILE_HERO.horizontalInset,
   },
   avatarGroup: {
     position: 'absolute',
@@ -398,5 +449,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: 'rgba(0,0,0,0.8)',
+  },
+  dividerWrap: {
+    position: 'absolute',
+    left: 0,
+    bottom: CHARACTER_PROFILE_HERO.dividerBottomInset,
+    alignItems: 'center',
   },
 })

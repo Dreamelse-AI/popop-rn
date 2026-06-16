@@ -27,8 +27,12 @@ export const CHARACTER_PROFILE_HERO = {
   buttonWidth: 88,
   buttonHeight: 31,
   buttonTopGap: 6,
-  bottomGap: 24,
+  bottomGap: 16,
   titleSubtitleGap: 6,
+  /** 展开态头像区顶部留白 */
+  expandedTopGap: 8,
+  /** 卡片底部分割虚线与内容区间距 */
+  dividerBottomInset: 12,
 } as const
 
 export const CHARACTER_PROFILE_HEADER_HEIGHT = 56
