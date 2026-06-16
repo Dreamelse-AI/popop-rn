@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { CenterDialog } from '@/shared/ui/center-dialog'
-import IconCloseCircle from '@/shared/assets/me/icon-close-circle.svg'
 
 async function copyToClipboard(text: string) {
   try {
@@ -115,10 +115,9 @@ export function InvitePage({ onBack }: InvitePageProps) {
       <BottomSheet
         open={showRecords}
         onClose={() => setShowRecords(false)}
-        closeIcon={<IconCloseCircle width={20} height={20} />}
+        header={<SheetHeader title="累计获得" />}
       >
-        <View style={styles.recordsHeader}>
-          <Text style={styles.recordsTitle}>累计获得</Text>
+        <SheetBody>
           <View style={styles.recordsSummary}>
             <View style={styles.recordsSummaryLeft}>
               <Text style={styles.recordsIceEmoji}>🧊</Text>
@@ -128,8 +127,7 @@ export function InvitePage({ onBack }: InvitePageProps) {
               <Text style={styles.recordsBadgeText}>3天内邀请了3人</Text>
             </View>
           </View>
-        </View>
-        <View style={styles.recordsList}>
+          <View style={styles.recordsList}>
           {MOCK_RECORDS.map(record => (
             <View key={record.id} style={styles.recordItem}>
               <View style={styles.recordLeft}>
@@ -143,6 +141,7 @@ export function InvitePage({ onBack }: InvitePageProps) {
             </View>
           ))}
         </View>
+        </SheetBody>
       </BottomSheet>
 
       {/* Loading overlay */}

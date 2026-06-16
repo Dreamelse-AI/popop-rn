@@ -18,7 +18,7 @@ export function mapDraftToCreationItem(draft: CharacterDraftItem): CreationChara
   let name = draft.name?.trim() ?? '';
   let coverUrl = draft.media?.url?.trim() ?? null;
 
-  if (local?.draftId === draft.draft_id && local.localUpdatedAt > serverUpdatedAt * 1000) {
+  if (local?.draftId === draft.draft_id && local.localUpdatedAt > serverUpdatedAt) {
     const localName = pickDisplayNameFromFormState(local);
     const localCover = pickCoverUrlFromFormState(local);
     if (localName) name = localName;
@@ -30,10 +30,7 @@ export function mapDraftToCreationItem(draft: CharacterDraftItem): CreationChara
     name,
     coverUrl,
     status: 'draft',
-    updatedAt: Math.max(
-      serverUpdatedAt,
-      local ? Math.floor(local.localUpdatedAt / 1000) : 0,
-    ),
+    updatedAt: Math.max(serverUpdatedAt, local?.localUpdatedAt ?? 0),
   };
 }
 

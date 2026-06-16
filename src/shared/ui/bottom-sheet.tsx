@@ -1,6 +1,18 @@
-import { type ReactNode } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView, Modal } from 'react-native'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  View,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  Animated,
+  Dimensions,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { SheetCloseIcon } from '@/shared/ui/sheet-primitives'
+
+import { SHEET } from './sheet-tokens'
 
 type BottomSheetProps = {
   open: boolean
@@ -10,31 +22,18 @@ type BottomSheetProps = {
   header?: ReactNode
   showCloseButton?: boolean
   closeIcon?: ReactNode
+  /** 顶部拖拽条，默认关闭（与 FE 一致） */
+  showHandle?: boolean
+  /** 是否用 ScrollView 包裹 children，含 FlatList 时设为 false */
+  scrollable?: boolean
+  /** 按内容高度展示，不撑满剩余空间 */
+  fitContent?: boolean
 }
 
-function DefaultCloseIcon() {
-  return (
-    <View style={defaultCloseStyles.circle}>
-      <Text style={defaultCloseStyles.x}>✕</Text>
-    </View>
-  )
-}
-
-const defaultCloseStyles = StyleSheet.create({
-  circle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  x: {
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
-    marginTop: -1,
-  },
-})
+const SLIDE_DISTANCE = Dimensions.get('window').height
+const OPEN_DURATION = 280
+const CLOSE_DURATION = 240
+const FADE_DURATION = 200
 
 export function BottomSheet({
   open,
@@ -44,36 +43,106 @@ export function BottomSheet({
   header,
   showCloseButton = true,
   closeIcon,
+  showHandle = false,
+  scrollable = true,
+  fitContent = false,
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
+  const [mounted, setMounted] = useState(open)
+  const slideAnim = useRef(new Animated.Value(SLIDE_DISTANCE)).current
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const closingRef = useRef(false)
 
-  if (!open) return null
+  useEffect(() => {
+    if (open) {
+      setMounted(true)
+      closingRef.current = false
+      slideAnim.setValue(SLIDE_DISTANCE)
+      fadeAnim.setValue(0)
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: FADE_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: OPEN_DURATION,
+          useNativeDriver: true,
+        }),
+      ]).start()
+      return
+    }
+
+    if (!mounted) return
+
+    closingRef.current = true
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: FADE_DURATION,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: SLIDE_DISTANCE,
+        duration: CLOSE_DURATION,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setMounted(false)
+        closingRef.current = false
+      }
+    })
+  }, [fadeAnim, mounted, open, slideAnim])
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) return
+    onClose()
+  }, [onClose])
+
+  if (!mounted && !open) return null
+
+  const bodyContent = scrollable ? (
+    <ScrollView
+      style={[styles.scrollArea, fitContent && styles.scrollAreaFitContent]}
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.bodyArea, fitContent && styles.bodyAreaFitContent]}>{children}</View>
+  )
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={handleClose}>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom }]}>
-          <View style={styles.handle} />
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        </Animated.View>
 
-          {showCloseButton && (
-            <Pressable style={styles.closeButton} onPress={onClose} accessibilityLabel="Close">
-              {closeIcon ?? <DefaultCloseIcon />}
+        <Animated.View
+          style={[
+            styles.sheet,
+            fitContent && styles.sheetFitContent,
+            { paddingBottom: insets.bottom, transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          {showHandle ? <View style={styles.handle} /> : null}
+
+          {showCloseButton ? (
+            <Pressable style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close">
+              {closeIcon ?? <SheetCloseIcon />}
             </Pressable>
-          )}
+          ) : null}
 
           {header}
 
-          <ScrollView
-            style={styles.scrollArea}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            {children}
-          </ScrollView>
+          {bodyContent}
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
@@ -85,42 +154,52 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    ...StyleSheet.absoluteFill,
+    backgroundColor: SHEET.backdrop,
   },
   sheet: {
     width: '100%',
     maxHeight: '90%',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    backgroundColor: '#f7f7f7',
+    borderTopLeftRadius: SHEET.radius,
+    borderTopRightRadius: SHEET.radius,
+    backgroundColor: SHEET.background,
     overflow: 'hidden',
+  },
+  sheetFitContent: {
+    maxHeight: undefined,
   },
   handle: {
     alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    marginTop: 12,
-    marginBottom: 4,
+    width: SHEET.handle.width,
+    height: SHEET.handle.height,
+    borderRadius: SHEET.handle.radius,
+    backgroundColor: SHEET.handle.bg,
+    marginTop: SHEET.handle.marginTop,
+    marginBottom: SHEET.handle.marginBottom,
   },
   closeButton: {
     position: 'absolute',
-    right: 12,
-    top: 12,
+    right: SHEET.close.right,
+    top: SHEET.close.top,
     zIndex: 20,
   },
   scrollArea: {
     flexShrink: 1,
   },
+  scrollAreaFitContent: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  bodyArea: {
+    flexShrink: 1,
+  },
+  bodyAreaFitContent: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   footer: {
     flexShrink: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: SHEET.footer.paddingH,
+    paddingVertical: SHEET.footer.paddingV,
   },
 })

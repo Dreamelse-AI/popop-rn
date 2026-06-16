@@ -6,6 +6,7 @@ import IconRequiredMark from '@/shared/assets/auth/required-mark.svg'
 import AvatarPlaceholder from '@/shared/assets/auth/avatar-placeholder.svg'
 import type { ProfileGender } from '../auth-types'
 import { AuthBottomSheet } from './auth-bottom-sheet'
+import { SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 export type ProfileSetupValues = {
   name: string
@@ -73,27 +74,20 @@ export function ProfileSetupSheet({
       open={open}
       onClose={onClose}
       showLogo={false}
+      header={<SheetHeader title={t('profile.title')} />}
       footer={
         <View>
           <Text style={styles.hintText}>{t('profile.hint')}</Text>
-          <Pressable
+          <SheetFooterButton
+            label={loading ? t('profile.loading') : t('profile.submit')}
             onPress={onSubmit}
             disabled={!canSubmit || loading}
-            style={[styles.submitButton, (!canSubmit || loading) && styles.submitButtonDisabled]}
-          >
-            <Text style={styles.submitText}>
-              {loading ? t('profile.loading') : t('profile.submit')}
-            </Text>
-          </Pressable>
+            loading={loading}
+          />
         </View>
       }
     >
       <View style={styles.content}>
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>{t('profile.title')}</Text>
-          <View style={styles.divider} />
-        </View>
-
         <View style={styles.avatarSection}>
           <Pressable
             onPress={onAvatarChange}
@@ -162,20 +156,6 @@ export function ProfileSetupSheet({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 12,
-    paddingTop: 24,
-  },
-  titleSection: {
-    gap: 12,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   avatarSection: {
     alignItems: 'center',
@@ -281,20 +261,5 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: 'rgba(0,0,0,0.5)',
     marginBottom: 12,
-  },
-  submitButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitButtonDisabled: {
-    opacity: 0.2,
-  },
-  submitText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

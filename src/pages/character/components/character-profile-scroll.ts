@@ -29,6 +29,8 @@ export const CHARACTER_PROFILE_HERO = {
   buttonTopGap: 6,
   bottomGap: 24,
   titleSubtitleGap: 6,
+  /** 展开态头像区顶部留白 */
+  expandedTopGap: 8,
 } as const
 
 export const CHARACTER_PROFILE_HEADER_HEIGHT = 56
@@ -37,6 +39,21 @@ export const CHARACTER_PROFILE_SCROLL_SLOT_HEIGHT =
   CHARACTER_PROFILE_HEADER_HEIGHT +
   CHARACTER_PROFILE_HERO.collapsedHeight +
   CHARACTER_PROFILE_COLLAPSE_DISTANCE
+
+/** 顶栏 + safe area 后的 hero 起始偏移 */
+export function getCharacterProfileHeroTopOffset(safeTop: number): number {
+  return CHARACTER_PROFILE_HEADER_HEIGHT + safeTop
+}
+
+/** 滚动区顶部占位（顶栏 + safe area + 折叠 hero + 展开行程） */
+export function getCharacterProfileScrollSlotHeight(safeTop: number): number {
+  return (
+    CHARACTER_PROFILE_HEADER_HEIGHT +
+    safeTop +
+    CHARACTER_PROFILE_HERO.collapsedHeight +
+    CHARACTER_PROFILE_COLLAPSE_DISTANCE
+  )
+}
 
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t

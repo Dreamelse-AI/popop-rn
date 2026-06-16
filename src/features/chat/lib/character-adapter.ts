@@ -4,6 +4,7 @@ import type {
   CharacterStatus,
   EmojiItem,
 } from '@/generated/arca_apiComponents';
+import { toEpochMs } from '@/shared/lib/epoch-ms';
 
 import type { ChatCharacter } from '../model/types';
 
@@ -51,10 +52,9 @@ export function getEmojiLabel(emoji: EmojiItem): string {
   );
 }
 
-function parseScheduleTime(value?: string): number | null {
-  if (!value) return null;
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? null : parsed;
+function parseScheduleTime(value?: number): number | null {
+  if (value == null || value <= 0) return null;
+  return toEpochMs(value);
 }
 
 /** 取当前时刻对应的日程，用于初始化顶栏角色状态标签 */

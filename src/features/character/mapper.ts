@@ -86,11 +86,11 @@ export function mapPostsToProfileGridCells(posts: PostInfo[]): CharacterProfileG
 
 export function mapCharacterDetailPage(
   resp: GetCharacterDetailPageResp,
-): CharacterDetailPageData {
+): Pick<CharacterDetailPageData, 'characterId' | 'characterName' | 'landingPageUrl'> {
   return {
     characterId: resp.character.character_id,
     characterName: resp.character.name ?? '',
-    htmlContent: resp.html_content ?? '',
+    landingPageUrl: resp.character.landing_page_urls?.[0]?.trim() ?? '',
   };
 }
 

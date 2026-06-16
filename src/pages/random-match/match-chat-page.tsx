@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Text, TextInput, Pressable, ScrollView, Modal, StyleSheet } from 'react-native'
+import { useEffect, useState, useCallback, type ComponentType } from 'react'
+import { View, Text, TextInput, Pressable, Modal, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
@@ -13,13 +13,21 @@ import IconPhoto from '@/shared/assets/random-match/icon-photo.svg'
 import IconSend from '@/shared/assets/random-match/icon-send.svg'
 import IconSendActive from '@/shared/assets/random-match/icon-send-active.svg'
 import IconMic from '@/shared/assets/random-match/icon-mic.svg'
+import IconMicWhite from '@/shared/assets/random-match/icon-mic-white.svg'
 import IconEdit from '@/shared/assets/random-match/icon-edit.svg'
 
 import type { PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents'
-import { addFriendFromAnonymousChat, sendMessageToAnonymousCharacter } from '@/generated/arca_api'
+import {
+  addFriendFromAnonymousChat,
+  getMyAnonymousTags,
+  sendMessageToAnonymousCharacter,
+  setMyAnonymousTags,
+} from '@/generated/arca_api'
 import { showGlobalToast } from '@/shared/wallet'
+import { PopImage } from '@/shared/ui/pop-image'
 import { useVoiceRecorder } from '@/features/chat/hooks/use-voice-recorder'
 import { VoiceRecordingBanner } from '@/features/chat/ui/chat-input-bar'
+import { ChatLocalAlbumSheet } from '@/features/chat/ui/chat-local-album-sheet'
 
 import { MATCH_TEMPLATES, type MatchTemplate } from './match-templates'
 import { getMatchPreference, savePreference, MOODS } from './random-match-page'
@@ -35,8 +43,27 @@ const GENDER_OPTIONS = [
   { emoji: '☺️', labelKey: 'randomMatch.genderNoLimit', value: null },
   { emoji: '👩', labelKey: 'randomMatch.genderFemale', value: 'female' },
   { emoji: '👨', labelKey: 'randomMatch.genderMale', value: 'male' },
-  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'other' },
+  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'non-human' },
 ] as const
+
+function TemplateOverlay({ style }: { style: (typeof MATCH_TEMPLATES)[MatchTemplate] }) {
+  if (!style.overlayImage) return null
+  if (style.overlayMode === 'cover') {
+    return (
+      <PopImage
+        source={style.overlayImage as number}
+        style={styles.templateOverlayCover}
+        contentFit="cover"
+      />
+    )
+  }
+  const OverlaySvg = style.overlayImage as ComponentType<{ width?: number; height?: number }>
+  return (
+    <View style={styles.templateOverlayDecor} pointerEvents="none">
+      <OverlaySvg width={120} height={120} />
+    </View>
+  )
+}
 
 type MatchChatPageProps = {
   chatSessionId: string
@@ -65,6 +92,8 @@ export function MatchChatPage({
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [genderFilter, setGenderFilter] = useState<string | null>(null)
   const [genderMenuOpen, setGenderMenuOpen] = useState(false)
+  const [albumSheetOpen, setAlbumSheetOpen] = useState(false)
+  const [sentImageUrl, setSentImageUrl] = useState('')
 
   const [myTags, setMyTags] = useState<string[]>(() => getMatchPreference().tags)
   const [myEmoji, setMyEmoji] = useState<string>(() => getMatchPreference().emoji)
@@ -98,15 +127,36 @@ export function MatchChatPage({
     }
   }, [greetingMessages])
 
+  useEffect(() => {
+    void getMyAnonymousTags()
+      .then(resp => {
+        if (resp.tags && resp.tags.length > 0) setMyTags(resp.tags)
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
+
   const handleSend = useCallback(async () => {
     const value = inputText.trim()
-    if (!value || isSending || !chatSessionId) return
+    const imageUrl = sentImageUrl
+    if ((!value && !imageUrl) || isSending || !chatSessionId) return
     setIsSending(true)
     setIsTyping(true)
     setInputText('')
+    setSentImageUrl('')
     setCharacterMessage('')
+
+    const messages: PhoneMessageInput[] = []
+    if (imageUrl) {
+      messages.push({
+        msg_type: 'image',
+        image: { image: { id: '', url: imageUrl, media_type: 'image' } },
+      })
+    }
+    if (value) {
+      messages.push({ msg_type: 'text', text: { text: value } })
+    }
+
     try {
-      const messages: PhoneMessageInput[] = [{ msg_type: 'text', text: { text: value } }]
       const resp = await sendMessageToAnonymousCharacter({
         chat_session_id: chatSessionId,
         messages,
@@ -127,7 +177,12 @@ export function MatchChatPage({
       setIsSending(false)
       setIsTyping(false)
     }
-  }, [inputText, isSending, chatSessionId, t])
+  }, [inputText, sentImageUrl, isSending, chatSessionId, t])
+
+  const handleSendImage = useCallback((imageUrl: string) => {
+    if (!imageUrl) return
+    setSentImageUrl(imageUrl)
+  }, [])
 
   const handleAddFriend = useCallback(async () => {
     if (!chatSessionId) return
@@ -135,7 +190,9 @@ export function MatchChatPage({
       const resp = await addFriendFromAnonymousChat({ chat_session_id: chatSessionId })
       if (resp.accepted) {
         showGlobalToast(t('randomMatch.friendAccepted', '对方接受了好友邀请'))
-        navigation.navigate('CharacterChat', { characterId: resp.character_id ?? '' })
+        if (resp.character_id) {
+          navigation.replace('CharacterDetail', { characterId: resp.character_id })
+        }
       } else {
         showGlobalToast(resp.message || t('randomMatch.friendRejected', '对方拒绝了你的好友邀请'))
         if (resp.message) setCharacterMessage(resp.message)
@@ -173,6 +230,11 @@ export function MatchChatPage({
     const pref = getMatchPreference()
     savePreference({ ...pref, tags: myTags, emoji: newEmoji })
     setShowEditPanel(false)
+    void setMyAnonymousTags({ tags: myTags })
+      .then(resp => {
+        if (resp.tags) setMyTags(resp.tags)
+      })
+      .catch(() => { /* ignore */ })
   }, [editMoodIndex, myTags])
 
   const handleEditAddTag = useCallback(() => {
@@ -234,6 +296,7 @@ export function MatchChatPage({
       <View style={styles.cardsContainer}>
         {/* Character card */}
         <View style={[styles.characterCard, { backgroundColor: style.bgColor }]}>
+          <TemplateOverlay style={style} />
           <Text style={[styles.anonTags, { color: style.tagColor }]}>
             {anonymousTags.map(tag => `#${tag}`).join(' ') || '#匿名'}
           </Text>
@@ -261,6 +324,9 @@ export function MatchChatPage({
 
         {/* My card */}
         <View style={styles.myCard}>
+          {sentImageUrl ? (
+            <PopImage uri={sentImageUrl} style={styles.sentImageOverlay} contentFit="cover" />
+          ) : null}
           <Pressable onPress={handleOpenEdit} style={styles.myTagsRow}>
             <Text style={styles.myTagsText}>{myTagsDisplay}</Text>
             <IconEdit width={12} height={12} />
@@ -269,7 +335,7 @@ export function MatchChatPage({
             <TextInput
               value={inputText}
               onChangeText={setInputText}
-              placeholder={t('randomMatch.chatPlaceholder')}
+              placeholder={sentImageUrl ? '' : t('randomMatch.chatPlaceholder')}
               placeholderTextColor="rgba(0,0,0,0.2)"
               style={styles.myInput}
               multiline
@@ -277,7 +343,7 @@ export function MatchChatPage({
             />
           </View>
           <View style={styles.myCardBottom}>
-            <Pressable style={styles.photoButton}>
+            <Pressable style={styles.photoButton} onPress={() => setAlbumSheetOpen(true)}>
               <IconPhoto width={36} height={36} />
             </Pressable>
             <View style={styles.rightActions}>
@@ -286,10 +352,18 @@ export function MatchChatPage({
                 onPressOut={() => void handleVoiceEnd()}
                 style={[styles.micButton, voiceRecorder.phase !== 'idle' && styles.micButtonActive]}
               >
-                <IconMic width={36} height={36} />
+                {voiceRecorder.phase !== 'idle' ? (
+                  <IconMicWhite width={36} height={36} />
+                ) : (
+                  <IconMic width={36} height={36} />
+                )}
               </Pressable>
-              <Pressable onPress={() => void handleSend()} disabled={isSending || !inputText.trim()} style={styles.sendButton}>
-                {!isSending && inputText.trim() ? (
+              <Pressable
+                onPress={() => void handleSend()}
+                disabled={isSending || (!inputText.trim() && !sentImageUrl)}
+                style={styles.sendButton}
+              >
+                {!isSending && (inputText.trim() || sentImageUrl) ? (
                   <IconSendActive width={36} height={36} />
                 ) : (
                   <IconSend width={36} height={36} />
@@ -314,6 +388,12 @@ export function MatchChatPage({
         </View>
       )}
 
+      <ChatLocalAlbumSheet
+        open={albumSheetOpen}
+        onClose={() => setAlbumSheetOpen(false)}
+        onSelectPhoto={({ imageUrl }) => handleSendImage(imageUrl)}
+      />
+
       {/* Exit confirm */}
       {showExitConfirm && (
         <View style={styles.confirmOverlay}>
@@ -334,15 +414,15 @@ export function MatchChatPage({
       {/* Friend invite dialog */}
       {showFriendInvite && (
         <View style={styles.confirmOverlay}>
-          <View style={styles.confirmDialog}>
-            <Text style={styles.confirmTitle}>{t('randomMatch.friendInviteTitle')}</Text>
-            <Text style={styles.friendInviteMessage}>{characterMessage}</Text>
-            <View style={styles.confirmButtons}>
-              <Pressable onPress={handleRejectFriendInvite} style={styles.confirmCancel}>
-                <Text style={styles.confirmCancelText}>{t('randomMatch.reject')}</Text>
+          <View style={styles.friendInviteDialog}>
+            <Text style={styles.friendInviteEmoji}>😊</Text>
+            <Text style={styles.friendInviteTitle}>{t('randomMatch.friendInviteTitle')}</Text>
+            <View style={styles.friendInviteButtons}>
+              <Pressable onPress={handleRejectFriendInvite} style={styles.friendInviteCancel}>
+                <Text style={styles.friendInviteCancelText}>{t('randomMatch.reject')}</Text>
               </Pressable>
-              <Pressable onPress={() => void handleAcceptFriendInvite()} style={styles.confirmOk}>
-                <Text style={styles.confirmOkText}>{t('randomMatch.accept')}</Text>
+              <Pressable onPress={() => void handleAcceptFriendInvite()} style={styles.friendInviteAccept}>
+                <Text style={styles.friendInviteAcceptText}>{t('randomMatch.accept')}</Text>
               </Pressable>
             </View>
           </View>
@@ -516,6 +596,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     overflow: 'hidden',
   },
+  templateOverlayCover: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 30,
+  },
+  templateOverlayDecor: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: [{ translateX: -60 }, { translateY: -60 }],
+  },
   anonTags: {
     fontSize: 12,
     fontFamily: 'Black Han Sans',
@@ -565,6 +655,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbf2d8',
     paddingHorizontal: 12,
     paddingVertical: 8,
+    overflow: 'hidden',
+  },
+  sentImageOverlay: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 30,
   },
   myTagsRow: {
     flexDirection: 'row',
@@ -649,10 +744,58 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#000000',
   },
-  friendInviteMessage: {
-    marginTop: 8,
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.6)',
+  friendInviteDialog: {
+    width: 310,
+    borderRadius: 30,
+    backgroundColor: '#ffffff',
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  friendInviteEmoji: {
+    fontSize: 24,
+    lineHeight: 28,
+    marginBottom: 12,
+  },
+  friendInviteTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000000',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  friendInviteButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 24,
+    width: '100%',
+  },
+  friendInviteCancel: {
+    flex: 1,
+    height: 60,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendInviteCancelText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  friendInviteAccept: {
+    flex: 1,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendInviteAcceptText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   confirmButtons: {
     flexDirection: 'row',

@@ -1,9 +1,10 @@
 import type { TFunction } from 'i18next';
 
 import type { WalletTransactionItem } from '@/generated/arca_apiComponents';
+import { toEpochMs } from '@/shared/lib/epoch-ms';
 
-export function formatWalletTransactionDate(unixSeconds: number, locale: string): string {
-  const date = new Date(unixSeconds * 1000);
+export function formatWalletTransactionDate(timestamp: number, locale: string): string {
+  const date = new Date(toEpochMs(timestamp));
   return date.toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',

@@ -53,7 +53,7 @@ async function mockPollSubmitDraftTask(taskId: string): Promise<GetTaskStatusRes
   }
 
   const elapsed = Date.now() - record.createdAt;
-  const now = Math.floor(Date.now() / 1000);
+  const now = Date.now();
 
   if (elapsed < MOCK_CREATION_LATENCY_MS * 3) {
     return {

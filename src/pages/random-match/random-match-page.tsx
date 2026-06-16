@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
 
+import { getMyAnonymousTags, setMyAnonymousTags } from '@/generated/arca_api'
 import { storage } from '@/shared/storage'
 
 import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
@@ -31,6 +32,10 @@ export function getMatchPreference(): MatchPreference {
 
 export function hasCompletedMatchSetup(): boolean {
   return storage.get(MATCH_PREF_KEY) !== null
+}
+
+export function clearMatchSetup() {
+  storage.remove(MATCH_PREF_KEY)
 }
 
 export const MOODS = [
@@ -62,6 +67,18 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
   const [genderOpen, setGenderOpen] = useState(false)
   const [tagLimitTip, setTagLimitTip] = useState(false)
 
+  useEffect(() => {
+    let cancelled = false
+    getMyAnonymousTags()
+      .then(resp => {
+        if (!cancelled && resp.tags?.length) {
+          setTags(resp.tags.slice(0, 3))
+        }
+      })
+      .catch(() => { /* 加载失败时静默，用户可重新填写 */ })
+    return () => { cancelled = true }
+  }, [])
+
   const handleSkip = () => {
     savePreference({ tags: [], personality: '', gender: null, emoji: MOODS[selectedMood]?.emoji ?? '🫠' })
     onStartMatching()
@@ -69,6 +86,7 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
 
   const handleStartChat = () => {
     savePreference({ tags, personality: personalityDesc, gender, emoji: MOODS[selectedMood]?.emoji ?? '🫠' })
+    void setMyAnonymousTags({ tags }).catch(() => { /* ignore */ })
     onStartMatching()
   }
 

@@ -7,7 +7,7 @@ type WalletState = {
   freeTokens: number | null;
   paidTokens: number | null;
   totalTokens: number | null;
-  /** 下次免费赠送的 UTC 秒级时间戳；无则为 null */
+  /** 下次免费赠送的客户端估计到达时间（ms，由 server_time 校正）；无则为 null */
   nextGrantAt: number | null;
   isLoading: boolean;
   refresh: () => Promise<void>;
@@ -26,11 +26,15 @@ export const useWalletStore = create<WalletState>(set => ({
     set({ isLoading: true });
     try {
       const data = await walletInfo();
+      const nextGrantAt =
+        data.next_grant_at > 0
+          ? Date.now() + data.next_grant_at - data.server_time
+          : null;
       set({
         freeTokens: data.free_tokens,
         paidTokens: data.paid_tokens,
         totalTokens: data.total_tokens,
-        nextGrantAt: data.next_grant_at ?? null,
+        nextGrantAt,
         isLoading: false,
       });
     } catch {

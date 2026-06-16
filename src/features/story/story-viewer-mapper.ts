@@ -3,6 +3,7 @@
  */
 import type { StoryViewerResp, StoryViewerStory } from '@/generated';
 import type { StoryHeadline } from '@/features/feed/story/types';
+import { toEpochMs } from '@/shared/lib/epoch-ms';
 
 import type { StoryCharacter, StoryItem } from './story-types';
 
@@ -11,8 +12,7 @@ function isHttpUrl(value: string): boolean {
 }
 
 function toIsoTimestamp(publishedAt: number): string {
-  const ms = publishedAt > 1e12 ? publishedAt : publishedAt * 1000;
-  return new Date(ms).toISOString();
+  return new Date(toEpochMs(publishedAt)).toISOString();
 }
 
 function resolveStoryImageUrl(story: StoryViewerStory): string | undefined {

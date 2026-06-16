@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg'
 
 import type { RechargePackageItem } from '@/generated/arca_apiComponents'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetFooterButton } from '@/shared/ui/sheet-primitives'
 
 import { getProviderProductId } from './iap-utils'
 import { useWalletStore } from './wallet-store'
@@ -119,7 +120,7 @@ export function RechargeSheet({
   const canPay = agreed && !!selectedPackage && !packagesLoading && !isPurchasing
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
+    <BottomSheet open={open} onClose={onClose} scrollable={false}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {isOutOfCubes ? (
           <View style={styles.headerOutOfCubes}>
@@ -183,13 +184,11 @@ export function RechargeSheet({
           {orderError ? (
             <Text style={styles.orderErrorText}>{orderError}</Text>
           ) : null}
-          <Pressable
+          <SheetFooterButton
+            label={rechargeButtonLabel}
             onPress={handleContinue}
             disabled={!canPay}
-            style={[styles.continueButton, !canPay && styles.continueButtonDisabled]}
-          >
-            <Text style={styles.continueButtonText}>{rechargeButtonLabel}</Text>
-          </Pressable>
+          />
         </View>
 
         <AgreeCheckbox checked={agreed} onToggle={() => setAgreed(a => !a)} />

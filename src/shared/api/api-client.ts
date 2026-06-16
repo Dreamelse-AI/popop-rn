@@ -66,6 +66,21 @@ function resolveApiClientToken(memoryToken: string | null): string | null {
   return memoryToken ?? useAuthStore.getState().token
 }
 
+function trackApiInReactotron(payload: {
+  method: string
+  path: string
+  url: string
+  status: number
+  request: { body?: unknown; headers: Record<string, string> }
+  response: unknown
+  error?: string
+  durationMs?: number
+}): void {
+  if (!__DEV__) return
+  const { trackApiCall } = require('@/shared/dev/api-reactotron') as typeof import('@/shared/dev/api-reactotron')
+  trackApiCall(payload)
+}
+
 class ApiClient {
   #baseUrl: string
   #token: string | null = null
@@ -111,9 +126,15 @@ class ApiClient {
     const bodyString = body ? JSON.stringify(body) : ''
     Object.assign(reqHeaders, await buildRequestSignHeaders(method, path, bodyString))
 
+    const url = `${this.#baseUrl}${path}`
+    const requestPayload = {
+      body: body ?? undefined,
+      headers: reqHeaders,
+    }
+
+    const startedAt = Date.now()
     let res: Response
     try {
-      const url = `${this.#baseUrl}${path}`
       console.log(`[API] ${method} ${url}`, { headers: reqHeaders, body: bodyString?.slice(0, 200) })
       res = await fetchWithTimeout(
         url,
@@ -128,10 +149,21 @@ class ApiClient {
       console.log(`[API] ${method} ${path} -> ${res.status}`)
     } catch (err: unknown) {
       console.error(`[API] ${method} ${path} FAILED:`, err)
+      const message = err instanceof Error ? err.message : 'Network request failed'
+      trackApiInReactotron({
+        method,
+        path,
+        url,
+        status: 0,
+        request: requestPayload,
+        response: null,
+        error: message,
+        durationMs: Date.now() - startedAt,
+      })
       if (err instanceof Error && err.name === 'AbortError') {
         throw new TimeoutError(timeoutMs)
       }
-      throw new NetworkError(err instanceof Error ? err.message : 'Network request failed')
+      throw new NetworkError(message)
     }
 
     if (res.status === 401) {
@@ -140,6 +172,21 @@ class ApiClient {
     }
 
     const json = await res.json().catch(() => null) as ApiEnvelope<T> | null
+
+    trackApiInReactotron({
+      method,
+      path,
+      url,
+      status: res.status,
+      request: requestPayload,
+      response: json,
+      error: !res.ok
+        ? (json?.msg ?? res.statusText)
+        : json && json.code !== 0
+          ? json.msg || 'Request failed'
+          : undefined,
+      durationMs: Date.now() - startedAt,
+    })
 
     if (!res.ok) {
       throw new ApiError(res.status, json?.msg ?? res.statusText)

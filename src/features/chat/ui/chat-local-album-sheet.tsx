@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker'
 
 import type { ChatBackgroundUploadResult } from '@/features/chat/lib/chat-background-upload'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { Image } from 'expo-image'
 
 type ChatLocalAlbumSheetProps = {
@@ -49,10 +50,12 @@ export function ChatLocalAlbumSheet({
   }, [onSelectPhoto, onClose, t])
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <View style={styles.container}>
-        <Text style={styles.title}>{t('chatLocalAlbumSheet.recentlyUsed')}</Text>
-
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={<SheetHeader title={t('chatLocalAlbumSheet.recentlyUsed')} />}
+    >
+      <SheetBody>
         <Pressable
           onPress={() => void handlePickFromDevice()}
           disabled={loading}
@@ -66,24 +69,12 @@ export function ChatLocalAlbumSheet({
         )}
 
         <Text style={styles.emptyText}>{t('chatLocalAlbumSheet.empty')}</Text>
-      </View>
+      </SheetBody>
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    lineHeight: 25,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-    marginBottom: 16,
-  },
   browseButton: {
     height: 48,
     borderRadius: 16,

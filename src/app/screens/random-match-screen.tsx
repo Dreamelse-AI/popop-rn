@@ -39,6 +39,10 @@ export function RandomMatchScreen() {
     setPhase('setup')
   }, [])
 
+  const handleAdjustFilters = useCallback(() => {
+    setPhase('setup')
+  }, [])
+
   const handleExit = useCallback(() => {
     navigation.goBack()
   }, [navigation])
@@ -53,6 +57,7 @@ export function RandomMatchScreen() {
       <MatchingPage
         onMatchSuccess={handleMatchSuccess}
         onMatchFailed={handleMatchFailed}
+        onAdjustFilters={handleAdjustFilters}
       />
     )
   }

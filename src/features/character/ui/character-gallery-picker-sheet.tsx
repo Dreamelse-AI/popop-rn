@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, Pressable, ScrollView, Modal, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Image } from 'expo-image'
 
 import { fetchCharacterGalleryImages } from '@/features/character/api/fetch-character-gallery-images'
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
+import { addCharacterCreateAssets } from '@/shared/assets/character/add-character'
+import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { PopImage } from '@/shared/ui/pop-image'
+import {
+  SheetBody,
+  SheetEmpty,
+  SheetFooterButton,
+  SheetHeader,
+  SheetRetry,
+} from '@/shared/ui/sheet-primitives'
 
 type CharacterGalleryPickerSheetProps = {
   open: boolean
@@ -15,6 +23,7 @@ type CharacterGalleryPickerSheetProps = {
   onConfirm: (urls: string[]) => void
 }
 
+/** 角色图库选择：数据来自 character detail 的 album / 形象照片 */
 export function CharacterGalleryPickerSheet({
   open,
   characterId,
@@ -23,11 +32,12 @@ export function CharacterGalleryPickerSheet({
   onConfirm,
 }: CharacterGalleryPickerSheetProps) {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
   const [images, setImages] = useState<string[]>([])
   const [selectedUrls, setSelectedUrls] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+
+  const CheckIcon = addCharacterCreateAssets.check
 
   const loadImages = useCallback(async () => {
     if (!characterId) {
@@ -78,131 +88,68 @@ export function CharacterGalleryPickerSheet({
   const selectedCount = selectedUrls.length
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { paddingBottom: Math.max(16, insets.bottom) }]}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('character.createPage.imagePickerGalleryTitle')}</Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>×</Text>
-            </Pressable>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={
+        <SheetHeader title={t('character.createPage.imagePickerGalleryTitle')} />
+      }
+      footer={
+        <SheetFooterButton
+          label={t('character.createPage.imagePickerConfirm', {
+            count: selectedCount,
+            max: maxSelectable,
+          })}
+          disabled={selectedCount === 0}
+          onPress={handleConfirm}
+        />
+      }
+    >
+      <SheetBody style={styles.content}>
+        {loading ? (
+          <View style={styles.grid}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View key={index} style={styles.skeletonItem} />
+            ))}
           </View>
+        ) : error ? (
+          <SheetRetry
+            message={t('character.createPage.imagePickerLoadFailed')}
+            retryLabel={t('character.creation.retry')}
+            onRetry={() => void loadImages()}
+          />
+        ) : images.length === 0 ? (
+          <SheetEmpty message={t('character.createPage.imagePickerEmpty')} />
+        ) : (
+          <View style={styles.grid}>
+            {images.map((url) => {
+              const selected = selectedUrls.includes(url)
+              const disabled = !selected && selectedCount >= maxSelectable
 
-          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-            {loading ? (
-              <View style={styles.grid}>
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <View key={index} style={styles.skeletonItem} />
-                ))}
-              </View>
-            ) : error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{t('character.createPage.imagePickerLoadFailed')}</Text>
-                <Pressable onPress={() => void loadImages()} style={styles.retryButton}>
-                  <Text style={styles.retryText}>{t('character.creation.retry')}</Text>
+              return (
+                <Pressable
+                  key={url}
+                  disabled={disabled}
+                  onPress={() => toggleSelect(url)}
+                  style={[styles.imageButton, disabled && styles.imageButtonDisabled]}
+                >
+                  <PopImage uri={resolveTosAssetUrl(url)} style={styles.image} contentFit="cover" />
+                  <View style={[styles.checkCircle, selected && styles.checkCircleSelected]}>
+                    {selected ? <CheckIcon width={14} height={14} /> : null}
+                  </View>
                 </Pressable>
-              </View>
-            ) : images.length === 0 ? (
-              <Text style={styles.emptyText}>{t('character.createPage.imagePickerEmpty')}</Text>
-            ) : (
-              <View style={styles.grid}>
-                {images.map((url) => {
-                  const selected = selectedUrls.includes(url)
-                  const disabled = !selected && selectedCount >= maxSelectable
-
-                  return (
-                    <Pressable
-                      key={url}
-                      disabled={disabled}
-                      onPress={() => toggleSelect(url)}
-                      style={[styles.imageButton, disabled && styles.imageButtonDisabled]}
-                    >
-                      <Image
-                        source={{ uri: resolveTosAssetUrl(url) }}
-                        style={styles.image}
-                        contentFit="cover"
-                      />
-                      <View style={[styles.checkCircle, selected && styles.checkCircleSelected]}>
-                        {selected && <Text style={styles.checkMark}>✓</Text>}
-                      </View>
-                    </Pressable>
-                  )
-                })}
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <Pressable
-              disabled={selectedCount === 0}
-              onPress={handleConfirm}
-              style={[styles.confirmButton, selectedCount === 0 && styles.confirmButtonDisabled]}
-            >
-              <Text style={styles.confirmText}>
-                {t('character.createPage.imagePickerConfirm', {
-                  count: selectedCount,
-                  max: maxSelectable,
-                })}
-              </Text>
-            </Pressable>
+              )
+            })}
           </View>
-        </View>
-      </View>
-    </Modal>
+        )}
+      </SheetBody>
+    </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: '#f7f7f7',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  closeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    fontSize: 18,
-    color: '#333333',
-  },
   content: {
-    flex: 1,
-  },
-  contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   grid: {
     flexDirection: 'row',
@@ -214,32 +161,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 16,
     backgroundColor: 'rgba(0,0,0,0.06)',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 48,
-  },
-  errorText: {
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.5)',
-  },
-  retryButton: {
-    borderRadius: 9999,
-    backgroundColor: '#fdeab3',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  retryText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  emptyText: {
-    paddingVertical: 48,
-    textAlign: 'center',
-    fontSize: 14,
-    color: 'rgba(0,0,0,0.4)',
   },
   imageButton: {
     width: '31%',
@@ -270,29 +191,5 @@ const styles = StyleSheet.create({
   },
   checkCircleSelected: {
     backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-  checkMark: {
-    fontSize: 12,
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  confirmButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.4,
-  },
-  confirmText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

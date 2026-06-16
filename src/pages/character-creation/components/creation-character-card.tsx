@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import type { CreationCharacterItem } from '@/features/character-creation/types';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
@@ -97,7 +98,14 @@ function PublishedCharacterCard({
         </Pressable>
       </View>
 
-      <View style={publishedStyles.gradient} />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.75)', 'rgba(0,0,0,0.35)', 'transparent']}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 0, y: 0 }}
+        style={publishedStyles.gradient}
+        pointerEvents="none"
+      />
 
       <View style={publishedStyles.bottomRow}>
         <Pressable onPress={onEdit} style={publishedStyles.actionButton}>
@@ -137,17 +145,24 @@ export function CreationCharacterCard({
           contentFit="cover"
         />
       ) : isPublished ? (
-        <View style={styles.publishedEmptyBg} />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.08)']}
+          style={styles.publishedEmptyBg}
+        />
       ) : (
         <View style={styles.draftEmptyBg} />
       )}
 
       {hasCover && (
-        <View
-          style={[
-            styles.coverOverlay,
-            isPublished ? styles.coverOverlayPublished : styles.coverOverlayDraft,
-          ]}
+        <LinearGradient
+          colors={
+            isPublished
+              ? ['rgba(0,0,0,0.3)', 'transparent', 'transparent']
+              : ['rgba(0,0,0,0.25)', 'transparent', 'rgba(0,0,0,0.35)']
+          }
+          locations={[0, 0.5, 1]}
+          style={styles.coverOverlay}
+          pointerEvents="none"
         />
       )}
 
@@ -197,7 +212,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.06)',
   },
   draftEmptyBg: {
     position: 'absolute',
@@ -214,12 +228,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 1,
-  },
-  coverOverlayPublished: {
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  coverOverlayDraft: {
-    backgroundColor: 'rgba(0,0,0,0.12)',
   },
 });
 
@@ -323,7 +331,6 @@ const publishedStyles = StyleSheet.create({
     right: 0,
     height: '55%',
     zIndex: 2,
-    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   bottomRow: {
     position: 'absolute',

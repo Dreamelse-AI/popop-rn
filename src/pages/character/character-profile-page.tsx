@@ -1,14 +1,15 @@
-import { useCallback, useRef, useState } from 'react'
-import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
+import { useCallback, useState } from 'react'
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCharacterProfilePage } from '@/features/character/hooks/use-character-profile-page'
 
-import { CharacterProfileGrid } from './components/character-profile-grid'
+import { characterFixedNavHeaderOffsetHeight } from './components/character-fixed-nav-header'
 import { CharacterProfileHeader } from './components/character-profile-header'
+import { CharacterProfilePostsList, type CharacterProfileCellAnchor } from './components/character-profile-posts-list'
 import { CharacterProfilePostsOverlay } from './components/character-profile-posts-overlay'
 import {
-  CHARACTER_PROFILE_SCROLL_SLOT_HEIGHT,
+  getCharacterProfileScrollSlotHeight,
   getScrollProgress,
 } from './components/character-profile-scroll'
 import { CharacterProfileStickyHero } from './components/character-profile-sticky-hero'
@@ -28,6 +29,10 @@ export function CharacterProfilePage({
   const [collapseProgress, setCollapseProgress] = useState(0)
   const [postsOverlayOpen, setPostsOverlayOpen] = useState(false)
   const [initialPostId, setInitialPostId] = useState<string | undefined>()
+  const [anchorRect, setAnchorRect] = useState<CharacterProfileCellAnchor | undefined>()
+
+  const heroTopOffset = characterFixedNavHeaderOffsetHeight(insets.top)
+  const scrollSlotHeight = getCharacterProfileScrollSlotHeight(insets.top)
 
   const {
     profile,
@@ -42,31 +47,33 @@ export function CharacterProfilePage({
     loadMore,
   } = useCharacterProfilePage(characterId)
 
-  const openPostsOverlay = useCallback((postId: string) => {
+  const openPostsOverlay = useCallback((postId: string, anchor: CharacterProfileCellAnchor) => {
     setInitialPostId(postId)
+    setAnchorRect(anchor)
     setPostsOverlayOpen(true)
   }, [])
 
   const closePostsOverlay = useCallback(() => {
     setPostsOverlayOpen(false)
     setInitialPostId(undefined)
+    setAnchorRect(undefined)
   }, [])
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollTop = event.nativeEvent.contentOffset.y
     setCollapseProgress(getScrollProgress(scrollTop))
+  }, [])
 
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
-    const remaining = contentSize.height - layoutMeasurement.height - contentOffset.y
-    if (hasMore && !loadingMore && !postsLoading && remaining < 400) {
+  const handleEndReached = useCallback(() => {
+    if (hasMore && !loadingMore && !postsLoading) {
       void loadMore()
     }
   }, [hasMore, loadMore, loadingMore, postsLoading])
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.loadingContainer}>
+      <View style={styles.container}>
+        <View style={[styles.loadingContainer, { paddingTop: heroTopOffset }]}>
           <ActivityIndicator size="small" color="rgba(0,0,0,0.4)" />
         </View>
       </View>
@@ -75,8 +82,8 @@ export function CharacterProfilePage({
 
   if (error || !profile) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.errorContainer}>
+      <View style={styles.container}>
+        <View style={[styles.errorContainer, { paddingTop: heroTopOffset }]}>
           <Text style={styles.errorText}>找不到该角色</Text>
           <Pressable onPress={onClose} style={styles.backButton}>
             <Text style={styles.backButtonText}>返回</Text>
@@ -87,7 +94,7 @@ export function CharacterProfilePage({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <CharacterProfileHeader
         characterId={characterId}
         characterName={profile.name}
@@ -96,6 +103,7 @@ export function CharacterProfilePage({
 
       <CharacterProfileStickyHero
         progress={collapseProgress}
+        topOffset={heroTopOffset}
         avatar={profile.avatar}
         heroImage={profile.heroImage}
         heroImageOverlay={profile.heroImageOverlay}
@@ -106,26 +114,23 @@ export function CharacterProfilePage({
         onViewInfo={onOpenDetail}
       />
 
-      <ScrollView
-        style={styles.scrollView}
+      <CharacterProfilePostsList
+        cells={cells}
+        loading={postsLoading}
+        loadingMore={loadingMore}
+        onCellClick={openPostsOverlay}
+        scrollable
+        headerSpacerHeight={scrollSlotHeight}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={{ height: CHARACTER_PROFILE_SCROLL_SLOT_HEIGHT }} />
-        <CharacterProfileGrid
-          cells={cells}
-          loading={postsLoading}
-          loadingMore={loadingMore}
-          onCellClick={openPostsOverlay}
-        />
-      </ScrollView>
+        onEndReached={handleEndReached}
+      />
 
       {postsOverlayOpen && (
         <CharacterProfilePostsOverlay
           characterName={profile.name}
           posts={posts}
           initialPostId={initialPostId}
+          anchorRect={anchorRect}
           loadingMore={loadingMore}
           hasMore={hasMore}
           onLoadMore={loadMore}
@@ -140,10 +145,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f7f7f7',
-  },
-  scrollView: {
-    flex: 1,
-    zIndex: 10,
   },
   loadingContainer: {
     flex: 1,

@@ -33,7 +33,9 @@ export type CharacterDraftFormState = {
   openingPrologue: string[];
   customizedSettings: Record<string, string>;
   landingPageUrls: string[];
+  /** 本地最后编辑时间（ms） */
   localUpdatedAt: number;
+  /** 服务端 updated_at（毫秒） */
   serverUpdatedAt: number;
 };
 

@@ -53,6 +53,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     [
+      'expo-media-library',
+      {
+        photosPermission: 'Used to browse and select photos from your library',
+        savePhotosPermission: 'Used to save photos to your library',
+        isAccessMediaLocationEnabled: false,
+      },
+    ],
+    [
       'expo-secure-store',
       {},
     ],

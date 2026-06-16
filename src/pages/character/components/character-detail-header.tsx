@@ -6,6 +6,7 @@ export type CharacterDetailHeaderProps = {
   onClose: () => void
 }
 
+/** 落地页顶栏：无背景，图标浮在 WebView 内容之上 */
 export function CharacterDetailHeader({
   characterId,
   characterName,
@@ -16,7 +17,7 @@ export function CharacterDetailHeader({
       characterId={characterId}
       characterName={characterName}
       onClose={onClose}
-      bgColor="transparent"
+      variant="overlay"
       iconTone="light"
     />
   )

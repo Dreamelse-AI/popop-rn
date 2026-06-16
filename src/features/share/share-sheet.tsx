@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Svg, { Path, Circle, Line, Rect } from 'react-native-svg'
 
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody } from '@/shared/ui/sheet-primitives'
 
 import { getShareChannels, type ShareChannel } from './share-channels'
 import { useRecentCharacters } from './hooks/use-recent-characters'
@@ -80,10 +81,8 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
   }
 
   return (
-    <BottomSheet open={open} onClose={handleClose}>
-      <View style={styles.content}>
-        <View style={styles.handle} />
-
+    <BottomSheet open={open} onClose={handleClose} scrollable={false}>
+      <SheetBody style={styles.content}>
         {/* Share channels */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.channelsRow}>
           <Pressable onPress={() => void handleCopyLink()} style={styles.channelItem}>
@@ -184,7 +183,7 @@ export function ShareSheet({ open, onClose, content }: ShareSheetProps) {
             </Text>
           </Pressable>
         )}
-      </View>
+      </SheetBody>
 
       {toast ? (
         <View style={styles.toastWrapper}>
@@ -201,19 +200,7 @@ const styles = StyleSheet.create({
   content: {
     minHeight: 460,
     gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 32,
-  },
-  handle: {
-    position: 'absolute',
-    top: 12,
-    left: '50%',
-    marginLeft: -30,
-    height: 6,
-    width: 60,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 4,
   },
   channelsRow: {
     gap: 12,

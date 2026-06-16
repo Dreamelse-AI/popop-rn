@@ -1,4 +1,3 @@
-import { useCallback } from 'react'
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,6 +8,7 @@ import type { CharacterDetailSource } from '@/features/character/types'
 import { CharacterDetailFooter } from './components/character-detail-footer'
 import { CharacterDetailHeader } from './components/character-detail-header'
 import { CharacterDetailHtmlView } from './components/character-detail-html-view'
+import { getCharacterFixedNavHeightPx } from './components/character-fixed-nav-header'
 
 const DETAIL_SOURCES: CharacterDetailSource[] = [
   'feed', 'user_page', 'character_page', 'notification', 'direct',
@@ -40,6 +40,7 @@ export function CharacterDetailPage({
   const insets = useSafeAreaInsets()
 
   const detailSource = parseDetailSource(source ?? null)
+  const navHeight = getCharacterFixedNavHeightPx(insets.top)
 
   const { data, loading, error } = useCharacterDetail(characterId, {
     source: detailSource,
@@ -54,7 +55,7 @@ export function CharacterDetailPage({
     )
   }
 
-  if (error || !data?.htmlContent) {
+  if (error || !data?.landingPageUrl) {
     return (
       <View style={[styles.errorContainer, { paddingTop: insets.top }]}>
         <Text style={styles.errorText}>{t('character.detailPage.loadFailed')}</Text>
@@ -67,15 +68,13 @@ export function CharacterDetailPage({
 
   return (
     <View style={styles.container}>
+      <CharacterDetailHtmlView landingPageUrl={data.landingPageUrl} navHeight={navHeight} />
+
       <CharacterDetailHeader
         characterId={characterId}
         characterName={data.characterName}
         onClose={onClose}
       />
-
-      <View style={styles.contentScroll}>
-        <CharacterDetailHtmlView html={data.htmlContent} />
-      </View>
 
       <CharacterDetailFooter
         characterId={characterId}
@@ -90,9 +89,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-  },
-  contentScroll: {
-    flex: 1,
   },
   loadingContainer: {
     flex: 1,

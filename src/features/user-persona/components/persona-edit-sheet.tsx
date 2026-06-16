@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 import {
   PERSONA_NAME_MAX,
@@ -67,15 +68,24 @@ export function PersonaEditSheet({
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            {mode === 'create' ? t('chatProfileSheet.addNew') : t('chatProfileSheet.edit')}
-          </Text>
-          <View style={styles.headerDivider} />
-        </View>
-
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={
+        <SheetHeader
+          title={mode === 'create' ? t('chatProfileSheet.addNew') : t('chatProfileSheet.edit')}
+        />
+      }
+      footer={
+        <SheetFooterButton
+          label={saving ? t('persona.saving') : t('chatProfileSheet.save')}
+          onPress={handleSubmit}
+          disabled={saving}
+          loading={saving}
+        />
+      }
+    >
+      <SheetBody style={styles.container}>
         <View style={styles.form}>
           {/* Avatar */}
           <View style={styles.avatarSection}>
@@ -144,36 +154,14 @@ export function PersonaEditSheet({
             />
           </View>
         </View>
-
-        {/* Footer */}
-        <Pressable onPress={handleSubmit} disabled={saving} style={[styles.submitButton, saving && styles.submitButtonDisabled]}>
-          <Text style={styles.submitText}>
-            {saving ? t('persona.saving') : t('chatProfileSheet.save')}
-          </Text>
-        </Pressable>
-      </View>
+      </SheetBody>
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingBottom: 24,
-  },
-  header: {
-    paddingTop: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
-    lineHeight: 21,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-  },
-  headerDivider: {
-    marginTop: 12,
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 0,
   },
   form: {
     gap: 16,
@@ -262,20 +250,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#000000',
-  },
-  submitButton: {
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 })

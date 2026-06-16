@@ -1,18 +1,27 @@
 import { useCallback, useState } from 'react'
-import { View, Text, TextInput, Pressable, ScrollView, Modal, ActivityIndicator, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as ImagePicker from 'expo-image-picker'
-import { Image } from 'expo-image'
 
+import { CharacterGalleryPickerSheet } from '@/features/character/ui/character-gallery-picker-sheet'
 import { CharacterAiImageFlow } from '@/features/character-creation/ui/character-ai-image-flow'
 import { MusicPickerSheet } from '@/features/resource/ui/music-picker-sheet'
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
+import { SpinnerIcon } from '@/pages/character-creation/components/creation-icons'
+import { addCharacterCreateAssets } from '@/shared/assets/character/add-character'
+import { characterMainAssets } from '@/shared/assets/character/main'
+import { FullscreenPage, PageHeaderBar } from '@/shared/ui/fullscreen-page'
+import { PopIcon } from '@/shared/ui/pop-icon'
+import { PopImage } from '@/shared/ui/pop-image'
 
-import {
-  PostDynamicImageSourceSheet,
-  type PostDynamicImageSource,
-} from './post-dynamic-image-source-sheet'
+import { PostDynamicImagePickerSheet } from './post-dynamic-image-picker-sheet'
 
 const MAX_DYNAMIC_IMAGES = 9
 const MAX_TEXT_LENGTH = 500
@@ -20,7 +29,7 @@ const MAX_TEXT_LENGTH = 500
 export type PostDynamicComposePayload = {
   text: string
   imageUrls: string[]
-  musicId: string | null
+  musicKey: string | null
 }
 
 type PostDynamicComposePageProps = {
@@ -31,6 +40,8 @@ type PostDynamicComposePageProps = {
   onPublish?: (payload: PostDynamicComposePayload) => void | Promise<void>
   publishing?: boolean
   onSystemAlbumUpload?: (uris: string[]) => Promise<string[]>
+  /** 父级已处理顶部安全区时设为 false，避免重复留白 */
+  includeSafeAreaTop?: boolean
 }
 
 export function PostDynamicComposePage({
@@ -41,12 +52,14 @@ export function PostDynamicComposePage({
   onPublish,
   publishing = false,
   onSystemAlbumUpload,
+  includeSafeAreaTop = true,
 }: PostDynamicComposePageProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [text, setText] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
-  const [imageSourceOpen, setImageSourceOpen] = useState(false)
+  const [imagePickerOpen, setImagePickerOpen] = useState(false)
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false)
   const [aiFlowOpen, setAiFlowOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [musicPickerOpen, setMusicPickerOpen] = useState(false)
@@ -54,11 +67,13 @@ export function PostDynamicComposePage({
   const [musicTitle, setMusicTitle] = useState('')
 
   const canPublish = (text.trim().length > 0 || imageUrls.length > 0) && !uploading && !publishing
+  const galleryMaxSelectable = MAX_DYNAMIC_IMAGES - imageUrls.length
 
   const resetForm = useCallback(() => {
     setText('')
     setImageUrls([])
-    setImageSourceOpen(false)
+    setImagePickerOpen(false)
+    setGalleryPickerOpen(false)
     setAiFlowOpen(false)
     setUploading(false)
     setMusicPickerOpen(false)
@@ -79,43 +94,19 @@ export function PostDynamicComposePage({
     })
   }, [])
 
-  const handleImageSourceSelect = useCallback(
-    async (source: PostDynamicImageSource) => {
-      if (source === 'ai') {
-        setAiFlowOpen(true)
-        return
-      }
+  const handleDeviceAlbumConfirm = useCallback(
+    async (uris: string[]) => {
+      if (!uris.length) return
 
-      if (source === 'gallery') {
-        if (MAX_DYNAMIC_IMAGES - imageUrls.length <= 0) return
-        // TODO: 接入 CharacterGalleryPickerSheet（阶段3完成后）
-        return
-      }
-
-      const room = MAX_DYNAMIC_IMAGES - imageUrls.length
-      if (room <= 0) return
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsMultipleSelection: true,
-        selectionLimit: room,
-        quality: 0.8,
-      })
-
-      if (result.canceled || !result.assets.length) return
-
-      const uris = result.assets.map(a => a.uri)
       setUploading(true)
       try {
-        const urls = onSystemAlbumUpload
-          ? await onSystemAlbumUpload(uris)
-          : uris
+        const urls = onSystemAlbumUpload ? await onSystemAlbumUpload(uris) : uris
         appendImages(urls)
       } finally {
         setUploading(false)
       }
     },
-    [imageUrls.length, onSystemAlbumUpload, appendImages],
+    [appendImages, onSystemAlbumUpload],
   )
 
   const handlePublish = async () => {
@@ -124,7 +115,7 @@ export function PostDynamicComposePage({
       await onPublish({
         text: text.trim(),
         imageUrls,
-        musicId: musicKey,
+        musicKey,
       })
       resetForm()
     } catch {
@@ -135,53 +126,66 @@ export function PostDynamicComposePage({
   if (!open) return null
 
   const showUploadPlaceholder = imageUrls.length === 0
+  const DefaultImageIcon = addCharacterCreateAssets.defaultImage
 
   return (
     <>
-      <Modal visible animationType="slide" onRequestClose={handleClose}>
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Pressable onPress={handleClose} disabled={publishing} style={styles.closeButton}>
-              <Text style={styles.closeText}>×</Text>
-            </Pressable>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>{t('character.creation.postUpdateTitle')}</Text>
-              <Text style={styles.headerSubtitle}>{characterName}</Text>
-            </View>
-            <View style={styles.closeButton} />
-          </View>
-
-          {/* Content */}
-          <ScrollView
-            style={[styles.content, publishing && styles.contentDisabled]}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
+      <FullscreenPage backgroundColor="#f7f7f7">
+        <PageHeaderBar includeSafeAreaTop={includeSafeAreaTop}>
+          <Pressable
+            onPress={handleClose}
+            disabled={publishing}
+            style={[styles.closeButton, publishing && styles.closeButtonDisabled]}
+            accessibilityLabel={t('character.detailPage.back')}
           >
-            {showUploadPlaceholder ? (
-              <Pressable
-                onPress={() => setImageSourceOpen(true)}
-                disabled={uploading}
-                style={styles.uploadPlaceholder}
-              >
-                <Text style={styles.uploadPlaceholderText}>
-                  {uploading
-                    ? t('character.createPage.imageUploading')
-                    : t('character.creation.uploadImage')}
-                </Text>
-              </Pressable>
-            ) : (
+            <PopIcon icon={characterMainAssets.iconClose} size={24} />
+          </Pressable>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {t('character.creation.postUpdateTitle')}
+            </Text>
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {characterName}
+            </Text>
+          </View>
+        </PageHeaderBar>
+
+        <ScrollView
+          style={[styles.content, publishing && styles.contentDisabled]}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: Math.max(88, 72 + insets.bottom) },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {showUploadPlaceholder ? (
+            <Pressable
+              onPress={() => setImagePickerOpen(true)}
+              disabled={uploading}
+              style={[styles.uploadPlaceholder, uploading && styles.uploadPlaceholderDisabled]}
+            >
+              <DefaultImageIcon width={148} height={88} style={{ opacity: 0.35 }} />
+              <Text style={styles.uploadPlaceholderText}>
+                {uploading
+                  ? t('character.createPage.imageUploading')
+                  : t('character.creation.uploadImage')}
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={styles.imageGridCard}>
               <View style={styles.imageGrid}>
                 {imageUrls.map((url, index) => (
                   <View key={`${url}-${index}`} style={styles.imageWrapper}>
-                    <Image
-                      source={{ uri: url.startsWith('file:') ? url : resolveTosAssetUrl(url) }}
+                    <PopImage
+                      uri={url.startsWith('file:') ? url : resolveTosAssetUrl(url)}
                       style={styles.image}
                       contentFit="cover"
                     />
                     <Pressable
                       onPress={() => setImageUrls((prev) => prev.filter((_, i) => i !== index))}
                       style={styles.imageDeleteButton}
+                      accessibilityLabel={t('character.createPage.imageDelete')}
                     >
                       <Text style={styles.imageDeleteText}>×</Text>
                     </Pressable>
@@ -189,65 +193,76 @@ export function PostDynamicComposePage({
                 ))}
                 {imageUrls.length < MAX_DYNAMIC_IMAGES && (
                   <Pressable
-                    onPress={() => setImageSourceOpen(true)}
+                    onPress={() => setImagePickerOpen(true)}
                     disabled={uploading}
                     style={styles.imageAddButton}
+                    accessibilityLabel={t('character.createPage.imageAdd')}
                   >
                     <Text style={styles.imageAddText}>+</Text>
                   </Pressable>
                 )}
               </View>
-            )}
-
-            <View style={styles.textCard}>
-              <Pressable onPress={() => setMusicPickerOpen(true)} style={styles.musicRow}>
-                <Text style={styles.musicLabel}>{t('character.creation.musicPickerTitle')}</Text>
-                <Text style={styles.musicValue} numberOfLines={1}>
-                  {musicTitle || t('character.creation.musicPickerEmpty')}
-                </Text>
-              </Pressable>
-              <TextInput
-                value={text}
-                onChangeText={(v) => setText(v.slice(0, MAX_TEXT_LENGTH))}
-                placeholder={t('character.creation.dynamicDescriptionPlaceholder')}
-                placeholderTextColor="rgba(0,0,0,0.25)"
-                multiline
-                style={styles.textInput}
-              />
-            </View>
-          </ScrollView>
-
-          {/* Publish button */}
-          <View style={[styles.footer, { paddingBottom: Math.max(16, insets.bottom) }]}>
-            <Pressable
-              disabled={!canPublish || publishing}
-              onPress={() => void handlePublish()}
-              style={[styles.publishButton, (!canPublish || publishing) && styles.publishButtonDisabled]}
-            >
-              {publishing ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text style={styles.publishButtonText}>{t('character.creation.publish')}</Text>
-              )}
-            </Pressable>
-          </View>
-
-          {/* Publishing overlay */}
-          {publishing && (
-            <View style={styles.publishingOverlay}>
-              <View style={styles.publishingIndicator}>
-                <ActivityIndicator size="large" color="#ffffff" />
-              </View>
             </View>
           )}
+
+          <View style={styles.textCard}>
+            <TextInput
+              value={text}
+              onChangeText={(v) => setText(v.slice(0, MAX_TEXT_LENGTH))}
+              placeholder={t('character.creation.dynamicDescriptionPlaceholder')}
+              placeholderTextColor="rgba(0,0,0,0.25)"
+              multiline
+              style={styles.textInput}
+            />
+          </View>
+
+          <Pressable onPress={() => setMusicPickerOpen(true)} style={styles.musicRow}>
+            <View style={styles.musicRowLeft}>
+              <Text style={styles.musicEmoji} accessibilityElementsHidden>
+                🎵
+              </Text>
+              <Text
+                style={[styles.musicValue, !musicKey && styles.musicValuePlaceholder]}
+                numberOfLines={1}
+              >
+                {musicKey ? musicTitle || musicKey : t('character.creation.selectMusic')}
+              </Text>
+            </View>
+            <PopIcon icon={addCharacterCreateAssets.rightGreyArrow} size={12} style={styles.musicArrow} />
+          </Pressable>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: Math.max(16, insets.bottom) }]}>
+          <Pressable
+            disabled={!canPublish || publishing}
+            onPress={() => void handlePublish()}
+            style={[styles.publishButton, (!canPublish || publishing) && styles.publishButtonDisabled]}
+          >
+            {publishing ? (
+              <View style={styles.publishButtonInner}>
+                <SpinnerIcon size={20} color="#ffffff" />
+                <Text style={styles.publishButtonText}>{t('character.creation.publishing')}</Text>
+              </View>
+            ) : (
+              <Text style={styles.publishButtonText}>{t('character.creation.publish')}</Text>
+            )}
+          </Pressable>
         </View>
-      </Modal>
+
+        {publishing && (
+          <View style={styles.publishingOverlay} accessibilityLiveRegion="polite">
+            <View style={styles.publishingIndicator}>
+              <SpinnerIcon size={32} color="#ffffff" />
+            </View>
+          </View>
+        )}
+      </FullscreenPage>
 
       <MusicPickerSheet
         open={musicPickerOpen}
         value={musicKey}
         onClose={() => setMusicPickerOpen(false)}
-        onSelect={music => {
+        onSelect={(music) => {
           setMusicKey(music.music_key)
           setMusicTitle(music.title?.trim() || music.music_key)
         }}
@@ -257,10 +272,22 @@ export function PostDynamicComposePage({
         }}
       />
 
-      <PostDynamicImageSourceSheet
-        open={imageSourceOpen}
-        onClose={() => setImageSourceOpen(false)}
-        onSelect={(source) => void handleImageSourceSelect(source)}
+      <PostDynamicImagePickerSheet
+        open={imagePickerOpen}
+        maxSelectable={galleryMaxSelectable}
+        onClose={() => setImagePickerOpen(false)}
+        onAiSelect={() => setAiFlowOpen(true)}
+        onGallerySelect={() => setGalleryPickerOpen(true)}
+        onConfirm={handleDeviceAlbumConfirm}
+        confirming={uploading}
+      />
+
+      <CharacterGalleryPickerSheet
+        open={galleryPickerOpen}
+        characterId={characterId}
+        maxSelectable={galleryMaxSelectable}
+        onClose={() => setGalleryPickerOpen(false)}
+        onConfirm={appendImages}
       />
 
       <CharacterAiImageFlow
@@ -274,29 +301,22 @@ export function PostDynamicComposePage({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 48,
-  },
   closeButton: {
+    position: 'absolute',
+    left: 16,
+    top: '50%',
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: -18,
+    zIndex: 1,
   },
-  closeText: {
-    fontSize: 24,
-    color: '#000000',
+  closeButtonDisabled: {
+    opacity: 0.4,
   },
   headerCenter: {
-    flex: 1,
+    maxWidth: '60%',
     alignItems: 'center',
     gap: 2,
   },
@@ -319,7 +339,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     gap: 8,
-    paddingBottom: 88,
   },
   uploadPlaceholder: {
     height: 292,
@@ -330,18 +349,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  uploadPlaceholderDisabled: {
+    opacity: 0.6,
+  },
   uploadPlaceholderText: {
     fontSize: 16,
     fontWeight: '500',
     color: 'rgba(0,0,0,0.3)',
   },
+  imageGridCard: {
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    padding: 12,
+  },
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    padding: 12,
   },
   imageWrapper: {
     width: '31%',
@@ -386,18 +410,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 12,
-  },
-  musicRow: {
-    gap: 4,
-  },
-  musicLabel: {
-    fontSize: 12,
-    color: 'rgba(0,0,0,0.4)',
-  },
-  musicValue: {
-    fontSize: 14,
-    color: '#000000',
   },
   textInput: {
     minHeight: 100,
@@ -405,6 +417,37 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlignVertical: 'top',
     padding: 0,
+  },
+  musicRow: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+  },
+  musicRowLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  musicEmoji: {
+    fontSize: 20,
+    lineHeight: 22,
+  },
+  musicValue: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000000',
+  },
+  musicValuePlaceholder: {
+    color: 'rgba(0,0,0,0.5)',
+  },
+  musicArrow: {
+    opacity: 0.4,
   },
   footer: {
     paddingHorizontal: 12,
@@ -420,17 +463,18 @@ const styles = StyleSheet.create({
   publishButtonDisabled: {
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
+  publishButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   publishButtonText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#ffffff',
   },
   publishingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     zIndex: 10,
     backgroundColor: 'rgba(247,247,247,0.6)',
     alignItems: 'center',
