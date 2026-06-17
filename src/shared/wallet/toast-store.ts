@@ -15,12 +15,12 @@ let lastShownAt = 0;
 
 function scheduleHide(clear: () => void) {
   if (hideTimer !== null) {
-    window.clearTimeout(hideTimer);
+    clearTimeout(hideTimer);
   }
-  hideTimer = window.setTimeout(() => {
+  hideTimer = setTimeout(() => {
     hideTimer = null;
     clear();
-  }, TOAST_DURATION_MS);
+  }, TOAST_DURATION_MS) as unknown as number;
 }
 
 export const useToastStore = create<ToastState>((set, get) => ({
@@ -43,7 +43,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
 
   clear: () => {
     if (hideTimer !== null) {
-      window.clearTimeout(hideTimer);
+      clearTimeout(hideTimer);
       hideTimer = null;
     }
     set({ message: null });

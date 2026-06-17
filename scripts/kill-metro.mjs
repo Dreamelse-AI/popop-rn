@@ -4,7 +4,7 @@
  */
 import { execSync } from 'node:child_process'
 
-const PORTS = [8081, 8082]
+const PORTS = [8081]
 
 for (const port of PORTS) {
   try {

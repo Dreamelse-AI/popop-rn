@@ -1,0 +1,5 @@
+verifyDepsBeforeRun: false
+allowBuilds:
+  dtrace-provider: false
+patchedDependencies:
+  react-native@0.85.3: patches/react-native@0.85.3.patch

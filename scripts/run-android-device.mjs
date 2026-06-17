@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
  * 在 USB 连接的 Android 真机上运行，自动排除 emulator。
- * 用法: node scripts/run-android-device.mjs [--no-bundler] [--port 8082]
+ * 用法: node scripts/run-android-device.mjs [--no-bundler] [--port 8081]
  */
 import { execSync, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const METRO_PORT = process.env.METRO_PORT ?? '8082'
+const METRO_PORT = process.env.METRO_PORT ?? '8081'
 const extraArgs = process.argv.slice(2)
 
 function resolveAdb() {

@@ -1,10 +1,12 @@
+import { storage } from '@/shared/storage';
+
 const STORAGE_KEY = 'friendship_removed_friends';
 
 type RemovedFriendMap = Record<string, { hadChatHistory: boolean }>;
 
 function loadMap(): RemovedFriendMap {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = storage.get(STORAGE_KEY);
     if (!raw) return {};
     const data = JSON.parse(raw) as unknown;
     if (typeof data !== 'object' || data === null) return {};
@@ -25,10 +27,10 @@ function loadMap(): RemovedFriendMap {
 function saveMap(map: RemovedFriendMap) {
   try {
     if (Object.keys(map).length === 0) {
-      localStorage.removeItem(STORAGE_KEY);
+      storage.remove(STORAGE_KEY);
       return;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    storage.set(STORAGE_KEY, JSON.stringify(map));
   } catch {
     // storage 不可用：忽略
   }

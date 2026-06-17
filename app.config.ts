@@ -3,7 +3,8 @@ import { ExpoConfig, ConfigContext } from 'expo/config'
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Popop',
-  slug: 'popop-rn',
+  slug: 'popop',
+  owner: 'imaginewithu',
   scheme: 'popop',
   version: '1.0.0',
   orientation: 'portrait',
@@ -11,8 +12,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'automatic',
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.popop.app',
+    bundleIdentifier: 'com.imagine.popop',
+    usesAppleSignIn: true,
+    appleTeamId: 'RXP5R6L784',
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
       NSCameraUsageDescription: 'Used to take photos for your profile and chats',
       NSMicrophoneUsageDescription: 'Used to record voice messages',
       NSPhotoLibraryUsageDescription: 'Used to select photos from your library',
@@ -35,7 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     adaptiveIcon: {
       backgroundColor: '#ffffff',
     },
-    package: 'com.popop.app',
+    package: 'com.imagine.popop',
     softwareKeyboardLayoutMode: 'resize',
   },
   plugins: [
@@ -71,14 +75,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           deploymentTarget: '16.4',
         },
         android: {
-          compileSdkVersion: 35,
-          targetSdkVersion: 35,
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
           kotlinVersion: '2.2.0',
         },
       },
     ],
   ],
   extra: {
+    eas: {
+      projectId: '7c4a5581-8a44-4d7f-b66b-9bd954d9b38a',
+    },
     apiBaseUrl: process.env.API_BASE_URL ?? 'https://i18n-api.imaginewithu.com',
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',

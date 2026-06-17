@@ -15,13 +15,14 @@ description: Use when syncing changes from popop-fe to popop-rn, or implementing
 6. FE 若改 IDL → 执行 `rn-api-idl-sync`
 7. PR 注明 FE commit/PR 引用
 
-## 三分类扫描
+## 四分类扫描
 
 | 分类 | 特征 | RN 处理 |
 | --- | --- | --- |
 | Logic | react/zustand/generated/fetch | 可直接 sync，改 import 为 `@/` |
 | Adapter-bound | localStorage、window、File、import.meta | 对照 `src/shared/storage/`、`expo-*` |
 | UI-only | Tailwind、DOM、react-router | 只参考交互，RN 重写 |
+| **埋点 / Analytics** | 第三方 SDK init、`track`/`logEvent`、`reportAppLog`、`feed-report`、`useFeedItemExposure`、曝光/点击/页面进出上报 | **不迁移**：删除 import 与调用，不为了 parity 补上报 |
 
 ## RN 改写检查清单
 
@@ -33,6 +34,7 @@ description: Use when syncing changes from popop-fe to popop-rn, or implementing
 - [ ] `<img>` → `PopImage` / `PopIcon`
 - [ ] `createPortal` → RN `Modal` / `BottomSheet`
 - [ ] `document`/`window` → 删除或 expo 等价 API
+- [ ] 埋点 SDK / 数据统计上报 → 删除，不移植（见 `h5-to-rn-migration`「埋点 / 数据统计」）
 
 ## 长期演进
 

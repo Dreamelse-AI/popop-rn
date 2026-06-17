@@ -1,0 +1,28 @@
+diff --git a/Libraries/Core/setUpReactDevTools.js b/Libraries/Core/setUpReactDevTools.js
+index 2c80b23393ad3ffe78da37166a520b8fe9411a97..3f66b1f7c62b73b32d05a91ca0c41dc317e0b88e 100644
+--- a/Libraries/Core/setUpReactDevTools.js
++++ b/Libraries/Core/setUpReactDevTools.js
+@@ -130,7 +130,9 @@ if (__DEV__) {
+ 
+     // not when debugging in chrome
+     // TODO(t12832058) This check is broken
+-    if (!window.document) {
++    const win = global.window;
++    // Hermes 下 bare `window` 可能不存在，需通过 global.window 访问
++    if (!win?.document) {
+       const AppState = require('../AppState/AppState').default;
+       const getDevServer = require('./Devtools/getDevServer').default;
+ 
+@@ -154,10 +156,10 @@ if (__DEV__) {
+       if (
+         // $FlowFixMe[prop-missing]
+         // $FlowFixMe[incompatible-use]
+-        window.__REACT_DEVTOOLS_PORT__ != null
++        win?.__REACT_DEVTOOLS_PORT__ != null
+       ) {
+         // $FlowFixMe[prop-missing]
+-        port = window.__REACT_DEVTOOLS_PORT__;
++        port = win.__REACT_DEVTOOLS_PORT__;
+       } else if (devServer.bundleLoadedFromServer) {
+         try {
+           const devUrl = new URL(devServer.url);

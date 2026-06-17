@@ -13,7 +13,7 @@ import { spawnSync } from 'node:child_process'
 
 const appRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const androidDir = join(appRoot, 'android')
-const metroPort = process.env.METRO_PORT ?? '8082'
+const metroPort = process.env.METRO_PORT ?? '8081'
 const attachOnly = process.argv.includes('--attach')
 
 function run(command, args, opts = {}) {

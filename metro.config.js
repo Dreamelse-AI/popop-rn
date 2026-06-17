@@ -3,6 +3,16 @@ const { getDefaultConfig } = require('expo/metro-config');
 const config = getDefaultConfig(__dirname);
 
 const { transformer, resolver } = config;
+const defaultGetModulesRunBeforeMainModule =
+  config.serializer?.getModulesRunBeforeMainModule;
+
+config.serializer = {
+  ...config.serializer,
+  getModulesRunBeforeMainModule: () => [
+    require.resolve('./scripts/polyfills/hermes-globals.js'),
+    ...(defaultGetModulesRunBeforeMainModule?.() ?? []),
+  ],
+};
 
 config.transformer = {
   ...transformer,

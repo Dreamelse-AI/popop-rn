@@ -5,14 +5,15 @@
   "private": true,
   "packageManager": "pnpm@11.5.2",
   "scripts": {
-    "dev": "expo start --dev-client --port 8082",
+    "dev": "expo start --dev-client",
     "dev:lan": "expo start --dev-client --host lan",
-    "dev:clear": "expo start --dev-client --port 8082 --clear",
+    "dev:clear": "expo start --dev-client --clear",
     "dev:kill": "node scripts/kill-metro.mjs",
     "dev:ios": "node scripts/dev-ios.mjs",
     "dev:android": "node scripts/dev-android.mjs",
     "ios:sim": "node scripts/dev-ios.mjs",
     "ios:sim:attach": "node scripts/dev-ios.mjs --attach",
+    "ios:sim:rebuild": "node scripts/dev-ios.mjs --rebuild",
     "android": "expo run:android",
     "android:device": "node scripts/dev-android.mjs",
     "android:device:attach": "node scripts/dev-android.mjs --attach",
@@ -25,7 +26,8 @@
     "gen:api:update": "git submodule update --remote external/common-idl && node scripts/gen-api.mjs",
     "idl:update": "git submodule update --remote external/common-idl",
     "sync:generated-from-fe": "node scripts/sync-generated-from-fe.mjs",
-    "sync:i18n-from-fe": "node scripts/sync-i18n-from-fe.mjs"
+    "sync:i18n-from-fe": "node scripts/sync-i18n-from-fe.mjs",
+    "eas": "eas"
   },
   "dependencies": {
     "@react-native-google-signin/google-signin": "^16.1.2",
@@ -69,6 +71,7 @@
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.3",
     "babel-preset-expo": "^56.0.15",
+    "eas-cli": "^20.2.0",
     "react-native-svg-transformer": "^1.5.3",
     "reactotron-react-native": "^5.2.0",
     "typescript": "~6.0.3"
