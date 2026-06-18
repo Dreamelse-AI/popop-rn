@@ -15,6 +15,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readAppIdentity } from './lib/app-identity.mjs'
+import { IOS_METRO_PORT, freeMetroPorts } from './lib/metro-ports.mjs'
 
 const appRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const iosDir = join(appRoot, 'ios')
@@ -22,7 +23,7 @@ const workspace = join(iosDir, 'Popop.xcworkspace')
 const scheme = 'Popop'
 const { iosBundleId: bundleId } = readAppIdentity(appRoot)
 const simulatorName = process.env.IOS_SIMULATOR ?? 'iPhone 17'
-const metroPort = process.env.METRO_PORT ?? '8081'
+const metroPort = IOS_METRO_PORT
 const derivedDataPath = join(iosDir, 'build')
 const buildStampPath = join(derivedDataPath, '.dev-client-stamp')
 const localAppPath = join(derivedDataPath, 'Build/Products/Debug-iphonesimulator/Popop.app')
@@ -205,6 +206,7 @@ function ensureDevClientOnSimulator(udid) {
 }
 
 function startMetro() {
+  freeMetroPorts([metroPort])
   console.log(`\n[ios] 启动 Metro (port ${metroPort})...\n`)
   run('npx', ['expo', 'start', '--dev-client', '--ios', '--port', metroPort])
 }

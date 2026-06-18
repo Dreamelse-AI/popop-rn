@@ -1,25 +1,12 @@
 #!/usr/bin/env node
 /**
- * 释放 Metro 占用的端口，避免切换 iOS 模拟器 / Android 真机时端口冲突。
+ * 释放 Metro 占用的端口。
+ * 默认清理 iOS(8081) 与 Android(8082)；也可传入自定义端口。
  */
-import { execSync } from 'node:child_process'
+import { ANDROID_METRO_PORT, IOS_METRO_PORT, freeMetroPorts } from './lib/metro-ports.mjs'
 
-const PORTS = [8081]
+const cliPorts = process.argv.slice(2).filter(Boolean)
+const ports = cliPorts.length > 0 ? cliPorts : [IOS_METRO_PORT, ANDROID_METRO_PORT]
 
-for (const port of PORTS) {
-  try {
-    const pids = execSync(`lsof -ti tcp:${port}`, { encoding: 'utf8' })
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-
-    for (const pid of pids) {
-      process.kill(Number(pid), 'SIGTERM')
-      console.log(`已停止端口 ${port} 上的进程 (pid ${pid})`)
-    }
-  } catch {
-    // 端口未被占用
-  }
-}
-
-console.log('Metro 端口已清理')
+freeMetroPorts(ports)
+console.log('Metro 端口已清理:', ports.join(', '))

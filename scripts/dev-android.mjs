@@ -10,10 +10,11 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import { ANDROID_METRO_PORT, freeMetroPorts } from './lib/metro-ports.mjs'
 
 const appRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const androidDir = join(appRoot, 'android')
-const metroPort = process.env.METRO_PORT ?? '8081'
+const metroPort = ANDROID_METRO_PORT
 const attachOnly = process.argv.includes('--attach')
 
 function run(command, args, opts = {}) {
@@ -99,6 +100,7 @@ function setupAdbReverse(adb, serial) {
 }
 
 function startMetro() {
+  freeMetroPorts([metroPort])
   console.log(`\n[android] 启动 Metro (port ${metroPort})...\n`)
   run('npx', ['expo', 'start', '--dev-client', '--android', '--port', metroPort])
 }

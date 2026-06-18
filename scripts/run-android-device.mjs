@@ -1,13 +1,20 @@
 #!/usr/bin/env node
 /**
  * 在 USB 连接的 Android 真机上运行，自动排除 emulator。
- * 用法: node scripts/run-android-device.mjs [--no-bundler] [--port 8081]
+ * 用法: node scripts/run-android-device.mjs [--no-bundler] [--port 8082]
  */
 import { execSync, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { ANDROID_METRO_PORT } from './lib/metro-ports.mjs'
+import {
+  buildExpoRunAndroidArgs,
+  expoRunAndroidEnv,
+  resolveExpoDeviceName,
+  setupMetroReverse,
+} from './lib/android-sdk.mjs'
 
-const METRO_PORT = process.env.METRO_PORT ?? '8081'
+const METRO_PORT = ANDROID_METRO_PORT
 const extraArgs = process.argv.slice(2)
 
 function resolveAdb() {
@@ -63,17 +70,30 @@ if (devices.length > 1) {
 }
 
 const serial = devices[0].serial
+const expoDevice = resolveExpoDeviceName(ADB, serial)
 
 try {
-  execSync(`${ADB} -s ${serial} reverse tcp:${METRO_PORT} tcp:${METRO_PORT}`, { stdio: 'inherit' })
-  console.log(`已设置 adb reverse tcp:${METRO_PORT} → 真机可访问 Metro`)
+  setupMetroReverse(ADB, serial, METRO_PORT)
+  console.log(`已设置 adb reverse → Metro ${METRO_PORT}`)
 } catch {
   console.warn('adb reverse 设置失败，若无法加载 JS bundle 请手动执行:')
-  console.warn(`  ${ADB} -s ${serial} reverse tcp:${METRO_PORT} tcp:${METRO_PORT}`)
+  console.warn(`  adb -s ${serial} reverse tcp:8081 tcp:${METRO_PORT}`)
+  console.warn(`  adb -s ${serial} reverse tcp:${METRO_PORT} tcp:${METRO_PORT}`)
 }
 
-const args = ['expo', 'run:android', '--device', serial, '-p', METRO_PORT, ...extraArgs]
-console.log('运行:', args.join(' '))
+const args = buildExpoRunAndroidArgs({
+  deviceName: expoDevice,
+  metroPort: METRO_PORT,
+  extraArgs,
+})
+console.log('运行: npx', args.join(' '))
 
-const result = spawnSync('npx', args, { stdio: 'inherit', shell: false })
+const result = spawnSync('npx', args, {
+  stdio: 'inherit',
+  shell: false,
+  env: {
+    ...process.env,
+    ...expoRunAndroidEnv(serial, METRO_PORT),
+  },
+})
 process.exit(result.status ?? 1)
