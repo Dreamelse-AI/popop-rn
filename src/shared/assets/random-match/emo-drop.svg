@@ -1,16 +1,1 @@
-<svg preserveAspectRatio="xMidYMid meet" width="118" height="147" overflow="visible" style="display: block;" viewBox="0 0 118.137 147.004" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Vector 7431" filter="url(#filter0_f_0_4)">
-<path d="M24.5486 111C4.23405 85.7311 58.5486 20 58.5486 20C58.5486 20 95.5487 65 98.0486 94C100.549 123 49.6472 142.22 24.5486 111Z" fill="url(#paint0_linear_0_4)"/>
-</g>
-<defs>
-<filter id="filter0_f_0_4" x="-6.92844e-07" y="0" width="118.137" height="147.004" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-<feGaussianBlur stdDeviation="10" result="effect1_foregroundBlur_0_4"/>
-</filter>
-<linearGradient id="paint0_linear_0_4" x1="55.648" y1="25.5" x2="55.648" y2="122.241" gradientUnits="userSpaceOnUse">
-<stop stop-color="#AADEFF"/>
-<stop offset="1" stop-color="#A7DEFF"/>
-</linearGradient>
-</defs>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" overflow="visible" style="display:block" viewBox="0 0 118.137 147.004"><g filter="url(#a)"><path fill="url(#b)" d="M24.549 111c-20.315-25.269 34-91 34-91s37 45 39.5 74-48.402 48.22-73.5 17"/></g><defs><linearGradient id="b" x1="55.648" x2="55.648" y1="25.5" y2="122.241" gradientUnits="userSpaceOnUse"><stop stop-color="#aadeff"/><stop offset="1" stop-color="#a7deff"/></linearGradient><filter id="a" width="118.137" height="147.004" x="0" y="0" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_0_4" stdDeviation="10"/></filter></defs></svg>

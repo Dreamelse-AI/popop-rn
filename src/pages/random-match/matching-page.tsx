@@ -11,7 +11,9 @@ import { PopImage } from '@/shared/ui/pop-image'
 import { buildRandomMatchRequest } from '@/features/random-match/lib/build-match-request'
 import { clearMatchSetup, getMatchPreference } from './random-match-page'
 
-import bgMatching from '@/shared/assets/random-match/bg-matching.png'
+import { cdnImage } from '@/shared/lib/cdn'
+
+const bgMatching = { uri: cdnImage('assets/random-match/bg-matching.png') }
 
 const MIN_LOADING_MS = 3000
 const NO_MATCH_CODE = 40404

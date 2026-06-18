@@ -1,4 +1,5 @@
 // 角色主页素材统一导出（Figma 625:5346）
+import { cdnImage } from '@/shared/lib/cdn';
 import iconClose from './character-close.svg';
 import iconShare from './character-main-share.svg';
 import iconGallery from './character-union.svg';
@@ -6,10 +7,11 @@ import iconMusic from './character-music.svg';
 import avatarRing from './character-avatar-while-circle.svg';
 import avatarGreyCircle from './character-avatar-grey-circle.svg';
 import badgeTail from './character-avatar-like-down.svg';
-import avatarMask from './Rectangle 346243755.png';
-import gridImage0 from './Frame 2117132557.png';
-import gridImage1 from './40d771a3cf5eec02423c6270e5fd88ca49bd8ff6.png';
-import gridImage2 from './f10cde6928ea1fb62d6094769cc2fefa6d058a82.png';
+
+const avatarMask = { uri: cdnImage('assets/character/main/Rectangle 346243755.png') };
+const gridImage0 = { uri: cdnImage('assets/character/main/Frame 2117132557.png') };
+const gridImage1 = { uri: cdnImage('assets/character/main/40d771a3cf5eec02423c6270e5fd88ca49bd8ff6.png') };
+const gridImage2 = { uri: cdnImage('assets/character/main/f10cde6928ea1fb62d6094769cc2fefa6d058a82.png') };
 
 export const characterMainAssets = {
   iconClose,
@@ -27,9 +29,8 @@ export const characterMainAssets = {
 
 export type CharacterGridCell = {
   id: string;
-  image: number;
-  /** 叠加图（部分格子为双层） */
-  overlay?: number;
+  image: { uri: string };
+  overlay?: { uri: string };
   showGalleryIcon?: boolean;
   showMusicIcon?: boolean;
 };
