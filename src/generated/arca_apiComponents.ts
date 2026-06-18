@@ -3066,11 +3066,13 @@ export interface VoiceTone {
 export interface WalletInfoResp {
 	free_tokens: number // 免费币余额
 	paid_tokens: number // 付费币余额
-	forzen_tokens: number // 已冻结代币
+	frozen_tokens: number // 已冻结代币
 	total_tokens: number // 可用合计（免费 + 付费）
 	low_balance: boolean // true：余额不够 N 次 chat 消费 → 前端限时气泡提示充值
-	next_grant_at: number // 下一次每日恢复发放UTC时间（unix 秒，UTC 自然日 0 点）；0=当前区域未启用每日恢复，前端隐藏倒计时
-	server_time: number // 服务器当前时间（unix 秒），前端用 next_grant_at - server_time 起倒计时，避免客户端时钟偏差
+	next_grant_at: number // 下一次周期恢复发放时间（unix 毫秒）；0=当前区域未启用周期恢复，前端隐藏倒计时
+	next_grant_amount: number // 下一次发放数量（每周期增量 daily_recover_amount；已满上限时为 0）
+	grant_cap: number // 恢复累计上限（= daily_recover_cap，余额达到即不再发放）
+	server_time: number // 服务器当前时间（unix 毫秒），前端用 next_grant_at - server_time 起倒计时，避免客户端时钟偏差
 }
 
 export interface WalletStatusInfo {

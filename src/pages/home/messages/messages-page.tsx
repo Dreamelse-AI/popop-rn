@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 
+import { useAuthStore } from '@/features/auth/auth-store'
 import { useFriendshipList } from '@/features/friendship/hooks/use-friendship-list'
 
 import { MessagesCharacterDrawer } from './messages-character-drawer'
@@ -25,6 +27,8 @@ export function MessagesPage({
   openDrawerOnMount = false,
   isActive = true,
 }: MessagesPageProps) {
+  const { t } = useTranslation()
+  const hasToken = useAuthStore(s => Boolean(s.token))
   const [drawerOpen, setDrawerOpen] = useState(openDrawerOnMount)
   const {
     items: characterListItems,
@@ -36,12 +40,12 @@ export function MessagesPage({
     unpinFriend,
     removeFriends,
     refresh,
-  } = useFriendshipList(true)
+  } = useFriendshipList(hasToken)
 
   useEffect(() => {
-    if (!isActive) return
+    if (!hasToken || !isActive) return
     void refresh()
-  }, [isActive, refresh])
+  }, [hasToken, isActive, refresh])
 
   const pinnedCharacters = useMemo(
     () =>
@@ -113,7 +117,7 @@ export function MessagesPage({
           onSearchPress={onSearchPress}
         />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>加载中…</Text>
+          <Text style={styles.loadingText}>{t('messages.loading', '加载中…')}</Text>
         </View>
       </View>
     )
@@ -128,9 +132,9 @@ export function MessagesPage({
 
       {error && !hasConversations ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>加载失败，请稍后重试</Text>
+          <Text style={styles.errorText}>{t('messages.loadFailed', '加载失败，请稍后重试')}</Text>
           <Pressable onPress={() => void refresh()} style={styles.retryButton}>
-            <Text style={styles.retryText}>重试</Text>
+            <Text style={styles.retryText}>{t('messages.retry', '重试')}</Text>
           </Pressable>
         </View>
       ) : hasConversations ? (

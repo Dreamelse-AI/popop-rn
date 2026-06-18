@@ -14,5 +14,5 @@ export function takePendingNewUserReward(): number | null {
   if (!raw) return null
 
   const coins = Number(raw)
-  return Number.isFinite(coins) && coins > 0 ? coins : DEFAULT_NEW_USER_REWARD_COINS
+  return Number.isFinite(coins) && coins > 0 ? coins : null
 }

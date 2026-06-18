@@ -233,7 +233,14 @@ export function MessagesCharacterDrawer({
         >
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Random match card */}
-            <Pressable style={styles.randomMatchCard} onPress={() => { navigation.navigate('RandomMatch'); onClose() }}>
+            <Pressable
+              style={styles.randomMatchCard}
+              onPress={() => {
+                markReopenCharacterDrawer()
+                navigation.navigate('RandomMatch')
+                onClose()
+              }}
+            >
               <View style={styles.eyesIcon}>
                 <IconEyes width={183} height={71} />
               </View>

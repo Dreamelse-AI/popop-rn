@@ -45,6 +45,19 @@ export type DetailSettingOption = {
   maxLength: number;
 };
 
+export type CharacterTagOption = {
+  key: string;
+  label: string;
+};
+
+/** page_config 配置项 key ↔ 展示文案 查找表（草稿存 key、UI 渲染 label） */
+export type PageConfigLookups = {
+  tagKeyToLabel: Map<string, string>;
+  tagLabelToKey: Map<string, string>;
+  speciesKeyToLabel: Map<string, string>;
+  speciesLabelToKey: Map<string, string>;
+};
+
 let pageConfigPromise: Promise<GetCharacterPageConfigResp> | null = null;
 
 /** 拉取 page_config（同一会话内复用缓存，避免重复请求） */
@@ -105,10 +118,16 @@ function resolveVisibilityValue(tagKey: string): VisibilityValue | null {
   return null;
 }
 
+function normalizeSpeciesValue(tagKey: string): string | null {
+  const key = tagKey.trim().toLowerCase();
+  if (!key) return null;
+  return key === 'orc' ? 'beast' : key;
+}
+
 function resolveSpeciesValue(tagKey: string): string | null {
   const key = tagKey.trim().toLowerCase();
   if (!SPECIES_KEYS.has(key)) return null;
-  return key === 'orc' ? 'beast' : key;
+  return normalizeSpeciesValue(key);
 }
 
 function resolveDetailSettingKey(tagKey: string): string | null {
@@ -119,12 +138,98 @@ function resolveDetailSettingKey(tagKey: string): string | null {
   return key;
 }
 
+export function mapPageConfigCharacterTagOptions(
+  resp: Pick<GetCharacterPageConfigResp, 'character_tags'>,
+): CharacterTagOption[] {
+  const seen = new Set<string>();
+  return (resp.character_tags ?? [])
+    .map((item) => {
+      const key = item.tag_key?.trim() ?? '';
+      const label = item.tag_name?.trim() ?? '';
+      if (!key || !label) return null;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return { key, label };
+    })
+    .filter((item): item is CharacterTagOption => item !== null);
+}
+
+/** @deprecated 使用 mapPageConfigCharacterTagOptions，草稿应存 tag_key */
 export function mapPageConfigTags(
   resp: Pick<GetCharacterPageConfigResp, 'character_tags'>,
 ): string[] {
-  return (resp.character_tags ?? [])
-    .map((item) => item.tag_name?.trim() ?? '')
-    .filter(Boolean);
+  return mapPageConfigCharacterTagOptions(resp).map((item) => item.key);
+}
+
+export function buildPageConfigLookups(
+  resp: Pick<GetCharacterPageConfigResp, 'character_tags' | 'species' | 'setting_options'>,
+): PageConfigLookups {
+  const tagKeyToLabel = new Map<string, string>();
+  const tagLabelToKey = new Map<string, string>();
+  for (const item of resp.character_tags ?? []) {
+    const key = item.tag_key?.trim() ?? '';
+    const label = item.tag_name?.trim() ?? '';
+    if (!key || !label) continue;
+    tagKeyToLabel.set(key, label);
+    if (!tagLabelToKey.has(label)) tagLabelToKey.set(label, key);
+  }
+
+  const speciesKeyToLabel = new Map<string, string>();
+  const speciesLabelToKey = new Map<string, string>();
+  const speciesItems = resp.species?.length
+    ? resp.species
+    : (resp.setting_options ?? []).filter((item) =>
+        SPECIES_KEYS.has((item.tag_key?.trim() ?? '').toLowerCase()),
+      );
+  for (const item of speciesItems) {
+    const rawKey = item.tag_key?.trim() ?? '';
+    const key = normalizeSpeciesValue(rawKey);
+    const label = item.tag_name?.trim() ?? '';
+    if (!key || !label) continue;
+    speciesKeyToLabel.set(key, label);
+    if (!speciesLabelToKey.has(label)) speciesLabelToKey.set(label, key);
+    if (rawKey && rawKey !== key && !speciesLabelToKey.has(rawKey)) {
+      speciesLabelToKey.set(rawKey, key);
+    }
+  }
+
+  return { tagKeyToLabel, tagLabelToKey, speciesKeyToLabel, speciesLabelToKey };
+}
+
+/** 草稿回填：将历史 tag_name 归一为 tag_key */
+export function normalizeStoredTagKeys(tags: string[], lookups: PageConfigLookups): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of tags) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const key =
+      lookups.tagKeyToLabel.has(trimmed)
+        ? trimmed
+        : (lookups.tagLabelToKey.get(trimmed) ?? trimmed);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(key);
+  }
+  return result;
+}
+
+/** 草稿回填：将历史 species 展示名归一为 tag_key */
+export function normalizeStoredSpeciesKey(
+  species: string,
+  lookups: PageConfigLookups,
+): string {
+  const trimmed = species.trim();
+  if (!trimmed) return '';
+  if (lookups.speciesKeyToLabel.has(trimmed)) return trimmed;
+  return lookups.speciesLabelToKey.get(trimmed) ?? trimmed;
+}
+
+export function resolveTagLabels(
+  tagKeys: string[],
+  lookups: PageConfigLookups,
+): string[] {
+  return tagKeys.map((key) => lookups.tagKeyToLabel.get(key) ?? key);
 }
 
 export function mapPageConfigGenderOptions(
@@ -134,9 +239,13 @@ export function mapPageConfigGenderOptions(
 }
 
 export function mapPageConfigSpeciesOptions(
-  settingOptions: GeneralTagInfo[] | undefined,
+  species: GeneralTagInfo[] | undefined,
+  settingOptionsFallback?: GeneralTagInfo[] | undefined,
 ): PageConfigSelectOption[] {
-  return mapGeneralTagOptions(settingOptions, resolveSpeciesValue);
+  if (species?.length) {
+    return mapGeneralTagOptions(species, normalizeSpeciesValue);
+  }
+  return mapGeneralTagOptions(settingOptionsFallback, resolveSpeciesValue);
 }
 
 export function mapPageConfigVisibilityOptions(
@@ -169,7 +278,7 @@ export function mapPageConfigDetailSettingOptions(
 export async function fetchPresetCharacterTags(): Promise<string[]> {
   try {
     const resp = await fetchCharacterPageConfig();
-    return mapPageConfigTags(resp);
+    return mapPageConfigCharacterTagOptions(resp).map((item) => item.key);
   } catch (error) {
     console.warn('[fetchPresetCharacterTags] page_config failed:', error);
     return [];
@@ -189,7 +298,7 @@ export async function fetchGenderOptions(): Promise<PageConfigSelectOption<Gende
 export async function fetchSpeciesOptions(): Promise<PageConfigSelectOption[]> {
   try {
     const resp = await fetchCharacterPageConfig();
-    return mapPageConfigSpeciesOptions(resp.species);
+    return mapPageConfigSpeciesOptions(resp.species, resp.setting_options);
   } catch (error) {
     console.warn('[fetchSpeciesOptions] page_config failed:', error);
     return [];

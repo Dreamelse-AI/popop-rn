@@ -8,6 +8,7 @@ import type {
   DeleteCharacterResp,
   GetCharacterDraftDetailReqParams,
   GetCharacterDraftDetailResp,
+  GetCharacterDraftStatusResp,
   ListCharacterDraftsResp,
   ListUserCharactersReq,
   ListUserCharactersResp,
@@ -31,7 +32,7 @@ type MockDraftRecord = {
   target_character_id?: string;
   character_create_form: CharacterCreateForm;
   updated_at: number;
-  status: string;
+  status: CharacterDraftItem['status'];
   reject_reason?: string;
 };
 
@@ -123,6 +124,15 @@ export async function getCharacterDraftDetail(
       reject_reason: draft.reject_reason,
     },
   };
+}
+
+export async function getCharacterDraftStatus(
+  params: GetCharacterDraftDetailReqParams,
+): Promise<GetCharacterDraftStatusResp> {
+  await delay();
+  const draft = mockDrafts.find(d => d.draft_id === params.draft_id);
+  if (!draft) throw new Error('Draft not found');
+  return { status: draft.status };
 }
 
 export async function listUserCharacters(
@@ -227,7 +237,7 @@ export async function submitCharacterDraft(
 ): Promise<SubmitCharacterDraftResp> {
   await delay();
   const characterId = finalizeMockSubmitDraft(req.draft_id);
-  return { character_id: characterId };
+  return { character_id: characterId, draft_id: req.draft_id, draft_status: 'draft' };
 }
 
 export async function deleteCharacter(req: DeleteCharacterReq): Promise<DeleteCharacterResp> {

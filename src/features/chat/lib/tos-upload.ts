@@ -177,10 +177,14 @@ async function uploadToTos(
   const objectKey = buildObjectKey(fileUri, prefix)
   const presignedUrl = await signPresignedPutUrl(credential, objectKey)
   const fileBytes = await readUploadBody(fileUri)
+  const uploadBody = fileBytes.buffer.slice(
+    fileBytes.byteOffset,
+    fileBytes.byteOffset + fileBytes.byteLength,
+  ) as ArrayBuffer
 
   const uploadResponse = await fetch(presignedUrl, {
     method: 'PUT',
-    body: fileBytes,
+    body: uploadBody,
   })
 
   if (!uploadResponse.ok) {

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
 
 import { getMyAnonymousTags, setMyAnonymousTags } from '@/generated/arca_api'
+import { registerSessionClearListener } from '@/shared/session/clear-user-session'
 import { storage } from '@/shared/storage'
 
 import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
@@ -38,6 +39,8 @@ export function clearMatchSetup() {
   storage.remove(MATCH_PREF_KEY)
 }
 
+registerSessionClearListener(clearMatchSetup)
+
 export const MOODS = [
   { emoji: '😭', labelKey: 'randomMatch.sad' },
   { emoji: '🫠', labelKey: 'randomMatch.depressed' },
@@ -54,9 +57,22 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
   const insets = useSafeAreaInsets()
 
   useEffect(() => {
-    if (hasCompletedMatchSetup()) {
-      onStartMatching()
-    }
+    let cancelled = false
+    if (!hasCompletedMatchSetup()) return
+
+    getMyAnonymousTags()
+      .then(resp => {
+        if (cancelled) return
+        if (resp.tags?.length) {
+          onStartMatching()
+        } else {
+          clearMatchSetup()
+        }
+      })
+      .catch(() => {
+        if (!cancelled) onStartMatching()
+      })
+    return () => { cancelled = true }
   }, [onStartMatching])
 
   const [selectedMood, setSelectedMood] = useState(1)
@@ -85,8 +101,9 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
   }
 
   const handleStartChat = () => {
-    savePreference({ tags, personality: personalityDesc, gender, emoji: MOODS[selectedMood]?.emoji ?? '🫠' })
-    void setMyAnonymousTags({ tags }).catch(() => { /* ignore */ })
+    const validTags = tags.map(tag => tag.trim()).filter(Boolean)
+    savePreference({ tags: validTags, personality: personalityDesc, gender, emoji: MOODS[selectedMood]?.emoji ?? '🫠' })
+    void setMyAnonymousTags({ tags: validTags }).catch(() => { /* ignore */ })
     onStartMatching()
   }
 
@@ -182,7 +199,15 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
           <Pressable onPress={() => setGenderOpen(true)} style={styles.genderRow}>
             <View>
               <Text style={styles.genderLabel}>性别</Text>
-              <Text style={styles.genderValue}>{gender ?? '请选择'}</Text>
+              <Text style={styles.genderValue}>
+                {gender === 'male'
+                  ? t('randomMatch.genderMale', '男性')
+                  : gender === 'female'
+                    ? t('randomMatch.genderFemale', '女性')
+                    : gender === 'other'
+                      ? t('randomMatch.genderOther', '其他')
+                      : t('randomMatch.genderAny', '不限')}
+              </Text>
             </View>
           </Pressable>
         </View>
@@ -203,13 +228,18 @@ export function RandomMatchPage({ onBack, onStartMatching }: RandomMatchPageProp
         <Pressable style={styles.genderOverlay} onPress={() => setGenderOpen(false)}>
           <View style={styles.genderPanel}>
             <Text style={styles.genderPanelTitle}>选择性别</Text>
-            {['不限', '男性', '女性', '其他'].map(opt => (
+            {([
+              { value: null, label: t('randomMatch.genderAny', '不限') },
+              { value: 'male', label: t('randomMatch.genderMale', '男性') },
+              { value: 'female', label: t('randomMatch.genderFemale', '女性') },
+              { value: 'other', label: t('randomMatch.genderOther', '其他') },
+            ] as const).map(opt => (
               <Pressable
-                key={opt}
-                onPress={() => { setGender(opt); setGenderOpen(false) }}
-                style={[styles.genderOption, gender === opt && styles.genderOptionActive]}
+                key={opt.label}
+                onPress={() => { setGender(opt.value); setGenderOpen(false) }}
+                style={[styles.genderOption, gender === opt.value && styles.genderOptionActive]}
               >
-                <Text style={[styles.genderOptionText, gender === opt && styles.genderOptionTextActive]}>{opt}</Text>
+                <Text style={[styles.genderOptionText, gender === opt.value && styles.genderOptionTextActive]}>{opt.label}</Text>
               </Pressable>
             ))}
           </View>

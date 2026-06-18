@@ -24,11 +24,8 @@ type UseCreationCharactersResult = {
 
 export function useCreationCharacters(enabled: boolean): UseCreationCharactersResult {
   const startPublish = useDraftPublishStore(state => state.startPublish);
+  const resumePublishPoll = useDraftPublishStore(state => state.resumePublishPoll);
   const jobs = useDraftPublishStore(state => state.jobs);
-  const isPublishing = useCallback(
-    (draftId: string) => jobs[draftId]?.status === 'publishing',
-    [jobs],
-  );
   const [drafts, setDrafts] = useState<CreationCharacterItem[]>([]);
   const [published, setPublished] = useState<CreationCharacterItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +33,30 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const requestIdRef = useRef(0);
+
+  const resumeAuditingDrafts = useCallback(
+    (items: CreationCharacterItem[]) => {
+      if (!enabled) return;
+
+      items
+        .filter(item => item.draftAuditStatus === 'auditing')
+        .forEach(item => {
+          void resumePublishPoll(item.id).catch(e => {
+            console.error('[useCreationCharacters] resume publish poll failed:', item.id, e);
+          });
+        });
+    },
+    [enabled, resumePublishPoll],
+  );
+
+  const isPublishing = useCallback(
+    (draftId: string) => {
+      if (jobs[draftId]?.status === 'publishing') return true;
+      const draft = drafts.find(item => item.id === draftId);
+      return draft?.draftAuditStatus === 'auditing';
+    },
+    [jobs, drafts],
+  );
 
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -62,6 +83,7 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
           }
         });
         setDrafts(nextDrafts);
+        resumeAuditingDrafts(nextDrafts);
       } else {
         console.error('[useCreationCharacters] drafts fetch failed:', draftResult.reason);
       }
@@ -91,7 +113,7 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
         setLoading(false);
       }
     }
-  }, []);
+  }, [resumeAuditingDrafts]);
 
   useEffect(() => {
     if (!enabled) return;

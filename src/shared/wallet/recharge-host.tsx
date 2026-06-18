@@ -70,6 +70,7 @@ export function RechargeHost() {
           signature,
         })
         applyVerifyResult(resp)
+        void refreshWallet()
         clearPendingRechargeSession()
         setSuccess(pending.tokenAmount)
       } catch (error) {

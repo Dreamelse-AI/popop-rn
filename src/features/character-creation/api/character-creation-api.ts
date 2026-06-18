@@ -6,6 +6,7 @@ import type {
   DeleteCharacterResp,
   GetCharacterDraftDetailReqParams,
   GetCharacterDraftDetailResp,
+  GetCharacterDraftStatusResp,
   ListCharacterDraftsResp,
   ListUserCharactersReq,
   ListUserCharactersResp,
@@ -30,6 +31,14 @@ export function getCharacterDraftDetail(
   return USE_CHARACTER_CREATION_MOCK
     ? mock.getCharacterDraftDetail(params)
     : real.getCharacterDraftDetail(params);
+}
+
+export function getCharacterDraftStatus(
+  params: GetCharacterDraftDetailReqParams,
+): Promise<GetCharacterDraftStatusResp> {
+  return USE_CHARACTER_CREATION_MOCK
+    ? mock.getCharacterDraftStatus(params)
+    : real.getCharacterDraftStatus(params);
 }
 
 export function listUserCharacters(req: ListUserCharactersReq): Promise<ListUserCharactersResp> {

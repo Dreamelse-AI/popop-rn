@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 
 import type { RechargePackageItem } from '@/generated/arca_apiComponents';
+import i18n from '@/i18n';
+import { ApiError } from '@/shared/api/api-errors';
 
 import { rechargePackages } from './recharge-api';
 import type { PaidActionSource } from './run-paid-action';
@@ -42,6 +44,34 @@ const initialFlowState = {
   successTokenAmount: 0,
 };
 
+const RECHARGE_REQUEST_TIMEOUT_MS = 15_000;
+
+function withRechargeRequestTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Recharge request timed out'));
+    }, RECHARGE_REQUEST_TIMEOUT_MS);
+
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function resolveBackendOrFallbackMessage(error: unknown, fallbackKey: string, fallback: string): string {
+  if (error instanceof ApiError && error.message.trim()) {
+    return error.message.trim();
+  }
+  return i18n.t(fallbackKey, fallback);
+}
+
 export const useRechargeStore = create<RechargeState>((set, get) => ({
   isOpen: false,
   source: undefined,
@@ -74,7 +104,7 @@ export const useRechargeStore = create<RechargeState>((set, get) => ({
   loadPackages: async () => {
     set({ packagesLoading: true, packagesError: null });
     try {
-      const resp = await rechargePackages();
+      const resp = await withRechargeRequestTimeout(rechargePackages());
       const packages = [...resp.packages].sort((a, b) => a.sort_order - b.sort_order);
       set({
         packages,
@@ -82,7 +112,11 @@ export const useRechargeStore = create<RechargeState>((set, get) => ({
         selectedPackageId: packages[0]?.package_id ?? null,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load packages';
+      const message = resolveBackendOrFallbackMessage(
+        error,
+        'wallet.loadPackagesFailed',
+        'Failed to load packages',
+      );
       set({ packagesLoading: false, packagesError: message });
     }
   },

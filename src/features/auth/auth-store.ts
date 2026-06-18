@@ -111,6 +111,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }))
 
+export function hasAuthToken(): boolean {
+  return Boolean(useAuthStore.getState().token)
+}
+
 if (__DEV__) {
   const { trackZustandStore } = require('@/shared/dev/zustand-reactotron') as typeof import('@/shared/dev/zustand-reactotron')
   trackZustandStore('AuthStore', useAuthStore)

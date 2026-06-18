@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import * as creationApi from '../api/character-creation-api';
+import {
+  buildPageConfigLookups,
+  fetchCharacterPageConfig,
+} from '../api/character-page-config-api';
 import type { CharacterEditMode } from '../lib/character-edit-mode';
 import {
   CREATE_SESSION_STORAGE_ID,
@@ -15,12 +19,23 @@ import {
   isDraftFormContentEqual,
   draftStateToApiForm,
   mergeDraftFormState,
+  normalizeDraftConfigKeys,
 } from '../lib/form-mapper';
 import { loadPublishedCharacterCreateForm } from '../lib/load-published-character-form';
 import type { CharacterDraftFormState } from '../types/form';
-import { createEmptyDraftFormState } from '../types/form';
+import { createEmptyDraftFormState, normalizeDraftFormState } from '../types/form';
 
 const LOCAL_SAVE_DEBOUNCE_MS = 400;
+
+async function loadPageConfigLookups() {
+  try {
+    const resp = await fetchCharacterPageConfig();
+    return buildPageConfigLookups(resp);
+  } catch (error) {
+    console.warn('[useCharacterDraftForm] page_config failed:', error);
+    return undefined;
+  }
+}
 
 type UseCharacterDraftFormOptions = {
   editMode?: CharacterEditMode;
@@ -65,8 +80,10 @@ export function useCharacterDraftForm(
     try {
       if (editMode === 'create') {
         const local = loadLocalDraftForm(CREATE_SESSION_STORAGE_ID);
-        const next = local ?? createEmptyDraftFormState('', 0);
+        const lookups = await loadPageConfigLookups();
         if (signal.cancelled) return;
+        const base = local ?? createEmptyDraftFormState('', 0);
+        const next = normalizeDraftConfigKeys(normalizeDraftFormState(base), lookups);
         skipLocalSaveRef.current = true;
         initialFormRef.current = next;
         setForm(next);
@@ -75,18 +92,25 @@ export function useCharacterDraftForm(
 
       if (isCharacterEdit && characterId) {
         const local = loadLocalDraftForm(storageId);
-        const apiForm = await loadPublishedCharacterCreateForm(characterId);
+        const [apiForm, lookups] = await Promise.all([
+          loadPublishedCharacterCreateForm(characterId),
+          loadPageConfigLookups(),
+        ]);
         if (signal.cancelled) return;
 
         const serverState: CharacterDraftFormState = {
-          ...apiFormToDraftState(local?.draftId ?? '', apiForm, 0),
+          ...apiFormToDraftState(local?.draftId ?? '', apiForm, 0, lookups),
           targetCharacterId: characterId,
           draftId: local?.draftId ?? '',
         };
-        const merged =
-          local && local.targetCharacterId === characterId
-            ? mergeDraftFormState(serverState, local)
-            : serverState;
+        const merged = normalizeDraftConfigKeys(
+          normalizeDraftFormState(
+            local && local.targetCharacterId === characterId
+              ? mergeDraftFormState(serverState, local)
+              : serverState,
+          ),
+          lookups,
+        );
 
         skipLocalSaveRef.current = true;
         initialFormRef.current = merged;
@@ -96,13 +120,18 @@ export function useCharacterDraftForm(
 
       if (isDraftEdit && draftId) {
         const local = loadLocalDraftForm(draftId);
-        const resp = await creationApi.getCharacterDraftDetail({ draft_id: draftId });
+        const [resp, lookups] = await Promise.all([
+          creationApi.getCharacterDraftDetail({ draft_id: draftId }),
+          loadPageConfigLookups(),
+        ]);
         if (signal.cancelled) return;
 
-        const serverState = draftStateFromDraftDetail(resp.draft);
-        const merged = mergeDraftFormState(
-          serverState,
-          local?.draftId === draftId ? local : null,
+        const serverState = draftStateFromDraftDetail(resp.draft, lookups);
+        const merged = normalizeDraftConfigKeys(
+          normalizeDraftFormState(
+            mergeDraftFormState(serverState, local?.draftId === draftId ? local : null),
+          ),
+          lookups,
         );
 
         skipLocalSaveRef.current = true;
@@ -118,7 +147,7 @@ export function useCharacterDraftForm(
 
       if (editMode === 'create') {
         const local = loadLocalDraftForm(CREATE_SESSION_STORAGE_ID);
-        const fallback = local ?? createEmptyDraftFormState('', 0);
+        const fallback = normalizeDraftFormState(local ?? createEmptyDraftFormState('', 0));
         skipLocalSaveRef.current = true;
         initialFormRef.current = fallback;
         setForm(fallback);
@@ -128,8 +157,8 @@ export function useCharacterDraftForm(
       const local = loadLocalDraftForm(storageId);
       if (local) {
         skipLocalSaveRef.current = true;
-        initialFormRef.current = local;
-        setForm(local);
+        initialFormRef.current = normalizeDraftFormState(local);
+        setForm(normalizeDraftFormState(local));
       } else {
         setError(true);
       }
@@ -155,11 +184,11 @@ export function useCharacterDraftForm(
   const patchForm = useCallback((patch: Partial<CharacterDraftFormState>) => {
     setForm((prev) => {
       if (!prev) return prev;
-      return {
+      return normalizeDraftFormState({
         ...prev,
         ...patch,
         localUpdatedAt: Date.now(),
-      };
+      });
     });
   }, []);
 

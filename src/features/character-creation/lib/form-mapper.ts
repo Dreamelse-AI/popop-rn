@@ -3,11 +3,18 @@ import type {
   CharacterDetailInfo,
   CharacterDraftDetail,
   CharacterDraftItem,
+  GenLandingPageReq,
+  LandingPageStyleConfig,
   UserUploadImage,
 } from '@/generated/arca_apiComponents';
 
+import type { PageConfigLookups } from '../api/character-page-config-api';
+import {
+  normalizeStoredSpeciesKey,
+  normalizeStoredTagKeys,
+} from '../api/character-page-config-api';
 import type { CharacterDraftFormState, CreationFormImage } from '../types/form';
-import { createEmptyDraftFormState } from '../types/form';
+import { createEmptyDraftFormState, normalizeDraftFormState, normalizeVisibility } from '../types/form';
 import { normalizeAppearanceImageTags } from './appearance-image-tags';
 
 /** 服务端 UserUploadImage 扩展 tags 字段（生成类型尚未包含） */
@@ -52,6 +59,7 @@ export function apiFormToDraftState(
   draftId: string,
   form: CharacterCreateForm,
   serverUpdatedAt: number,
+  lookups?: PageConfigLookups,
 ): CharacterDraftFormState {
   const customizedSettings = form.customized_settings
     ? Object.fromEntries(
@@ -61,25 +69,32 @@ export function apiFormToDraftState(
       )
     : {};
 
-  return {
+  const rawTags = form.tags ?? [];
+  const rawSpecies = form.species?.trim() ?? '';
+  const tags = lookups ? normalizeStoredTagKeys(rawTags, lookups) : rawTags;
+  const species = lookups ? normalizeStoredSpeciesKey(rawSpecies, lookups) : rawSpecies;
+
+  return normalizeDraftFormState({
     draftId,
     name: form.name?.trim() ?? '',
-    tags: form.tags ?? [],
-    species: form.species ?? '',
+    tags,
+    species,
     gender: form.gender ?? '',
     voiceId: form.voice_id ?? '',
     voiceName: '',
     profile: form.profile ?? '',
     disposition: form.disposition ?? '',
     anonymousTags: form.anonymous_tags ?? [],
-    visibility: form.visibility === 'public' ? 'public' : 'private',
+    visibility: normalizeVisibility(form.visibility),
     images: mapImagesFromApi(form.images),
     openingPrologue: form.opening_prologue ?? [],
     customizedSettings,
-    landingPageUrls: form.landing_page_url?.trim() ? [form.landing_page_url.trim()] : [],
+    landingPageUrl: form.landing_page_url?.trim() ?? '',
+    landingPagePrompt: form.landing_page_style?.user_prompt?.trim() ?? '',
+    landingPageStyleKey: form.landing_page_style?.style_key?.trim() ?? '',
     localUpdatedAt: serverUpdatedAt,
     serverUpdatedAt,
-  };
+  });
 }
 
 export function draftStateFromServerItem(draft: CharacterDraftItem): CharacterDraftFormState {
@@ -95,12 +110,16 @@ export function draftStateFromServerItem(draft: CharacterDraftItem): CharacterDr
   };
 }
 
-export function draftStateFromDraftDetail(detail: CharacterDraftDetail): CharacterDraftFormState {
+export function draftStateFromDraftDetail(
+  detail: CharacterDraftDetail,
+  lookups?: PageConfigLookups,
+): CharacterDraftFormState {
   return {
     ...apiFormToDraftState(
       detail.draft_id,
       detail.character_create_form ?? {},
       detail.updated_at ?? 0,
+      lookups,
     ),
     targetCharacterId: detail.target_character_id,
   };
@@ -118,12 +137,24 @@ export function isDraftFormContentEqual(
   return serializeDraftFormContent(a) === serializeDraftFormContent(b);
 }
 
+function buildLandingPageStyle(state: CharacterDraftFormState): LandingPageStyleConfig | undefined {
+  const styleKey = state.landingPageStyleKey.trim();
+  if (!styleKey) return undefined;
+
+  const prompt = state.landingPagePrompt.trim();
+  return {
+    style_key: styleKey as LandingPageStyleConfig['style_key'],
+    user_prompt: prompt || undefined,
+  };
+}
+
 export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCreateForm {
   const customizedEntries = Object.entries(state.customizedSettings)
     .map(([key, content]) => [key, content.trim()] as const)
     .filter(([, content]) => content.length > 0);
   const customized_settings =
     customizedEntries.length > 0 ? Object.fromEntries(customizedEntries) : undefined;
+  const landing_page_style = buildLandingPageStyle(state);
 
   return {
     name: state.name || undefined,
@@ -134,15 +165,57 @@ export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCr
     profile: state.profile || undefined,
     disposition: state.disposition || undefined,
     anonymous_tags: state.anonymousTags.length ? state.anonymousTags : undefined,
-    visibility: state.visibility,
+    visibility: normalizeVisibility(state.visibility),
     images: mapImagesToApi(state.images),
     opening_prologue: (() => {
       const lines = state.openingPrologue.map((line) => line.trim()).filter(Boolean);
       return lines.length ? lines : undefined;
     })(),
     customized_settings,
-    landing_page_url: state.landingPageUrls.find((url) => url.trim())?.trim() || undefined,
+    landing_page_url: (state.landingPageUrl ?? '').trim() || undefined,
+    landing_page_style,
   };
+}
+
+export function normalizeDraftConfigKeys(
+  state: CharacterDraftFormState,
+  lookups?: PageConfigLookups,
+): CharacterDraftFormState {
+  if (!lookups) return normalizeDraftFormState(state);
+  return normalizeDraftFormState({
+    ...state,
+    tags: normalizeStoredTagKeys(state.tags, lookups),
+    species: normalizeStoredSpeciesKey(state.species, lookups),
+  });
+}
+
+/** 介绍页预览请求体 */
+export function buildLandingPreviewApiForm(state: CharacterDraftFormState): CharacterCreateForm {
+  return draftStateToApiForm(state);
+}
+
+/** 介绍页正式生成请求体 */
+export function buildGenLandingPageRequest(
+  state: CharacterDraftFormState,
+  options?: { characterId?: string },
+): GenLandingPageReq {
+  const styleKey = state.landingPageStyleKey.trim();
+  if (!styleKey) {
+    throw new Error('landing page style_key is required');
+  }
+
+  const req: GenLandingPageReq = {
+    style_key: styleKey as GenLandingPageReq['style_key'],
+    character_create_form: draftStateToApiForm(state),
+  };
+
+  const prompt = state.landingPagePrompt.trim();
+  if (prompt) req.user_prompt = prompt;
+
+  const characterId = options?.characterId?.trim();
+  if (characterId) req.character_id = characterId;
+
+  return req;
 }
 
 export function pickCoverUrlFromFormState(state: Pick<CharacterDraftFormState, 'images'>): string | null {

@@ -5,11 +5,11 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 
-import { useAuthStore } from '@/features/auth/auth-store'
+import { hasAuthToken, useAuthStore } from '@/features/auth/auth-store'
 import { useMeProfileStore } from '@/features/user-persona'
 import { apiClient } from '@/shared/api/api-client'
 import { deregister } from '@/generated/arca_api'
-import { openRecharge, refreshWallet, showGlobalToast, useWalletStore } from '@/shared/wallet'
+import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 import { CenterDialog } from '@/shared/ui/center-dialog'
 import { PopImage } from '@/shared/ui/pop-image'
 import { UserPersonaSheet } from '@/features/user-persona/components/user-persona-sheet'
@@ -47,22 +47,15 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-function formatFreeIceCountdown(nextGrantAt: number | null, nowMs: number): string {
-  if (!nextGrantAt) return '--:--:--'
-  const remain = Math.max(0, nextGrantAt - nowMs)
-  const h = Math.floor(remain / 3_600_000)
-  const m = Math.floor((remain % 3_600_000) / 60_000)
-  const s = Math.floor((remain % 60_000) / 1000)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(h)}:${pad(m)}:${pad(s)}`
+type MePageProps = {
+  isActive?: boolean
 }
 
-export function MePage() {
+export function MePage({ isActive = true }: MePageProps) {
   const { t } = useTranslation()
   const navigation = useNavigation<MeNav>()
   const logout = useAuthStore(s => s.logout)
-  const totalTokens = useWalletStore(s => s.totalTokens)
-  const nextGrantAt = useWalletStore(s => s.nextGrantAt)
+  const hasToken = useAuthStore(s => Boolean(s.token))
   const displayName = useMeProfileStore(s => s.displayName)
   const displayUid = useMeProfileStore(s => s.displayUid)
   const avatarUrl = useMeProfileStore(s => s.avatarUrl)
@@ -78,24 +71,15 @@ export function MePage() {
   const [showAbout, setShowAbout] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showPersona, setShowPersona] = useState(false)
-  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const currentLangLabel = LANGUAGE_OPTIONS.find(l => l.code === i18n.language)?.label ?? 'English'
-  const freeIceCountdown = formatFreeIceCountdown(nextGrantAt, nowMs)
   const remoteAvatarUrl = isRemoteAvatarUrl(avatarUrl) ? avatarUrl : null
 
   useEffect(() => {
+    if (!hasToken || !isActive || !hasAuthToken()) return
     void refreshMeProfile()
     void refreshWallet()
-  }, [refreshMeProfile])
-
-  useEffect(() => {
-    if (!nextGrantAt) return
-    const timer = setInterval(() => {
-      setNowMs(Date.now())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [nextGrantAt])
+  }, [hasToken, isActive, refreshMeProfile])
 
   const handleCopyUid = async () => {
     if (!displayUid) return
@@ -166,30 +150,10 @@ export function MePage() {
         </Pressable>
 
         <View style={styles.cardsContainer}>
-          <View style={styles.freeIceCard}>
-            <View style={styles.freeIceRow}>
-              <View style={styles.freeIceLeft}>
-                <Text style={styles.iceEmoji}>🧊</Text>
-                <Text style={styles.freeIceLabel}>{t('me.freeIce')}</Text>
-              </View>
-              <Text style={styles.freeIceTimer}>{freeIceCountdown}</Text>
-            </View>
-          </View>
-
-          <View style={styles.tokenCard}>
-            <View style={styles.tokenLeft}>
-              <Text style={styles.tokenEmoji}>🧊</Text>
-              <Text style={styles.tokenAmount}>{totalTokens ?? 0}</Text>
-            </View>
-            <View style={styles.tokenActions}>
-              <Pressable style={styles.rechargeButton} onPress={() => openRecharge({ source: 'me_page' })}>
-                <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
-              </Pressable>
-              <Pressable style={styles.detailButton} onPress={() => setShowHistory(true)}>
-                <Text style={styles.detailText}>{t('me.detail')}</Text>
-              </Pressable>
-            </View>
-          </View>
+          <WalletBalanceCard
+            onRecharge={() => openRecharge({ source: 'me_page' })}
+            onOpenHistory={() => setShowHistory(true)}
+          />
 
           {menuItems.map((item, idx) => (
             <Pressable key={idx} style={styles.menuItem} onPress={item.onPress}>

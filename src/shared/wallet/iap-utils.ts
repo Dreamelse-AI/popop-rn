@@ -13,14 +13,14 @@ export function getRechargeProvider(): RechargeIapProvider {
 }
 
 export function getProviderProductId(pkg: RechargePackageItem): string | null {
-  const productId = pkg.provider_products?.[getRechargeProvider()]?.trim()
+  const productId = pkg.provider_products?.[getRechargeProvider()]?.price_id?.trim()
   return productId || null
 }
 
 export function collectProviderProductIds(packages: RechargePackageItem[]): string[] {
   const provider = getRechargeProvider()
   const ids = packages
-    .map(pkg => pkg.provider_products?.[provider]?.trim())
+    .map(pkg => pkg.provider_products?.[provider]?.price_id?.trim())
     .filter((id): id is string => Boolean(id))
   return [...new Set(ids)]
 }

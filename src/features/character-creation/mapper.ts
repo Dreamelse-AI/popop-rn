@@ -30,6 +30,7 @@ export function mapDraftToCreationItem(draft: CharacterDraftItem): CreationChara
     name,
     coverUrl,
     status: 'draft',
+    draftAuditStatus: draft.status,
     updatedAt: Math.max(serverUpdatedAt, local?.localUpdatedAt ?? 0),
   };
 }

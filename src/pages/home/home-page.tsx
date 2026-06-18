@@ -24,7 +24,6 @@ import { SearchPanel } from './search/search-panel'
 import { MePage } from './me-page'
 import { TopNavBar } from './nav/top-nav-bar'
 import { CreatePage } from './create-page'
-import { PromoBanner } from './promo-banner'
 
 import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
 
@@ -47,7 +46,6 @@ export function HomePage() {
   const insets = useSafeAreaInsets()
   const { t } = useTranslation()
   const [searchOpen, setSearchOpen] = useState(false)
-  const [promoVisible, setPromoVisible] = useState(true)
   const [bottomTab, setBottomTab] = useState('home')
   const [reopenDrawer] = useState(takeReopenCharacterDrawer)
   const [returnToCharacterTab] = useState(takeReturnToCharacterTab)
@@ -167,10 +165,6 @@ export function HomePage() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {!searchOpen && bottomTab !== 'create' && promoVisible && (
-        <PromoBanner onClose={() => setPromoVisible(false)} />
-      )}
-
       {showHomeChrome && (
         <TopNavBar onSearchPress={() => setSearchOpen(true)} />
       )}
@@ -199,7 +193,7 @@ export function HomePage() {
 
         {/* Me tab — always mounted, hidden via display */}
         <View style={[styles.tabPanel, styles.absoluteFill, bottomTab !== 'me' && styles.hidden]}>
-          <MePage />
+          <MePage isActive={bottomTab === 'me'} />
         </View>
 
         {/* Character tab — always mounted, hidden via display */}

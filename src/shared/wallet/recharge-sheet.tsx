@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
-import { View, Text, Pressable, ActivityIndicator, ScrollView, StyleSheet } from 'react-native'
+import { View, Text, Pressable, ActivityIndicator, ScrollView, StyleSheet, Linking } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
 
-import type { RechargePackageItem } from '@/generated/arca_apiComponents'
+import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
+import type { RechargePackageItem, TermsInfo } from '@/generated/arca_apiComponents'
+import { getAccountRegion } from '@/shared/api/account-region-store'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { SheetFooterButton } from '@/shared/ui/sheet-primitives'
 
-import { getProviderProductId } from './iap-utils'
+import { getProviderProductId, getRechargeProvider } from './iap-utils'
 import { useWalletStore } from './wallet-store'
 
 type RechargeSheetProps = {
@@ -24,6 +27,31 @@ type RechargeSheetProps = {
   onContinue: () => void
 }
 
+const RECHARGE_TERMS_TYPES = new Set([
+  'recharge',
+  'recharge_agreement',
+  'recharge_terms',
+  'payment',
+  'top_up',
+  'top_up_terms',
+  'topup',
+  'topup_terms',
+  'payment_terms',
+])
+
+const RECHARGE_TERMS_TITLE_KEYWORDS = [
+  'recharge',
+  'top-up',
+  'top up',
+  'topup',
+  'payment',
+  '充值',
+  '충전',
+  '결제',
+  'チャージ',
+  '支払い',
+]
+
 function chunkPackages<T>(items: T[], size: number): T[][] {
   const rows: T[][] = []
   for (let i = 0; i < items.length; i += size) {
@@ -32,11 +60,50 @@ function chunkPackages<T>(items: T[], size: number): T[][] {
   return rows
 }
 
+function normalizeTermsType(type: string): string {
+  return type.trim().toLowerCase().replace(/[-\s]+/g, '_')
+}
+
+function isRechargeTermsTitle(title: string): boolean {
+  const normalized = title.trim().toLowerCase()
+  return RECHARGE_TERMS_TITLE_KEYWORDS.some(keyword => normalized.includes(keyword))
+}
+
+function findRechargeTerms(termsList: TermsInfo[]): TermsInfo | undefined {
+  return termsList.find(term => {
+    const type = normalizeTermsType(term.type)
+    return (
+      RECHARGE_TERMS_TYPES.has(type) ||
+      type.includes('recharge') ||
+      type.includes('top_up') ||
+      type.includes('topup') ||
+      isRechargeTermsTitle(term.title)
+    )
+  })
+}
+
+function findFallbackTermsLink(termsList: TermsInfo[]): string | undefined {
+  return termsList.find(term => term.link.trim())?.link.trim() || undefined
+}
+
 function formatPackageAmount(pkg: RechargePackageItem): string {
   if (pkg.bonus_tokens > 0) {
     return `${pkg.tokens}+${pkg.bonus_tokens}`
   }
   return String(pkg.tokens)
+}
+
+function getPackageDisplayPrice(pkg: RechargePackageItem): string {
+  const displayPrice = pkg.provider_products?.[getRechargeProvider()]?.display_price?.trim()
+  if (displayPrice) return displayPrice
+
+  const dollarSuffix = pkg.name.match(/([\d.]+)\s*\$/)
+  if (dollarSuffix?.[1]) return `$${dollarSuffix[1]}`
+
+  const dollarPrefix = pkg.name.match(/\$\s*([\d.]+)/)
+  if (dollarPrefix?.[1]) return `$${dollarPrefix[1]}`
+
+  return pkg.name
 }
 
 function getPackagePriceLabel(
@@ -48,6 +115,9 @@ function getPackagePriceLabel(
     return iapPriceLabels[productId]
   }
 
+  const displayPrice = getPackageDisplayPrice(pkg)
+  if (displayPrice) return displayPrice
+
   const dollarSuffix = pkg.name.match(/([\d.]+)\s*\$/)
   if (dollarSuffix?.[1]) return `$${dollarSuffix[1]}`
 
@@ -57,7 +127,23 @@ function getPackagePriceLabel(
   return pkg.name
 }
 
-function AgreeCheckbox({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+function AgreeCheckbox({
+  checked,
+  onToggle,
+  title,
+  link,
+}: {
+  checked: boolean
+  onToggle: () => void
+  title: string
+  link?: string
+}) {
+  const { t } = useTranslation()
+  const openTerms = () => {
+    if (!link) return
+    void Linking.openURL(link)
+  }
+
   return (
     <View style={styles.agreeRow}>
       <Pressable onPress={onToggle} style={[styles.checkbox, checked && styles.checkboxChecked]}>
@@ -68,7 +154,8 @@ function AgreeCheckbox({ checked, onToggle }: { checked: boolean; onToggle: () =
         )}
       </Pressable>
       <Text style={styles.agreeText}>
-        I have read and agree to <Text style={styles.agreeLink}>Top-up Terms & Policy</Text>
+        {t('wallet.rechargeAgreementPrefix', 'I have read and agree to ')}
+        <Text style={styles.agreeLink} onPress={openTerms}>{title}</Text>
       </Text>
     </View>
   )
@@ -88,8 +175,11 @@ export function RechargeSheet({
   onRetryPackages,
   onContinue,
 }: RechargeSheetProps) {
+  const { t } = useTranslation()
   const [agreed, setAgreed] = useState(false)
+  const termsList = useAppTerms(getAccountRegion())
   const totalTokens = useWalletStore(s => s.totalTokens)
+  const freeTokens = useWalletStore(s => s.freeTokens)
   const isOutOfCubes = (totalTokens ?? 0) === 0
 
   const selectedPackage = useMemo(
@@ -98,6 +188,9 @@ export function RechargeSheet({
   )
 
   const packageRows = useMemo(() => chunkPackages(packages, 3), [packages])
+  const rechargeTerms = useMemo(() => findRechargeTerms(termsList), [termsList])
+  const rechargeTermsTitle = t('wallet.rechargeAgreementTitle', 'Top-up Terms & Policy')
+  const rechargeTermsLink = rechargeTerms?.link.trim() || findFallbackTermsLink(termsList)
 
   const handleContinue = () => {
     if (!agreed || !selectedPackage || isPurchasing) return
@@ -109,12 +202,15 @@ export function RechargeSheet({
     : null
 
   const rechargeButtonLabel = (() => {
-    if (isPurchasing) return 'Processing...'
-    if (!selectedPackage) return 'Recharge Now'
+    if (isPurchasing) return t('wallet.processing', 'Processing...')
+    if (!selectedPackage) return t('wallet.rechargeNow', 'Recharge Now')
     if (isOutOfCubes && selectedPriceLabel) {
-      return `Recharge ${selectedPriceLabel} Now`
+      return t('wallet.rechargePriceNow', { price: selectedPriceLabel, defaultValue: `Recharge ${selectedPriceLabel} Now` })
     }
-    return `Recharge ${formatPackageAmount(selectedPackage)} Now`
+    return t('wallet.rechargeTokensNow', {
+      amount: formatPackageAmount(selectedPackage),
+      defaultValue: `Recharge ${formatPackageAmount(selectedPackage)} Now`,
+    })
   })()
 
   const canPay = agreed && !!selectedPackage && !packagesLoading && !isPurchasing
@@ -136,23 +232,26 @@ export function RechargeSheet({
             <Text style={styles.heroEmoji}>🧊</Text>
             <Text style={styles.headerSubtitle}>Recharge Cubes</Text>
             <Text style={styles.totalTokens}>{totalTokens ?? 0}</Text>
+            <Text style={styles.giftTokens}>
+              {t('wallet.includingGiftTokens', { amount: freeTokens ?? 0, defaultValue: `Including ${freeTokens ?? 0} gift cubes` })}
+            </Text>
           </View>
         )}
 
         {packagesLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="rgba(0,0,0,0.4)" />
-            <Text style={styles.loadingText}>Loading packages...</Text>
+            <Text style={styles.loadingText}>{t('wallet.loadingPackages', 'Loading packages...')}</Text>
           </View>
         ) : packagesError ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{packagesError}</Text>
             <Pressable onPress={onRetryPackages} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>{t('common.retry', 'Retry')}</Text>
             </Pressable>
           </View>
         ) : packages.length === 0 ? (
-          <Text style={styles.emptyText}>No packages available</Text>
+          <Text style={styles.emptyText}>{t('wallet.noPackages', 'No packages available')}</Text>
         ) : (
           <View style={styles.packagesContainer}>
             {packageRows.map((row, rowIdx) => (
@@ -191,7 +290,12 @@ export function RechargeSheet({
           />
         </View>
 
-        <AgreeCheckbox checked={agreed} onToggle={() => setAgreed(a => !a)} />
+        <AgreeCheckbox
+          checked={agreed}
+          onToggle={() => setAgreed(a => !a)}
+          title={rechargeTermsTitle}
+          link={rechargeTermsLink}
+        />
       </ScrollView>
     </BottomSheet>
   )
@@ -250,6 +354,16 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 48,
     fontWeight: '900',
+    color: '#000000',
+  },
+  giftTokens: {
+    marginTop: 8,
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#000000',
   },
   loadingContainer: {

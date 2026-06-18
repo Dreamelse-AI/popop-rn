@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { hasAuthToken } from '@/features/auth/auth-store'
 import type { UserPersonaItem } from '@/generated'
 
 import { userPersonaApi } from '../api'
@@ -34,6 +35,8 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
   const [error, setError] = useState(false)
 
   const refresh = useCallback(async () => {
+    if (!hasAuthToken()) return []
+
     setLoading(true)
     setError(false)
     try {
@@ -117,6 +120,18 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
     }
   }, [])
 
+  const deletePersona = useCallback(async (personaId: string) => {
+    try {
+      const resp = await userPersonaApi.delete({ persona_id: personaId })
+      if (!resp.deleted) return false
+      setItems(prev => prev.filter(item => item.persona_id !== personaId))
+      return true
+    } catch (e) {
+      console.error('[useUserPersonaList] delete failed:', e)
+      return false
+    }
+  }, [])
+
   return {
     items,
     loading,
@@ -126,5 +141,6 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
     applyToCharacter,
     createPersona,
     updatePersona,
+    deletePersona,
   }
 }

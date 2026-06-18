@@ -12,5 +12,6 @@ alwaysApply: false
 - 禁止 `react-dom`、`react-router`、`tailwindcss`
 - 禁止 `@popop/consumer`、`@popop/shared` workspace import
 - 禁止 `import.meta.env`（用 `expo-constants` 或 `process.env`）
+- 禁止移植 Web 专用下载引导、下载提示条、App 下载落地页入口；RN 已是客户端，不展示 Web 下载 CTA
 
 持久化用 `src/shared/storage/`；导航用 React Navigation。

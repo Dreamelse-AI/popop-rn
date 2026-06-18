@@ -23,6 +23,7 @@ import {
   sendMessageToAnonymousCharacter,
   setMyAnonymousTags,
 } from '@/generated/arca_api'
+import { ApiError } from '@/shared/api/api-errors'
 import { showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { useVoiceRecorder } from '@/features/chat/hooks/use-voice-recorder'
@@ -146,7 +147,6 @@ export function MatchChatPage({
     setIsTyping(true)
     setInputText('')
     setSentImageUrl('')
-    setCharacterMessage('')
 
     const messages: PhoneMessageInput[] = []
     if (imageUrl) {
@@ -165,6 +165,7 @@ export function MatchChatPage({
         messages,
       })
       const replies = resp.character_messages ?? []
+      setCharacterMessage('')
       const lastTextReply = [...replies].reverse().find(m => m.text?.text)
       if (lastTextReply?.text?.text) {
         setCharacterMessage(lastTextReply.text.text)
@@ -174,8 +175,14 @@ export function MatchChatPage({
       if (resp.friend_request_pending) {
         setShowFriendInvite(true)
       }
-    } catch {
-      showGlobalToast(t('randomMatch.sendFailed', '发送失败，请重试'))
+    } catch (error) {
+      setInputText(value)
+      setSentImageUrl(imageUrl)
+      if (error instanceof ApiError && error.message.trim()) {
+        showGlobalToast(error.message.trim())
+      } else {
+        showGlobalToast(t('randomMatch.sendFailed', '发送失败，请重试'))
+      }
     } finally {
       setIsSending(false)
       setIsTyping(false)

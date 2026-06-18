@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Image } from 'expo-image'
 
 import { useChatPreference } from '@/features/chat/hooks/use-chat-preference'
 import type { ChatModelDisplay } from '@/features/chat/lib/chat-model-display'
@@ -19,7 +18,7 @@ import type { ChatAtmosphereConfig } from '@/features/chat/lib/chat-atmosphere-p
 import { useUserPersonaList } from '@/features/user-persona/hooks/use-user-persona-list'
 import { dialogAssets } from '@/shared/assets/dialog'
 import { PopIcon } from '@/shared/ui/pop-icon'
-import { showGlobalToast } from '@/shared/wallet'
+import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 
 import { ChatModeCustomSheet, DEFAULT_CHAT_MODE_CUSTOM_SETTINGS } from './chat-mode-custom-sheet'
 import { ChatPageStyleSheet } from './chat-page-style-sheet'
@@ -41,14 +40,6 @@ type ChatSettingsDrawerProps = {
   atmosphereConfig: ChatAtmosphereConfig
   onApplyAtmosphere: (config: ChatAtmosphereConfig) => Promise<unknown>
   onClose: () => void
-}
-
-function CountdownBlock({ value }: { value: string }) {
-  return (
-    <View style={styles.countdownBlock}>
-      <Text style={styles.countdownText}>{value}</Text>
-    </View>
-  )
 }
 
 function ModeRow({
@@ -169,6 +160,11 @@ export function ChatSettingsDrawer({
   ]
 
   useEffect(() => {
+    if (!open) return
+    void refreshWallet()
+  }, [open])
+
+  useEffect(() => {
     if (open) {
       setMounted(true)
       slideAnim.setValue(DRAWER_WIDTH)
@@ -241,39 +237,8 @@ export function ChatSettingsDrawer({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Bonus */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{t('chatSettings.bonus')}</Text>
-                <View style={styles.iceRow}>
-                  <Text style={styles.iceEmoji}>🧊</Text>
-                  <Text style={styles.iceCount}>
-                    10<Text style={styles.iceTotal}>/20</Text>
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.refillRow}>
-                <Text style={styles.refillText}>🧊 {t('chatSettings.refillAt', { time: '13:31' })}</Text>
-              </View>
-            </View>
-
-            {/* Private room */}
-            <View style={styles.privateRoomCard}>
-              <Image
-                source={dialogAssets.dialogSettingsTempIcon}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-              />
-              <View style={styles.privateRoomOverlay} />
-              <Text style={styles.privateRoomTitle}>{t('chatSettings.privateRoom')}</Text>
-              <View style={styles.countdownRow}>
-                <CountdownBlock value="13" />
-                <Text style={styles.countdownSeparator}>:</Text>
-                <CountdownBlock value="31" />
-                <Text style={styles.countdownSeparator}>:</Text>
-                <CountdownBlock value="23" />
-              </View>
-            </View>
+            {/* Reward */}
+            <WalletBalanceCard onRecharge={() => openRecharge({ source: 'chat_with_character' })} />
 
             {/* Mode select */}
             <View style={styles.cardLg}>
@@ -428,13 +393,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 12,
   },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-    backgroundColor: '#ffffff',
-    padding: 12,
-  },
   cardLg: {
     borderRadius: 24,
     borderWidth: 1,
@@ -446,11 +404,6 @@ const styles = StyleSheet.create({
   customSettingsCard: {
     paddingHorizontal: 12,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   cardTitle: {
     fontSize: 20,
     lineHeight: 21,
@@ -459,82 +412,6 @@ const styles = StyleSheet.create({
   },
   cardTitleInset: {
     paddingHorizontal: 6,
-  },
-  iceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  iceEmoji: {
-    fontSize: 24,
-  },
-  iceCount: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  iceTotal: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: 'rgba(0,0,0,0.2)',
-  },
-  refillRow: {
-    marginTop: 8,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    paddingVertical: 4,
-    alignItems: 'center',
-  },
-  refillText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(0,0,0,0.8)',
-  },
-  privateRoomCard: {
-    height: 120,
-    borderRadius: 20,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-  },
-  privateRoomOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  privateRoomTitle: {
-    fontSize: 20,
-    lineHeight: 21,
-    fontFamily: 'Black Han Sans',
-    color: '#ffffff',
-    zIndex: 1,
-  },
-  countdownRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    zIndex: 1,
-  },
-  countdownBlock: {
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 4,
-  },
-  countdownText: {
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 23,
-    color: '#ffffff',
-  },
-  countdownSeparator: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#ffffff',
   },
   placeholderTextInset: {
     marginTop: 8,

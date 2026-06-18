@@ -72,7 +72,9 @@ export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }:
           return
         }
 
-        if (!(err instanceof ApiError)) {
+        if (err instanceof ApiError && err.message.trim()) {
+          showGlobalToast(err.message.trim())
+        } else {
           showGlobalToast(t('randomMatch.networkError'))
         }
         clearMatchSetup()

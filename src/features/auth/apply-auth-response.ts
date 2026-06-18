@@ -7,12 +7,17 @@ import { useAuthStore } from './auth-store';
 import type { AuthResponse } from './auth-types';
 import { markUserRegisteredAt } from '@/features/feed/lib/feed-user-context';
 
-import { DEFAULT_NEW_USER_REWARD_COINS, setPendingNewUserReward } from './new-user-reward';
+import { setPendingNewUserReward } from './new-user-reward';
 import { env } from '@/shared/env';
 
-// 获取新用户奖励金币数量
+// 获取新用户奖励金币数量（从后端 reward_tokens 读取）
 export function getNewUserRewardCoins(res: AuthResponse): number {
-  return res.new_user_reward_coins ?? DEFAULT_NEW_USER_REWARD_COINS;
+  const coins = res.reward_tokens;
+  if (!coins) {
+    console.error('[auth] reward_tokens not found in login response');
+    return 0;
+  }
+  return coins;
 }
 
 function withDevNewUserMock(res: AuthResponse): AuthResponse {

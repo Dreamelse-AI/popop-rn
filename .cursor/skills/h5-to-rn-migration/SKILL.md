@@ -49,6 +49,7 @@ eas build --profile development --platform ios
 - 禁止假设仓库名 popop-native 或使用 Expo Router
 - 禁止 RN import `@popop/consumer` / `@popop/shared`
 - 禁止引入 `react-dom`、`react-router`、Tailwind、`localStorage`
+- 禁止迁移 Web 专用下载引导、下载提示条、App 下载落地页入口；RN 已是客户端，不展示 Web 下载 CTA
 - 禁止手改 `src/generated/`
 - 禁止从 FE 整文件复制 `.tsx` 而不做 RN 改写
 - 禁止跳过 Mock 开关联调未验证 API

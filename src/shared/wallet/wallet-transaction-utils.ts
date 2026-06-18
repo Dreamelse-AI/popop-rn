@@ -16,6 +16,9 @@ export function formatWalletTransactionDate(timestamp: number, locale: string): 
 }
 
 export function getWalletTransactionTitle(item: WalletTransactionItem, t: TFunction): string {
+  const sceneName = item.scene_name?.trim();
+  if (sceneName) return sceneName;
+
   if (item.kind === 'consume' && item.scene) {
     const sceneKey = `history.scene.${item.scene}`;
     const sceneLabel = t(sceneKey);
@@ -30,6 +33,9 @@ export function getWalletTransactionTitle(item: WalletTransactionItem, t: TFunct
 }
 
 export function getWalletTransactionNote(item: WalletTransactionItem, t: TFunction): string | undefined {
+  const reason = item.reason?.trim();
+  if (reason) return reason;
+
   if (item.kind === 'refund') {
     return t('history.note.refund');
   }

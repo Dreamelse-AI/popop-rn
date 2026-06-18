@@ -336,9 +336,6 @@
     "invite": "Invite",
     "inviteCode": "Invite Code"
   },
-  "promo": {
-    "download": "Download"
-  },
   "chatProfileSheet": {
     "title": "Select User Profile",
     "addNew": "Add a new identity",
