@@ -14,15 +14,17 @@ import iconUnreadRing from './icon/Ellipse 111367.svg';
 import logoPopop from './icon/Group 2117132529.svg';
 import promoCharacter from './icon/Frame 2117132547.svg';
 
-import storyAvatar1 from './img/Ellipse 111366.png';
-import storyAvatar2 from './img/Ellipse 111361.png';
-import storyAvatar3 from './img/Ellipse 111361-1.png';
-import storyAvatar4 from './img/Ellipse 111361-2.png';
-import feedPostImage from './img/Frame 2117132555-3.png';
-import recCard1 from './img/Frame 2117132556.png';
-import recCard2 from './img/Frame 2117132555-1.png';
-import recCard3 from './img/Frame 2117132555-2.png';
-import characterAvatar from './img/jimeng-2026-03-24-8382-美男，狐狸耳朵，狐狸尾巴，灰蓝色蓬松头发，瓷肌冷白皮略显苍白、单凤眼，微眯垂眸、... 1.png';
+import { cdnImage } from '@/shared/lib/cdn';
+
+const storyAvatar1 = { uri: cdnImage('assets/feed/img/Ellipse 111366.png') };
+const storyAvatar2 = { uri: cdnImage('assets/feed/img/Ellipse 111361.png') };
+const storyAvatar3 = { uri: cdnImage('assets/feed/img/Ellipse 111361-1.png') };
+const storyAvatar4 = { uri: cdnImage('assets/feed/img/Ellipse 111361-2.png') };
+const feedPostImage = { uri: cdnImage('assets/feed/img/Frame 2117132555-3.png') };
+const recCard1 = { uri: cdnImage('assets/feed/img/Frame 2117132556.png') };
+const recCard2 = { uri: cdnImage('assets/feed/img/Frame 2117132555-1.png') };
+const recCard3 = { uri: cdnImage('assets/feed/img/Frame 2117132555-2.png') };
+const characterAvatar = { uri: cdnImage('assets/feed/img/jimeng-2026-03-24-8382-美男，狐狸耳朵，狐狸尾巴，灰蓝色蓬松头发，瓷肌冷白皮略显苍白、单凤眼，微眯垂眸、... 1.png') };
 
 export const feedAssets = {
   iconSearch,

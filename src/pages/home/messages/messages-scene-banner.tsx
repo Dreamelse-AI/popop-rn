@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 
-import SceneBannerBg from '@/shared/assets/character/character-banner.png'
+import { cdnImage } from '@/shared/lib/cdn'
+const SceneBannerBg = { uri: cdnImage('assets/character/character-banner.png') }
 import TagPillBg from '@/shared/assets/character/character-rectangle.svg'
 import IconLocation from '@/shared/assets/character/location.svg'
 import IconActiveDot from '@/shared/assets/character/white-dot.svg'

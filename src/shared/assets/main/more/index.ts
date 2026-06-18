@@ -1,10 +1,11 @@
 // 推荐-更多页素材统一导出
+import { cdnImage } from '@/shared/lib/cdn';
 import iconBack from './back.svg';
 import iconContent from './content.svg';
-import cardImage0 from './Frame 2117132555.png';
-import cardImage1 from './Frame 2117132555-1.png';
-import cardImage2 from './Frame 2117132555-2.png';
-import cardImage3 from './Frame 2117132555-3.png';
+const cardImage0 = cdnImage('assets/main/more/Frame 2117132555.png');
+const cardImage1 = cdnImage('assets/main/more/Frame 2117132555-1.png');
+const cardImage2 = cdnImage('assets/main/more/Frame 2117132555-2.png');
+const cardImage3 = cdnImage('assets/main/more/Frame 2117132555-3.png');
 export const recommendedMoreAssets = {
   iconBack,
   iconContent,

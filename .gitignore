@@ -45,3 +45,7 @@ yarn-error.*
 
 # AI analysis documents
 ai-analysis/
+
+# CDN scripts - sensitive
+scripts/cdn/config.mjs
+scripts/cdn/upload-manifest.json

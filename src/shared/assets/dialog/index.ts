@@ -16,10 +16,11 @@ import iconKeyboard from './dialog-keyboard.svg';
 import iconTopLeftBack from './dialog-topleft-back.svg';
 import iconTopLeftTag from './dialog-topleft-tag.svg';
 import iconTopRightMenu from './dialog-topright-back.svg';
+import { cdnImage } from '@/shared/lib/cdn';
 import dialogSettingsOption from './dialogSettings-option.svg';
 import dialogSettingsRightBack from './dialogSettings-rightBack.svg';
 import dialogSettingsDownBack from './dialogSettings-downBack.svg';
-import dialogSettingsTempIcon from './dialogSettings-tempIcon.png';
+const dialogSettingsTempIcon = { uri: cdnImage('assets/dialog/dialogSettings-tempIcon.png') };
 
 export const dialogAssets = {
   iconPlus,

@@ -1,7 +1,8 @@
 // 角色 / 消息页素材统一导出
+import { cdnImage } from '@/shared/lib/cdn';
 import iconMenu from './back.svg';
 import mascotEmpty from './popop-logo-grey.svg';
-import sceneBanner from './character-banner.png';
+const sceneBanner = { uri: cdnImage('assets/character/character-banner.png') };
 import tagPillBg from './character-rectangle.svg';
 import iconLocation from './location.svg';
 import iconPin from './dialog-pin.svg';
