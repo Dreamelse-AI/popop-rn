@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, type RefObject } from 'react'
 import { View, Text, Pressable, FlatList, StyleSheet, type ListRenderItemInfo } from 'react-native'
 
 import type { BubbleStyleTokens } from '../lib/chat-atmosphere-presets'
 import { getBubbleStyleTokens } from '../lib/chat-atmosphere-presets'
+import { isRollbackableMessage } from '../lib/message-rollback'
 import { resolveChatImageDisplayUrl } from '../lib/tos-upload'
 import type { ChatMessage } from '../model/types'
 import { BubbleTail } from './bubble-tail'
@@ -17,6 +18,7 @@ import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 import { Image } from 'expo-image'
 
 type ChatMessageListProps = {
+  listRef?: RefObject<FlatList<ChatMessage> | null>
   messages: ChatMessage[]
   avatar: string
   isTyping?: boolean
@@ -26,12 +28,17 @@ type ChatMessageListProps = {
   onCharacterVoicePress?: (message: Extract<ChatMessage, { type: 'voice' }>) => void
   onUserVoicePress?: (message: Extract<ChatMessage, { type: 'voice' }>) => void
   onMessageLongPress?: (message: ChatMessage) => void
+  onImagePress?: (url: string) => void
+  onFailedMessagePress?: (message: ChatMessage) => void
+  onShareCardPress?: (message: Extract<ChatMessage, { type: 'share_card' }>) => void
   onScroll?: (event: any) => void
   onContentSizeChange?: (w: number, h: number) => void
   onLayout?: (event: any) => void
+  onScrollToIndexFailed?: (info: { index: number; averageItemLength: number }) => void
 }
 
 export function ChatMessageList({
+  listRef,
   messages,
   avatar,
   isTyping = false,
@@ -41,12 +48,21 @@ export function ChatMessageList({
   onCharacterVoicePress,
   onUserVoicePress,
   onMessageLongPress,
+  onImagePress,
+  onFailedMessagePress,
+  onShareCardPress,
   onScroll,
   onContentSizeChange,
   onLayout,
+  onScrollToIndexFailed,
 }: ChatMessageListProps) {
   const renderItem = useCallback(
     ({ item: message }: ListRenderItemInfo<ChatMessage>) => {
+      const handleLongPress = () => {
+        if (!isRollbackableMessage(message)) return
+        onMessageLongPress?.(message)
+      }
+
       switch (message.type) {
         case 'timestamp':
           return <ChatTimestamp text={message.text} />
@@ -54,25 +70,55 @@ export function ChatMessageList({
           return <ChatSystemMessage text={message.text} />
         case 'text':
           return message.sender === 'character' ? (
-            <Pressable onLongPress={() => onMessageLongPress?.(message)}>
+            <Pressable onLongPress={handleLongPress}>
               <CharacterTextBubble avatar={avatar} text={message.text} bubbleStyle={bubbleStyle} onAvatarPress={onAvatarPress} />
             </Pressable>
           ) : (
-            <Pressable onLongPress={() => onMessageLongPress?.(message)}>
-              <UserTextBubble text={message.text} status={message.status} bubbleStyle={bubbleStyle} />
+            <Pressable onLongPress={handleLongPress}>
+              <UserTextBubble
+                text={message.text}
+                status={message.status}
+                bubbleStyle={bubbleStyle}
+                onFailedPress={() => onFailedMessagePress?.(message)}
+              />
             </Pressable>
           )
         case 'emoji':
           return message.sender === 'character' ? (
-            <CharacterEmojiBubble avatar={avatar} url={message.url} bubbleStyle={bubbleStyle} onAvatarPress={onAvatarPress} />
+            <Pressable onLongPress={handleLongPress}>
+              <CharacterEmojiBubble avatar={avatar} url={message.url} bubbleStyle={bubbleStyle} onAvatarPress={onAvatarPress} />
+            </Pressable>
           ) : (
-            <UserEmojiBubble url={message.url} status={message.status} bubbleStyle={bubbleStyle} />
+            <Pressable onLongPress={handleLongPress}>
+              <UserEmojiBubble
+                url={message.url}
+                status={message.status}
+                bubbleStyle={bubbleStyle}
+                onFailedPress={() => onFailedMessagePress?.(message)}
+              />
+            </Pressable>
           )
         case 'image':
           return message.sender === 'character' ? (
-            <CharacterImageBubble avatar={avatar} url={message.url} bubbleStyle={bubbleStyle} onAvatarPress={onAvatarPress} />
+            <Pressable onLongPress={handleLongPress}>
+              <CharacterImageBubble
+                avatar={avatar}
+                url={message.url}
+                bubbleStyle={bubbleStyle}
+                onAvatarPress={onAvatarPress}
+                onImagePress={() => onImagePress?.(message.url)}
+              />
+            </Pressable>
           ) : (
-            <UserImageBubble url={message.url} status={message.status} bubbleStyle={bubbleStyle} />
+            <Pressable onLongPress={handleLongPress}>
+              <UserImageBubble
+                url={message.url}
+                status={message.status}
+                bubbleStyle={bubbleStyle}
+                onFailedPress={() => onFailedMessagePress?.(message)}
+                onImagePress={() => onImagePress?.(message.url)}
+              />
+            </Pressable>
           )
         case 'voice':
           return message.sender === 'character' ? (
@@ -83,13 +129,16 @@ export function ChatMessageList({
               bubbleStyle={bubbleStyle}
               onAvatarPress={onAvatarPress}
               onPress={() => onCharacterVoicePress?.(message)}
+              onLongPress={handleLongPress}
             />
           ) : (
             <UserVoiceBubble
               duration={message.durationSec}
               status={message.status}
               bubbleStyle={bubbleStyle}
+              onFailedPress={() => onFailedMessagePress?.(message)}
               onPress={() => onUserVoicePress?.(message)}
+              onLongPress={handleLongPress}
             />
           )
         case 'share_card':
@@ -101,30 +150,36 @@ export function ChatMessageList({
               content={message.content}
               imageUrl={message.imageUrl}
               status={message.status}
+              onPress={() => onShareCardPress?.(message)}
             />
           )
         default:
           return null
       }
     },
-    [avatar, bubbleStyle, onAvatarPress, playingVoiceId, onCharacterVoicePress, onUserVoicePress, onMessageLongPress],
+    [avatar, bubbleStyle, onAvatarPress, playingVoiceId, onCharacterVoicePress, onUserVoicePress, onMessageLongPress, onImagePress, onFailedMessagePress, onShareCardPress],
   )
 
   const keyExtractor = useCallback((item: ChatMessage) => item.id, [])
 
   const footer = isTyping ? <ChatTypingIndicator avatar={avatar} bubbleStyle={bubbleStyle} /> : null
+  const initialNumToRender = Math.min(messages.length + (isTyping ? 1 : 0), 50)
 
   return (
     <FlatList
+      ref={listRef}
       data={messages}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
+      style={styles.list}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      initialNumToRender={initialNumToRender}
       ListFooterComponent={footer}
       onScroll={onScroll}
       onContentSizeChange={onContentSizeChange}
       onLayout={onLayout}
+      onScrollToIndexFailed={onScrollToIndexFailed}
       scrollEventThrottle={16}
     />
   )
@@ -142,8 +197,12 @@ function ChatSystemMessage({ text }: { text: string }) {
   return (
     <View style={styles.systemRow}>
       <View style={styles.systemBubble}>
-        <Text style={styles.systemEmoji}>🔒</Text>
-        <Text style={styles.systemText} numberOfLines={1}>{text}</Text>
+        <Text style={styles.systemEmoji} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          🔒
+        </Text>
+        <Text style={styles.systemText} numberOfLines={1} ellipsizeMode="tail">
+          {text}
+        </Text>
       </View>
     </View>
   )
@@ -164,12 +223,16 @@ function CharacterTextBubble({ avatar, text, bubbleStyle, onAvatarPress }: { ava
   )
 }
 
-function UserTextBubble({ text, status, bubbleStyle }: { text: string; status?: string; bubbleStyle: BubbleStyleTokens }) {
+function UserTextBubble({ text, status, bubbleStyle, onFailedPress }: { text: string; status?: string; bubbleStyle: BubbleStyleTokens; onFailedPress?: () => void }) {
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
       {status === 'pending' && <IconWaiting width={24} height={24} />}
-      {status === 'failed' && <IconWarning width={24} height={24} />}
+      {status === 'failed' && (
+        <Pressable onPress={onFailedPress}>
+          <IconWarning width={24} height={24} />
+        </Pressable>
+      )}
       <View style={[styles.sentBubble, { backgroundColor: sent.bgColor }]}>
         <Text style={[styles.bubbleText, { color: sent.textColor }]}>{text}</Text>
         <BubbleTail variant={sent.tail} side="right" />
@@ -193,12 +256,16 @@ function CharacterEmojiBubble({ avatar, url, bubbleStyle, onAvatarPress }: { ava
   )
 }
 
-function UserEmojiBubble({ url, status, bubbleStyle }: { url: string; status?: string; bubbleStyle: BubbleStyleTokens }) {
+function UserEmojiBubble({ url, status, bubbleStyle, onFailedPress }: { url: string; status?: string; bubbleStyle: BubbleStyleTokens; onFailedPress?: () => void }) {
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
       {status === 'pending' && <IconWaiting width={24} height={24} />}
-      {status === 'failed' && <IconWarning width={24} height={24} />}
+      {status === 'failed' && (
+        <Pressable onPress={onFailedPress}>
+          <IconWarning width={24} height={24} />
+        </Pressable>
+      )}
       <View style={[styles.sentBubble, styles.emojiBubble, { backgroundColor: sent.bgColor }]}>
         <Image source={{ uri: normalizeAssetUrl(url) }} style={styles.emojiImage} contentFit="cover" />
         <BubbleTail variant={sent.tail} side="right" />
@@ -207,43 +274,83 @@ function UserEmojiBubble({ url, status, bubbleStyle }: { url: string; status?: s
   )
 }
 
-function CharacterImageBubble({ avatar, url, bubbleStyle, onAvatarPress }: { avatar: string; url: string; bubbleStyle: BubbleStyleTokens; onAvatarPress?: () => void }) {
+function CharacterImageBubble({
+  avatar,
+  url,
+  bubbleStyle,
+  onAvatarPress,
+  onImagePress,
+}: {
+  avatar: string
+  url: string
+  bubbleStyle: BubbleStyleTokens
+  onAvatarPress?: () => void
+  onImagePress?: () => void
+}) {
   const { received } = bubbleStyle
   return (
     <View style={styles.characterRow}>
       <Pressable onPress={onAvatarPress}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
-      <View style={[styles.receivedBubble, { backgroundColor: received.bgColor, padding: 4 }]}>
-        <Image source={{ uri: resolveChatImageDisplayUrl(url) }} style={styles.messageImage} />
+      <View style={[styles.receivedBubble, styles.imageBubble, { backgroundColor: received.bgColor }]}>
+        <Pressable onPress={onImagePress} accessibilityLabel="查看大图" accessibilityRole="imagebutton">
+          <Image
+            source={{ uri: resolveChatImageDisplayUrl(url) }}
+            style={styles.messageImage}
+            contentFit="cover"
+          />
+        </Pressable>
         <BubbleTail variant={received.tail} side="left" />
       </View>
     </View>
   )
 }
 
-function UserImageBubble({ url, status, bubbleStyle }: { url: string; status?: string; bubbleStyle: BubbleStyleTokens }) {
+function UserImageBubble({
+  url,
+  status,
+  bubbleStyle,
+  onFailedPress,
+  onImagePress,
+}: {
+  url: string
+  status?: string
+  bubbleStyle: BubbleStyleTokens
+  onFailedPress?: () => void
+  onImagePress?: () => void
+}) {
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
       {status === 'pending' && <IconWaiting width={24} height={24} />}
-      {status === 'failed' && <IconWarning width={24} height={24} />}
-      <View style={[styles.sentBubble, { backgroundColor: sent.bgColor, padding: 4 }]}>
-        <Image source={{ uri: resolveChatImageDisplayUrl(url) }} style={styles.messageImage} />
+      {status === 'failed' && (
+        <Pressable onPress={onFailedPress}>
+          <IconWarning width={24} height={24} />
+        </Pressable>
+      )}
+      <View style={[styles.sentBubble, styles.imageBubble, { backgroundColor: sent.bgColor }]}>
+        <Pressable onPress={onImagePress} accessibilityLabel="查看大图" accessibilityRole="imagebutton">
+          <Image
+            source={{ uri: resolveChatImageDisplayUrl(url) }}
+            style={styles.messageImage}
+            contentFit="cover"
+          />
+        </Pressable>
         <BubbleTail variant={sent.tail} side="right" />
       </View>
     </View>
   )
 }
 
-function CharacterVoiceBubble({ avatar, duration, isPlaying, bubbleStyle, onAvatarPress, onPress }: { avatar: string; duration: number; isPlaying: boolean; bubbleStyle: BubbleStyleTokens; onAvatarPress?: () => void; onPress?: () => void }) {
+function CharacterVoiceBubble({ avatar, duration, isPlaying, bubbleStyle, onAvatarPress, onPress, onLongPress }: { avatar: string; duration: number; isPlaying: boolean; bubbleStyle: BubbleStyleTokens; onAvatarPress?: () => void; onPress?: () => void; onLongPress?: () => void }) {
   const { received } = bubbleStyle
   return (
     <View style={styles.characterRow}>
       <Pressable onPress={onAvatarPress}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
-      <Pressable onPress={onPress} style={[styles.receivedBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
+      <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
         <View style={styles.voiceContent}>
           <IconVoiceReceive width={20} height={20} />
           <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
@@ -254,13 +361,17 @@ function CharacterVoiceBubble({ avatar, duration, isPlaying, bubbleStyle, onAvat
   )
 }
 
-function UserVoiceBubble({ duration, status, bubbleStyle, onPress }: { duration: number; status?: string; bubbleStyle: BubbleStyleTokens; onPress?: () => void }) {
+function UserVoiceBubble({ duration, status, bubbleStyle, onPress, onLongPress, onFailedPress }: { duration: number; status?: string; bubbleStyle: BubbleStyleTokens; onPress?: () => void; onLongPress?: () => void; onFailedPress?: () => void }) {
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
       {status === 'pending' && <IconWaiting width={24} height={24} />}
-      {status === 'failed' && <IconWarning width={24} height={24} />}
-      <Pressable onPress={onPress} style={[styles.sentBubble, { backgroundColor: sent.bgColor }]}>
+      {status === 'failed' && (
+        <Pressable onPress={onFailedPress}>
+          <IconWarning width={24} height={24} />
+        </Pressable>
+      )}
+      <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.sentBubble, { backgroundColor: sent.bgColor }]}>
         <View style={[styles.voiceContent, { flexDirection: 'row-reverse' }]}>
           <IconVoiceSend width={20} height={20} />
           <Text style={[styles.voiceDuration, { color: '#575757' }]}>{duration}"</Text>
@@ -272,9 +383,13 @@ function UserVoiceBubble({ duration, status, bubbleStyle, onPress }: { duration:
 }
 
 const styles = StyleSheet.create({
+  list: {
+    flex: 1,
+  },
   container: {
     gap: 12,
     paddingHorizontal: 16,
+    paddingTop: 20,
     paddingBottom: 16,
   },
   timestampRow: {
@@ -288,26 +403,32 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.3)',
   },
   systemRow: {
+    width: '100%',
     alignItems: 'center',
   },
   systemBubble: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    maxWidth: 358,
     borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.06)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    maxWidth: 358,
+    overflow: 'hidden',
   },
   systemEmoji: {
+    flexShrink: 0,
     fontSize: 12,
+    lineHeight: 16,
   },
   systemText: {
+    flexShrink: 1,
+    minWidth: 0,
     fontSize: 12,
     fontWeight: '500',
+    lineHeight: 16,
     color: 'rgba(0,0,0,0.3)',
-    flex: 1,
   },
   characterRow: {
     flexDirection: 'row',
@@ -328,6 +449,10 @@ const styles = StyleSheet.create({
   emojiBubble: {
     overflow: 'hidden',
     padding: 4,
+  },
+  imageBubble: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   userRow: {
     flexDirection: 'row',
@@ -351,8 +476,8 @@ const styles = StyleSheet.create({
     height: 128,
   },
   messageImage: {
-    maxWidth: 240,
-    maxHeight: 256,
+    width: 240,
+    height: 256,
     borderRadius: 16,
   },
   voiceContent: {

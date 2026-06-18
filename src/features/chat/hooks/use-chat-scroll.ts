@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
-import type { ScrollView, NativeSyntheticEvent, NativeScrollEvent, LayoutChangeEvent } from 'react-native'
+import type {
+  FlatList,
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native'
 
 import {
   HISTORY_LOAD_MORE_THRESHOLD_PX,
@@ -9,7 +14,7 @@ import type { ChatMessage } from '../model/types'
 
 type UseChatScrollOptions = {
   characterId: string
-  scrollRef: RefObject<ScrollView | null>
+  listRef: RefObject<FlatList<ChatMessage> | null>
   messages: ChatMessage[]
   isTyping: boolean
   isLoadingCharacter: boolean
@@ -21,7 +26,7 @@ type UseChatScrollOptions = {
 
 export function useChatScroll({
   characterId,
-  scrollRef,
+  listRef,
   messages,
   isTyping,
   isLoadingCharacter,
@@ -31,15 +36,16 @@ export function useChatScroll({
   onLoadOlder,
 }: UseChatScrollOptions) {
   const initialScrollDoneRef = useRef(false)
+  const needsInitialScrollRef = useRef(false)
   const loadingOlderRef = useRef(false)
   const prevLastMessageIdRef = useRef<string | null>(null)
   const contentHeightRef = useRef(0)
   const scrollViewHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
-  const prevContentHeightRef = useRef(0)
 
   useEffect(() => {
     initialScrollDoneRef.current = false
+    needsInitialScrollRef.current = false
     prevLastMessageIdRef.current = null
     loadingOlderRef.current = false
   }, [characterId])
@@ -50,18 +56,50 @@ export function useChatScroll({
     return distanceFromBottom < HISTORY_NEAR_BOTTOM_THRESHOLD_PX
   }, [])
 
-  const scrollToEnd = useCallback(() => {
-    scrollRef.current?.scrollToEnd({ animated: false })
-  }, [scrollRef])
+  const scrollToLatest = useCallback(() => {
+    const list = listRef.current
+    if (!list || messages.length === 0) return
 
-  useEffect(() => {
-    if (isLoadingCharacter || isLoadingHistory || initialScrollDoneRef.current) return
+    const lastIndex = messages.length - 1
+    list.scrollToIndex({ index: lastIndex, animated: false, viewPosition: 1 })
+  }, [listRef, messages.length])
+
+  const completeInitialScroll = useCallback(() => {
+    initialScrollDoneRef.current = true
+    needsInitialScrollRef.current = false
+    prevLastMessageIdRef.current = messages[messages.length - 1]?.id ?? null
+  }, [messages])
+
+  const performInitialScroll = useCallback(() => {
+    if (initialScrollDoneRef.current) return
+    if (isLoadingCharacter || isLoadingHistory) return
     if (messages.length === 0) return
 
-    initialScrollDoneRef.current = true
-    prevLastMessageIdRef.current = messages[messages.length - 1]?.id ?? null
-    requestAnimationFrame(scrollToEnd)
-  }, [isLoadingCharacter, isLoadingHistory, messages, scrollToEnd])
+    scrollToLatest()
+    completeInitialScroll()
+  }, [
+    completeInitialScroll,
+    isLoadingCharacter,
+    isLoadingHistory,
+    messages.length,
+    scrollToLatest,
+  ])
+
+  useEffect(() => {
+    if (isLoadingCharacter || isLoadingHistory) return
+    if (messages.length === 0) return
+    needsInitialScrollRef.current = true
+  }, [isLoadingCharacter, isLoadingHistory, messages.length])
+
+  useEffect(() => {
+    if (!needsInitialScrollRef.current || initialScrollDoneRef.current) return
+    if (isLoadingCharacter || isLoadingHistory) return
+    if (messages.length === 0) return
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(performInitialScroll)
+    })
+  }, [isLoadingCharacter, isLoadingHistory, messages, performInitialScroll])
 
   useEffect(() => {
     if (!initialScrollDoneRef.current) return
@@ -74,9 +112,9 @@ export function useChatScroll({
     prevLastMessageIdRef.current = lastMessageId
 
     if (shouldStick) {
-      requestAnimationFrame(scrollToEnd)
+      requestAnimationFrame(scrollToLatest)
     }
-  }, [isTyping, messages, isNearBottom, scrollToEnd])
+  }, [isTyping, messages, isNearBottom, scrollToLatest])
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -105,24 +143,57 @@ export function useChatScroll({
           requestAnimationFrame(() => {
             const newContentHeight = contentHeightRef.current
             const offset = scrollOffsetRef.current + (newContentHeight - previousContentHeight)
-            scrollRef.current?.scrollTo({ y: offset, animated: false })
+            listRef.current?.scrollToOffset({ offset, animated: false })
           })
         })
         .finally(() => {
           loadingOlderRef.current = false
         })
     },
-    [historyUpHasMore, isLoadingOlderHistory, onLoadOlder, scrollRef],
+    [historyUpHasMore, isLoadingOlderHistory, onLoadOlder, listRef],
   )
 
-  const onContentSizeChange = useCallback((_w: number, h: number) => {
-    prevContentHeightRef.current = contentHeightRef.current
-    contentHeightRef.current = h
-  }, [])
+  const onContentSizeChange = useCallback(
+    (_w: number, h: number) => {
+      contentHeightRef.current = h
+      if (!needsInitialScrollRef.current || initialScrollDoneRef.current) return
+      if (isLoadingCharacter || isLoadingHistory) return
+      if (messages.length === 0) return
+
+      requestAnimationFrame(() => {
+        scrollToLatest()
+        completeInitialScroll()
+      })
+    },
+    [
+      completeInitialScroll,
+      isLoadingCharacter,
+      isLoadingHistory,
+      messages.length,
+      scrollToLatest,
+    ],
+  )
+
+  const onScrollToIndexFailed = useCallback(
+    (info: { index: number; averageItemLength: number }) => {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, info.averageItemLength * info.index),
+        animated: false,
+      })
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToIndex({
+          index: info.index,
+          animated: false,
+          viewPosition: 1,
+        })
+      })
+    },
+    [listRef],
+  )
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     scrollViewHeightRef.current = event.nativeEvent.layout.height
   }, [])
 
-  return { onScroll, onContentSizeChange, onLayout }
+  return { onScroll, onContentSizeChange, onLayout, onScrollToIndexFailed }
 }

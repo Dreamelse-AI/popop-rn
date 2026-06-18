@@ -2,22 +2,44 @@ import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
+import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { showGlobalToast } from '@/shared/wallet'
 
 import { useUserPersona } from '../hooks/use-user-persona'
-import { Image } from 'expo-image'
+import { resolvePersonaAvatarUrl } from '../lib/persona-utils'
 
 type UserPersonaSheetProps = {
   open: boolean
   onClose: () => void
   fallbackAvatar?: string
+  /** undefined = 默认自设；null = 新建；string = 编辑指定自设 */
+  personaId?: string | null
+  isDefaultOnCreate?: boolean
+  confirmLabelKey?: 'persona.goChat' | 'chatProfileSheet.save'
+  onSaved?: (personaId: string) => void
+  embedded?: boolean
+  embeddedZIndex?: number
 }
 
-export function UserPersonaSheet({ open, onClose, fallbackAvatar }: UserPersonaSheetProps) {
+export function UserPersonaSheet({
+  open,
+  onClose,
+  fallbackAvatar,
+  personaId,
+  isDefaultOnCreate,
+  confirmLabelKey = 'persona.goChat',
+  onSaved,
+  embedded = false,
+  embeddedZIndex = 70,
+}: UserPersonaSheetProps) {
   const { t } = useTranslation()
-  const { form, loading, saving, avatarUploading, setForm, pickAvatar, save } = useUserPersona(open)
+  const { form, loading, saving, avatarUploading, setForm, pickAvatar, save } = useUserPersona(open, {
+    personaId,
+    isDefaultOnCreate,
+  })
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
@@ -36,20 +58,28 @@ export function UserPersonaSheet({ open, onClose, fallbackAvatar }: UserPersonaS
     if (!form.name.trim()) return
     const result = await save()
     if (result.ok) {
+      if (result.personaId) onSaved?.(result.personaId)
       onClose()
     } else if (result.auditFailed) {
       showGlobalToast(t('profile.avatarAuditFailed'))
     }
   }
 
+  const avatarUrl =
+    resolvePersonaAvatarUrl(form.avatarResourceId) ||
+    resolvePersonaAvatarUrl(fallbackAvatar) ||
+    ''
+
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
+      embedded={embedded}
+      embeddedZIndex={embeddedZIndex}
       header={<SheetHeader title={t('persona.title')} />}
       footer={
         <SheetFooterButton
-          label={saving ? t('persona.saving') : t('persona.goChat')}
+          label={saving ? t('persona.saving') : t(confirmLabelKey)}
           onPress={() => void handleSave()}
           disabled={saving}
           loading={saving}
@@ -65,10 +95,11 @@ export function UserPersonaSheet({ open, onClose, fallbackAvatar }: UserPersonaS
             style={styles.avatarButton}
             accessibilityLabel={t('profile.avatarUpload')}
           >
-            <Image
-              source={{ uri: form.avatarResourceId || fallbackAvatar || undefined }}
-              style={styles.avatarImage}
-            />
+            {avatarUrl ? (
+              <PopImage uri={avatarUrl} style={styles.avatarImage} />
+            ) : (
+              <AvatarPlaceholder width={144} height={144} />
+            )}
             {avatarUploading && (
               <View style={styles.avatarUploading}>
                 <ActivityIndicator size="small" color="#ffffff" />

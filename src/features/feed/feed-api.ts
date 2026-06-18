@@ -6,7 +6,6 @@ import {
   feedRecallCharacters,
   feedRecommendation,
   getFeedTags,
-  recPopop,
   type FeedMoreCharactersReq,
   type FeedRecommendationReq,
 } from '@/generated';
@@ -14,6 +13,7 @@ import {
 import {
   FEED_CHARACTER_ROW_PREVIEW_LIMIT,
   FEED_HOT_RECALL_STRATEGY,
+  FEED_INTERACTION_RECALL_STRATEGY,
   FEED_MORE_CHARACTERS_STRATEGY,
   FEED_PAGE_SIZE,
 } from './lib/feed-layout-config';
@@ -175,19 +175,14 @@ export const feedApi = {
   },
 
   /**
-   * 互动触发角色推荐：携带帖子角色标签请求 rec_popop（source=character）。
-   * 无标签时不请求，由调用方跳过插入。
+   * 互动触发角色推荐：点赞成功后按 post_id 调用 recall_characters(interaction)。
    */
-  fetchInteractionCharacters: async (tags: string[], excludeIds: string[] = []) => {
-    const tag = tags[0];
-    if (!tag) return [];
-
-    const resp = await recPopop({
-      source: 'character',
-      request_index: 1,
+  fetchInteractionCharacters: async (postId: string, requestId?: string) => {
+    const resp = await feedRecallCharacters({
+      ...(requestId ? { request_id: requestId } : {}),
+      strategy: FEED_INTERACTION_RECALL_STRATEGY,
+      interaction_post_id: postId,
       limit: FEED_CHARACTER_ROW_PREVIEW_LIMIT,
-      character_filter: { tag },
-      ...(excludeIds.length ? { exclude_ids: excludeIds } : {}),
     });
     const mapped = mapFeedEntities(resp);
     rememberCharacterTags(mapped.characters);

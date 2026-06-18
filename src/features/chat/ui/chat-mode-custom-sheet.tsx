@@ -23,6 +23,7 @@ type ChatModeCustomSheetProps = {
   initialSettings?: ChatModeCustomSettings
   onClose: () => void
   onConfirm: (settings: ChatModeCustomSettings) => void
+  embedded?: boolean
 }
 
 export function ChatModeCustomSheet({
@@ -30,6 +31,7 @@ export function ChatModeCustomSheet({
   initialSettings = DEFAULT_CHAT_MODE_CUSTOM_SETTINGS,
   onClose,
   onConfirm,
+  embedded = false,
 }: ChatModeCustomSheetProps) {
   const { t } = useTranslation()
   const [draftSettings, setDraftSettings] = useState<ChatModeCustomSettings>(initialSettings)
@@ -43,6 +45,8 @@ export function ChatModeCustomSheet({
     <BottomSheet
       open={open}
       onClose={onClose}
+      embedded={embedded}
+      embeddedZIndex={60}
       header={<SheetHeader title={t('chatModeCustomSheet.title')} />}
       footer={
         <SheetFooterButton

@@ -12,8 +12,8 @@ import { AgreeModal } from '@/features/auth/components/agree-modal'
 import { EmailModal } from '@/features/auth/components/email-modal'
 import { ProfileSetupModal } from '@/features/auth/components/profile-setup-modal'
 import { ProviderButton } from '@/features/auth/components/provider-button'
-import { RegionSelector } from '@/features/auth/components/region-selector'
-import { PopopLogo } from '@/shared/assets/popop-logo'
+import { LanguageSelector } from '@/features/auth/components/language-selector'
+import { AuthLoginShell } from '@/pages/auth/auth-login-shell'
 import type { AuthProvider } from '@/features/auth/auth-types'
 
 export function LoginPage() {
@@ -28,7 +28,6 @@ export function LoginPage() {
     handleEmailLogin,
     loginWithProvider,
     setAgreed,
-    setRegion,
     clearToast,
     handleSkipLogin,
   } = loginHook
@@ -48,67 +47,59 @@ export function LoginPage() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(32, insets.top + 16) }]}>
-      <View style={styles.header}>
-        <RegionSelector region={state.region} onRegionChange={setRegion} />
+    <>
+      <AuthLoginShell
+        header={
+          <>
+            <LanguageSelector />
 
-        <Pressable style={styles.skipButton} onPress={handleSkipLogin}>
-          <Text style={styles.skipText}>{t('login.skip')}</Text>
-        </Pressable>
-      </View>
+            <Pressable style={styles.skipButton} onPress={handleSkipLogin}>
+              <Text style={styles.skipText}>{t('login.skip')}</Text>
+            </Pressable>
+          </>
+        }
+        footer={
+          <>
+            {state.error && !state.showEmailModal && (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{state.error}</Text>
+              </View>
+            )}
 
-      <View style={styles.logoContainer}>
-        <PopopLogo width={145} height={114} />
-      </View>
+            <View style={[styles.buttonGroup, state.providers.length >= 4 && styles.buttonGroupCompact]}>
+              {state.providers.map(provider => (
+                <ProviderButton
+                  key={provider}
+                  provider={provider}
+                  loading={state.loading && provider !== 'email'}
+                  compact={state.providers.length >= 4}
+                  onClick={() => handleProviderClick(provider)}
+                />
+              ))}
+            </View>
 
-      <View style={[styles.bottom, { paddingBottom: Math.max(32, insets.bottom + 16) }]}>
-        {state.error && !state.showEmailModal && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>{state.error}</Text>
-          </View>
-        )}
-
-        <View style={[styles.buttonGroup, state.providers.length >= 4 && styles.buttonGroupCompact]}>
-          {state.providers.map(provider => (
-            <ProviderButton
-              key={provider}
-              provider={provider}
-              loading={state.loading && provider !== 'email'}
-              compact={state.providers.length >= 4}
-              onClick={() => handleProviderClick(provider)}
-            />
-          ))}
-        </View>
-
-        <View style={styles.agreeRow}>
-          <AgreeCheckbox checked={state.agreed} termsList={termsList} tone="light" onChange={setAgreed} />
-        </View>
-      </View>
-
-      {state.toast && (
-        <View style={[styles.toast, { top: Math.max(48, insets.top + 24) }]}>
-          <Text style={styles.toastText}>{state.toast}</Text>
-        </View>
-      )}
+            <View style={styles.agreeRow}>
+              <AgreeCheckbox checked={state.agreed} termsList={termsList} tone="light" onChange={setAgreed} />
+            </View>
+          </>
+        }
+        overlay={
+          state.toast ? (
+            <View style={[styles.toast, { top: Math.max(48, insets.top + 24) }]}>
+              <Text style={styles.toastText}>{state.toast}</Text>
+            </View>
+          ) : null
+        }
+      />
 
       <EmailModal loginHook={loginHook} />
       <AgreeModal loginHook={loginHook} />
       <ProfileSetupModal loginHook={loginHook} />
-    </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fbf2d8',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-  },
   skipButton: {
     height: 32,
     alignItems: 'center',
@@ -121,15 +112,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: 'rgba(0,0,0,0.5)',
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  bottom: {
-    paddingHorizontal: 24,
   },
   errorBanner: {
     marginBottom: 12,

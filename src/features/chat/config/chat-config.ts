@@ -14,6 +14,9 @@ export const TIMESTAMP_GAP_MS = 5 * 60_000;
 /** 聊天历史上滑分页：每页条数（接口最大 100） */
 export const HISTORY_PAGE_SIZE = 30;
 
+/** 轮询拉取新消息间隔（ms） */
+export const POLL_NEW_MESSAGES_INTERVAL_MS = 2000;
+
 /** 距顶部多少 px 触发加载更早历史 */
 export const HISTORY_LOAD_MORE_THRESHOLD_PX = 80;
 
@@ -60,20 +63,23 @@ export const MOCK_VOICE_TRANSCRIPTS = [
 /** Mock ASR 模拟耗时 */
 export const MOCK_VOICE_ASR_MS = 600;
 
-/** 表情面板 — Figma 101:31262，宽度随 390 设计稿居中，高度随视口缩放 */
+/** 表情面板 — Figma 2566-37517 / 101:31262 */
 export const EMOJI_PANEL = {
   maxWidthPx: 390,
+  contentWidthPx: 358,
   horizontalInsetPx: 16,
-  /** 328px @390 宽设计稿，小屏不超过 48dvh */
-  heightCss: 'min(328px, 48dvh)',
+  /** 324px @390 宽设计稿，小屏不超过 52dvh */
+  heightPx: 368,
+  heightCss: 'min(368px, 52dvh)',
   tabBarHeightPx: 70,
   tabRowHeightPx: 56,
   tabIconMaxHeightPx: 39,
   tabIconMaxWidthPx: 48,
-  activeIndicatorWidthPx: 28,
+  activeIndicatorWidthPx: 40,
   activeIndicatorHeightPx: 4,
-  /** 仅滚动时展示的顶部渐隐高度 */
-  scrollFadeHeightPx: 24,
+  /** 滚动时顶部渐隐高度 */
+  scrollFadeHeightPx: 70,
+  scrollFadeGradientStop: 0.77919,
 } as const;
 
 /** 额外回复是否走 ReadDelay（建议 false 或 0~1s） */

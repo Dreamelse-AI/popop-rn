@@ -41,8 +41,8 @@ export function useCharacterPageConfig(enabled = true) {
     [config?.genders],
   );
   const speciesOptions = useMemo(
-    () => mapPageConfigSpeciesOptions(config?.setting_options),
-    [config?.setting_options],
+    () => mapPageConfigSpeciesOptions(config?.species),
+    [config?.species],
   );
   const visibilityOptions = useMemo(
     () => mapPageConfigVisibilityOptions(config?.setting_options),

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AudioModule, type AudioRecorder, setAudioModeAsync } from 'expo-audio'
+import {
+  AudioModule,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  type AudioRecorder,
+} from 'expo-audio'
 
 import {
   VOICE_RECORD_CANCEL_HINT_OFFSET_PX,
@@ -7,9 +13,10 @@ import {
   VOICE_RECORD_MIN_DURATION_MS,
 } from '../config/chat-config'
 import {
-  createSpeechRecognitionSession,
   isSpeechRecognitionSupported,
-  type SpeechRecognitionSession,
+  requestSpeechRecognitionPermissions,
+  resolveSpeechRecognitionLang,
+  transcribeAudioFile,
 } from '../lib/speech-recognition'
 
 export type VoiceRecorderPhase = 'idle' | 'requesting' | 'recording' | 'processing'
@@ -51,9 +58,8 @@ export function useVoiceRecorder(): VoiceRecorderControls {
   const pressedAtRef = useRef(0)
   const startedAtRef = useRef(0)
   const cancelledRef = useRef(false)
+  const abortRequestedRef = useRef(false)
   const tooShortTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const speechSessionRef = useRef<SpeechRecognitionSession | null>(null)
-  const interimTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const speechRecognitionAvailable = isSpeechRecognitionSupported()
 
   const setPhaseSafe = useCallback((next: VoiceRecorderPhase) => {
@@ -77,59 +83,27 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     }, 600)
   }, [])
 
-  const stopInterimPolling = useCallback(() => {
-    if (interimTimerRef.current !== null) {
-      clearInterval(interimTimerRef.current)
-      interimTimerRef.current = null
+  const releaseRecorder = useCallback((recorder: AudioRecorder | null) => {
+    if (!recorder) return
+    try {
+      if (typeof recorder.release === 'function') {
+        recorder.release()
+      }
+    } catch {
+      /* recorder already released */
     }
   }, [])
 
-  const startSpeechRecognition = useCallback(() => {
-    if (!speechRecognitionAvailable) return
-
-    const session = createSpeechRecognitionSession({ lang: 'zh-CN' })
-    if (!session) return
-
-    speechSessionRef.current = session
-    session.start()
-    setInterimTranscript('')
-
-    stopInterimPolling()
-    interimTimerRef.current = setInterval(() => {
-      const text = speechSessionRef.current?.getInterimTranscript() ?? ''
-      setInterimTranscript(text)
-    }, 200)
-  }, [speechRecognitionAvailable, stopInterimPolling])
-
-  const stopSpeechRecognition = useCallback(async (): Promise<string> => {
-    stopInterimPolling()
-    const session = speechSessionRef.current
-    speechSessionRef.current = null
-    if (!session) {
-      setInterimTranscript('')
-      return ''
-    }
-
-    const transcript = await session.stop()
-    setInterimTranscript(transcript)
-    return transcript
-  }, [stopInterimPolling])
-
-  const abortSpeechRecognition = useCallback(() => {
-    stopInterimPolling()
-    speechSessionRef.current?.abort()
-    speechSessionRef.current = null
-    setInterimTranscript('')
-  }, [stopInterimPolling])
-
   const resetRecorder = useCallback(() => {
-    abortSpeechRecognition()
+    releaseRecorder(recordingRef.current)
     recordingRef.current = null
     cancelledRef.current = false
+    abortRequestedRef.current = false
+    setInterimTranscript('')
     setIsCancelled(false)
     setCancelZoneSafe('none')
     setPhaseSafe('idle')
-  }, [abortSpeechRecognition, setCancelZoneSafe, setPhaseSafe])
+  }, [releaseRecorder, setCancelZoneSafe, setPhaseSafe])
 
   const startRecording = useCallback(
     async (startY: number) => {
@@ -138,15 +112,34 @@ export function useVoiceRecorder(): VoiceRecorderControls {
       startYRef.current = startY
       pressedAtRef.current = Date.now()
       cancelledRef.current = false
+      abortRequestedRef.current = false
       setIsCancelled(false)
       setIsPressTooShort(false)
       setCancelZoneSafe('none')
+      setInterimTranscript('')
       setPhaseSafe('requesting')
 
       try {
-        const permissionResult = await AudioModule.requestRecordingPermissionsAsync()
+        const permissionResult = await requestRecordingPermissionsAsync()
         if (!permissionResult.granted) {
           setPermissionDenied(true)
+          resetRecorder()
+          return
+        }
+
+        if (speechRecognitionAvailable) {
+          const speechGranted = await requestSpeechRecognitionPermissions()
+          if (!speechGranted) {
+            setPermissionDenied(true)
+            resetRecorder()
+            return
+          }
+        }
+
+        if (abortRequestedRef.current) {
+          if (Date.now() - pressedAtRef.current < VOICE_RECORD_MIN_DURATION_MS) {
+            flashPressTooShort()
+          }
           resetRecorder()
           return
         }
@@ -157,22 +150,21 @@ export function useVoiceRecorder(): VoiceRecorderControls {
           playsInSilentMode: true,
         })
 
-        const recorder = new AudioModule.AudioRecorder({
-          extension: '.caf',
-        })
+        const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY)
         await recorder.prepareToRecordAsync()
         recorder.record()
 
         recordingRef.current = recorder
         startedAtRef.current = Date.now()
         setPhaseSafe('recording')
-        startSpeechRecognition()
       } catch {
         setPermissionDenied(true)
+        releaseRecorder(recordingRef.current)
+        recordingRef.current = null
         resetRecorder()
       }
     },
-    [resetRecorder, setCancelZoneSafe, setPhaseSafe, startSpeechRecognition],
+    [flashPressTooShort, releaseRecorder, resetRecorder, setCancelZoneSafe, setPhaseSafe, speechRecognitionAvailable],
   )
 
   const discardRecording = useCallback(async (): Promise<null> => {
@@ -186,15 +178,17 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     if (recorder) {
       try {
         await recorder.stop()
-        recorder.release()
-      } catch { /* already stopped */ }
+      } catch {
+        /* already stopped */
+      }
+      releaseRecorder(recorder)
     }
 
     await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true })
     resetRecorder()
     setTimeout(() => setIsCancelled(false), 600)
     return null
-  }, [resetRecorder, setCancelZoneSafe])
+  }, [resetRecorder, releaseRecorder, setCancelZoneSafe])
 
   const cancelRecording = useCallback(() => {
     void discardRecording()
@@ -202,7 +196,7 @@ export function useVoiceRecorder(): VoiceRecorderControls {
 
   const updatePointer = useCallback(
     (clientY: number) => {
-      if (phaseRef.current !== 'recording') return
+      if (phaseRef.current !== 'recording' && phaseRef.current !== 'requesting') return
       const offset = startYRef.current - clientY
       if (offset >= VOICE_RECORD_CANCEL_OFFSET_PX) {
         setCancelZoneSafe('active')
@@ -219,8 +213,14 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     const pressDurationMs = Date.now() - pressedAtRef.current
 
     if (phaseRef.current === 'requesting') {
+      abortRequestedRef.current = true
       if (pressDurationMs < VOICE_RECORD_MIN_DURATION_MS) {
         flashPressTooShort()
+      } else if (cancelZoneRef.current === 'active') {
+        cancelledRef.current = true
+        setIsCancelled(true)
+        setCancelZoneSafe('none')
+        setTimeout(() => setIsCancelled(false), 600)
       }
       return null
     }
@@ -238,6 +238,7 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     }
 
     setPhaseSafe('processing')
+    setInterimTranscript('')
 
     const recorder = recordingRef.current
     if (!recorder) {
@@ -254,33 +255,41 @@ export function useVoiceRecorder(): VoiceRecorderControls {
       const durationMs = status.durationMillis > 0
         ? status.durationMillis
         : Math.max(0, Date.now() - startedAtRef.current)
-      const transcript = await stopSpeechRecognition()
 
-      recorder.release()
+      releaseRecorder(recorder)
       recordingRef.current = null
+
+      if (!uri) {
+        resetRecorder()
+        return null
+      }
+
+      const transcript = speechRecognitionAvailable
+        ? await transcribeAudioFile(uri, {
+            lang: resolveSpeechRecognitionLang(),
+            onInterim: setInterimTranscript,
+          })
+        : ''
+
       cancelledRef.current = false
       setIsCancelled(false)
       setCancelZoneSafe('none')
       setPhaseSafe('idle')
-
-      if (!uri) return null
 
       return { uri, durationMs, transcript }
     } catch {
       resetRecorder()
       return null
     }
-  }, [discardRecording, flashPressTooShort, resetRecorder, setCancelZoneSafe, setPhaseSafe, stopSpeechRecognition])
+  }, [discardRecording, flashPressTooShort, releaseRecorder, resetRecorder, setCancelZoneSafe, setPhaseSafe, speechRecognitionAvailable])
 
   useEffect(
     () => () => {
       if (tooShortTimerRef.current !== null) {
         clearTimeout(tooShortTimerRef.current)
       }
-      stopInterimPolling()
-      abortSpeechRecognition()
     },
-    [abortSpeechRecognition, stopInterimPolling],
+    [],
   )
 
   return {

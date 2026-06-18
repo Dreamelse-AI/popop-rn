@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { DEV_AUTH_TOKEN_NEVER_EXPIRES_AT, getDevAuthToken } from '@/features/auth/dev-auth-token'
 import { storage, secureStorage } from '@/shared/storage'
 import { sessionStore } from '@/shared/session-store'
+import { clearUserSessionStores } from '@/shared/session/clear-user-session'
 
 type AuthState = {
   isLoggedIn: boolean
@@ -50,6 +51,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await secureStorage.remove(TOKEN_KEY)
     storage.remove(TOKEN_EXPIRES_AT_KEY)
     setGuestModeStorage(true)
+    clearUserSessionStores()
     set({ isLoggedIn: false, guestMode: true, token: null, tokenExpiresAt: null, isRestoringSession: false })
   },
 
@@ -57,6 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     setGuestModeStorage(false)
     await secureStorage.remove(TOKEN_KEY)
     storage.remove(TOKEN_EXPIRES_AT_KEY)
+    clearUserSessionStores()
     set({ isLoggedIn: false, guestMode: false, token: null, tokenExpiresAt: null })
   },
 

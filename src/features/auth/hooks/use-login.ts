@@ -52,6 +52,8 @@ export function useLogin(navigation: UseLoginNavigation) {
   const googleLogin = useGoogleLogin()
   const appleLogin = useAppleLogin()
   const pendingActionRef = useRef<(() => void) | null>(null)
+  const pendingAfterAgreeCloseRef = useRef<(() => void) | null>(null)
+  const pendingAfterEmailCloseRef = useRef<(() => void) | null>(null)
   const pendingAuthRef = useRef<AuthResponse | null>(null)
   const profileAvatarUriRef = useRef<string | null>(null)
   const profileSetupSessionRef = useRef(0)
@@ -151,28 +153,20 @@ export function useLogin(navigation: UseLoginNavigation) {
   const setAgreed = useCallback((agreed: boolean) => update({ agreed }), [update])
   const clearToast = useCallback(() => update({ toast: null }), [update])
 
-  const setRegion = useCallback((region: AccountRegion) => {
-    setState(prev => {
-      if (prev.region === region) return prev
-      return {
-        ...prev,
-        region,
-        agreed: false,
-        agreementChecks: {},
-        error: null,
-      }
-    })
-    i18n.changeLanguage(REGION_TO_LANGUAGE[region])
-    setAccountRegion(region)
-  }, [])
-
   const openEmailModal = useCallback(() => {
     update({ showEmailModal: true, step: 'email', code: '', error: null })
   }, [update])
 
   const closeEmailModal = useCallback(() => {
+    pendingAfterEmailCloseRef.current = null
     update({ showEmailModal: false, error: null })
   }, [update])
+
+  const handleEmailModalClosed = useCallback(() => {
+    const pending = pendingAfterEmailCloseRef.current
+    pendingAfterEmailCloseRef.current = null
+    pending?.()
+  }, [])
 
   const buildPrefilledAgreementChecks = useCallback(() => {
     if (!state.agreed) return {}
@@ -232,8 +226,15 @@ export function useLogin(navigation: UseLoginNavigation) {
 
   const closeAgreeModal = useCallback(() => {
     pendingActionRef.current = null
+    pendingAfterAgreeCloseRef.current = null
     update({ showAgreeModal: false })
   }, [update])
+
+  const handleAgreeModalClosed = useCallback(() => {
+    const pending = pendingAfterAgreeCloseRef.current
+    pendingAfterAgreeCloseRef.current = null
+    pending?.()
+  }, [])
 
   const closeProfileSetupModal = useCallback(() => {
     bumpProfileSetupSession()
@@ -276,16 +277,21 @@ export function useLogin(navigation: UseLoginNavigation) {
   const submitAgreeAndLogin = useCallback(() => {
     if (!canSubmitAgreements) return
 
-    update({ agreed: true, showAgreeModal: false })
-
     if (pendingAuthRef.current) {
-      openProfileSetupModal()
+      update({ agreed: true, showAgreeModal: false })
+      pendingAfterAgreeCloseRef.current = () => openProfileSetupModal()
       return
     }
 
     const pending = pendingActionRef.current
     pendingActionRef.current = null
-    pending?.()
+
+    update({ agreed: true, showAgreeModal: false })
+
+    if (pending) {
+      // 等条款弹窗关闭动画结束后再打开下一个弹窗，避免 RN 多 Modal 叠层冲突
+      pendingAfterAgreeCloseRef.current = pending
+    }
   }, [canSubmitAgreements, update, openProfileSetupModal])
 
   const submitProfileSetup = useCallback(async () => {
@@ -359,6 +365,15 @@ export function useLogin(navigation: UseLoginNavigation) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }, [])
 
+  const openAgreeModalForProfileSetup = useCallback(() => {
+    update({
+      showAgreeModal: true,
+      agreeModalMode: 'provider',
+      agreementChecks: {},
+      error: null,
+    })
+  }, [update])
+
   const beginProfileSetupForAuth = useCallback(
     (res: AuthResponse) => {
       pendingAuthRef.current = res
@@ -366,26 +381,31 @@ export function useLogin(navigation: UseLoginNavigation) {
         applyAuthResponse(res)
         navigation.replace('Home')
       }
-      if (state.agreed) {
-        openProfileSetupModal()
-      } else {
-        update({
-          showAgreeModal: true,
-          agreeModalMode: 'provider',
-          agreementChecks: {},
-          error: null,
-          showEmailModal: false,
-        })
-      }
+
+      setState(prev => {
+        const runAfterEmailClose = () => {
+          if (prev.agreed) {
+            openProfileSetupModal()
+          } else {
+            openAgreeModalForProfileSetup()
+          }
+        }
+
+        if (prev.showEmailModal) {
+          pendingAfterEmailCloseRef.current = runAfterEmailClose
+          return { ...prev, showEmailModal: false, error: null }
+        }
+
+        queueMicrotask(runAfterEmailClose)
+        return prev
+      })
     },
-    [navigation, state.agreed, openProfileSetupModal, update],
+    [navigation, openProfileSetupModal, openAgreeModalForProfileSetup],
   )
 
   const handleNewUserFlow = useCallback(
     async (res: AuthResponse) => {
-      console.log('[useLogin] handleNewUserFlow:', { is_new: res.is_new, jwt_token: !!res.jwt_token })
       if (res.is_new) {
-        console.log('[useLogin] -> beginProfileSetupForAuth (new user)')
         beginProfileSetupForAuth(res)
         return
       }
@@ -393,9 +413,7 @@ export function useLogin(navigation: UseLoginNavigation) {
       applyAuthTokenOnly(res)
       try {
         const listResp = await userPersonaApi.list()
-        console.log('[useLogin] persona list:', { count: (listResp.items ?? []).length })
         if ((listResp.items ?? []).length === 0) {
-          console.log('[useLogin] -> beginProfileSetupForAuth (no persona)')
           beginProfileSetupForAuth(res)
           return
         }
@@ -406,7 +424,6 @@ export function useLogin(navigation: UseLoginNavigation) {
         return
       }
 
-      console.log('[useLogin] -> applyAuthResponse & navigate Home')
       applyAuthResponse(res)
       navigation.replace('Home')
     },
@@ -510,13 +527,14 @@ export function useLogin(navigation: UseLoginNavigation) {
     setCode,
     toggleAgree,
     setAgreed,
-    setRegion,
     clearToast,
     openEmailModal,
     closeEmailModal,
+    handleEmailModalClosed,
     requireAgreementBeforeAction,
     toggleAgreement,
     closeAgreeModal,
+    handleAgreeModalClosed,
     submitAgreeAndLogin,
     canSubmitAgreements,
     handleSkipLogin,

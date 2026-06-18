@@ -8,10 +8,12 @@ import { takePendingNewUserReward } from '@/features/auth/new-user-reward'
 import {
   clearFeedTabLeft,
   markFeedTabLeft,
+  saveFeedScrollTop,
   shouldRefreshFeedOnReturn,
+  takeFeedScrollTop,
 } from '@/features/feed/feed-session'
 import type { FeedRefreshOutcome } from '@/features/feed/hooks/use-feed'
-import { takePostDynamicPublishSuccess } from '@/features/post-dynamic'
+import { takePostDynamicPublishSuccess } from '@/features/post-dynamic/lib/post-dynamic-feed-return'
 import { Toast, useToast } from '@/shared/ui/toast'
 import { BottomNavBar } from './nav/bottom-nav-bar'
 import { TagFeed, type TagFeedRef } from './feed/tag-feed'
@@ -22,6 +24,7 @@ import { SearchPanel } from './search/search-panel'
 import { MePage } from './me-page'
 import { TopNavBar } from './nav/top-nav-bar'
 import { CreatePage } from './create-page'
+import { PromoBanner } from './promo-banner'
 
 import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
 
@@ -44,11 +47,13 @@ export function HomePage() {
   const insets = useSafeAreaInsets()
   const { t } = useTranslation()
   const [searchOpen, setSearchOpen] = useState(false)
+  const [promoVisible, setPromoVisible] = useState(true)
   const [bottomTab, setBottomTab] = useState('home')
   const [reopenDrawer] = useState(takeReopenCharacterDrawer)
   const [returnToCharacterTab] = useState(takeReturnToCharacterTab)
   const [newUserRewardCoins, setNewUserRewardCoins] = useState<number | null>(null)
   const feedScrollRef = useRef<ScrollView>(null)
+  const feedScrollOffsetRef = useRef(0)
   const tagFeedRef = useRef<TagFeedRef>(null)
   const prevBottomTabRef = useRef(bottomTab)
   const { toast, showToast } = useToast()
@@ -83,6 +88,21 @@ export function HomePage() {
     const coins = takePendingNewUserReward()
     if (coins !== null) {
       setNewUserRewardCoins(coins)
+    }
+  }, [])
+
+  useEffect(() => {
+    const top = takeFeedScrollTop()
+    if (top == null) return
+
+    requestAnimationFrame(() => {
+      feedScrollRef.current?.scrollTo({ y: top, animated: false })
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      saveFeedScrollTop(feedScrollOffsetRef.current)
     }
   }, [])
 
@@ -135,6 +155,7 @@ export function HomePage() {
 
   const handleFeedScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
+    feedScrollOffsetRef.current = contentOffset.y
     const remaining = contentSize.height - layoutMeasurement.height - contentOffset.y
     if (remaining < 400) {
       tagFeedRef.current?.tryLoadMore()
@@ -146,6 +167,10 @@ export function HomePage() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {!searchOpen && bottomTab !== 'create' && promoVisible && (
+        <PromoBanner onClose={() => setPromoVisible(false)} />
+      )}
+
       {showHomeChrome && (
         <TopNavBar onSearchPress={() => setSearchOpen(true)} />
       )}

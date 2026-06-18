@@ -1,9 +1,10 @@
 /**
- * 帖子互动 API：契约来自 arca.api reaction 模块（target_type=1 post）
+ * 帖子互动 API：契约来自 arca.api reaction 模块（target_type=2 post）
  */
 import { addReaction, removeReaction } from '@/generated';
 
-const POST_TARGET_TYPE = 1 as const;
+// reaction target_type 枚举（IDL）：1-character 2-post 3-story
+const POST_TARGET_TYPE = 2 as const;
 const LIKE_KIND = 1 as const;
 
 export const postApi = {

@@ -76,7 +76,7 @@ export function apiFormToDraftState(
     images: mapImagesFromApi(form.images),
     openingPrologue: form.opening_prologue ?? [],
     customizedSettings,
-    landingPageUrls: form.landing_page_urls ?? [],
+    landingPageUrls: form.landing_page_url?.trim() ? [form.landing_page_url.trim()] : [],
     localUpdatedAt: serverUpdatedAt,
     serverUpdatedAt,
   };
@@ -141,7 +141,7 @@ export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCr
       return lines.length ? lines : undefined;
     })(),
     customized_settings,
-    landing_page_urls: state.landingPageUrls,
+    landing_page_url: state.landingPageUrls.find((url) => url.trim())?.trim() || undefined,
   };
 }
 
@@ -246,6 +246,6 @@ export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): 
     voice_id: character.voice?.voice_id,
     visibility: character.is_public === false ? 'private' : 'public',
     images: images.length ? images : undefined,
-    landing_page_urls: character.landing_page_urls ?? [],
+    landing_page_url: character.landing_page_urls?.[0]?.trim() || undefined,
   };
 }

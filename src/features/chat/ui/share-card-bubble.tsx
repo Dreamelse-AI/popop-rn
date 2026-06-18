@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import { Image } from 'expo-image'
 
@@ -9,6 +9,7 @@ type ShareCardBubbleProps = {
   content: string
   imageUrl?: string
   status?: 'pending' | 'failed'
+  onPress?: () => void
 }
 
 export function ShareCardBubble({
@@ -18,10 +19,11 @@ export function ShareCardBubble({
   content,
   imageUrl,
   status,
+  onPress,
 }: ShareCardBubbleProps) {
   return (
     <View style={styles.wrapper}>
-      <View style={styles.card}>
+      <Pressable style={styles.card} onPress={onPress}>
         {/* Author */}
         <View style={styles.authorRow}>
           <Image source={{ uri: authorAvatar }} style={styles.authorAvatar} />
@@ -49,7 +51,7 @@ export function ShareCardBubble({
             <Text style={styles.failedText}>!</Text>
           </View>
         )}
-      </View>
+      </Pressable>
     </View>
   )
 }

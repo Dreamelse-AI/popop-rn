@@ -1,4 +1,5 @@
 import { Modal, View, Pressable, Text, StyleSheet } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 
 import { resolveChatImageDisplayUrl } from '../lib/tos-upload'
@@ -9,6 +10,8 @@ type ChatImagePreviewProps = {
 }
 
 export function ChatImagePreview({ imageUrl, onClose }: ChatImagePreviewProps) {
+  const insets = useSafeAreaInsets()
+
   if (!imageUrl) return null
 
   return (
@@ -18,18 +21,37 @@ export function ChatImagePreview({ imageUrl, onClose }: ChatImagePreviewProps) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-        <Pressable onPress={(e) => e.stopPropagation()}>
+      <View style={styles.overlay}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityLabel="关闭预览"
+          accessibilityRole="button"
+        />
+
+        <Pressable
+          onPress={() => {
+            // 点击图片区域不关闭，仅拦截背景点击
+          }}
+          style={styles.imageWrap}
+        >
           <Image
             source={{ uri: resolveChatImageDisplayUrl(imageUrl) }}
             style={styles.image}
             contentFit="contain"
           />
         </Pressable>
-      </Pressable>
+
+        <Pressable
+          style={[styles.closeButton, { top: insets.top + 32 }]}
+          onPress={onClose}
+          accessibilityLabel="关闭"
+          accessibilityRole="button"
+          hitSlop={8}
+        >
+          <Text style={styles.closeText}>×</Text>
+        </Pressable>
+      </View>
     </Modal>
   )
 }
@@ -41,11 +63,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  imageWrap: {
+    zIndex: 1,
+    maxWidth: '100%',
+    paddingHorizontal: 16,
+  },
   closeButton: {
     position: 'absolute',
     right: 16,
-    top: 16,
-    zIndex: 10,
+    zIndex: 2,
+    elevation: 2,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -63,5 +90,6 @@ const styles = StyleSheet.create({
     width: 390,
     height: 500,
     maxWidth: '100%',
+    maxHeight: '85%',
   },
 })

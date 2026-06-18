@@ -40,13 +40,14 @@ export function StoryAvatar({ item, onClick }: StoryAvatarProps) {
           <Image
             source={{ uri: item.characterAvatarUrl! }}
             style={styles.avatarImage}
+            contentFit="cover"
             onError={() => setImageFailed(true)}
           />
         )}
       </View>
 
       {showUnreadRing && (
-        <View style={styles.unreadRingWrapper}>
+        <View pointerEvents="none" style={styles.unreadRingWrapper}>
           <IconUnreadRing width={68} height={68} />
         </View>
       )}
@@ -78,8 +79,8 @@ const styles = StyleSheet.create({
     height: 60,
   },
   unreadRingWrapper: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

@@ -12,6 +12,7 @@ import bubbleTailYellow from './dialog-pop-down-yellow.svg';
 import characterAvatarPlaceholder from './character-icon.svg';
 import iconBlackSend from './dialog-black-send.svg';
 import iconBlackEmoji from './dialog-black-emoji.svg';
+import iconKeyboard from './dialog-keyboard.svg';
 import iconTopLeftBack from './dialog-topleft-back.svg';
 import iconTopLeftTag from './dialog-topleft-tag.svg';
 import iconTopRightMenu from './dialog-topright-back.svg';
@@ -24,6 +25,7 @@ export const dialogAssets = {
   iconPlus,
   iconEmoji,
   iconBlackEmoji,
+  iconKeyboard,
   iconVoice,
   iconBlackSend,
   iconVoiceUnion,

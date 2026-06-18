@@ -35,6 +35,12 @@ function toForm(item: UserPersonaItem): UserPersonaForm {
   }
 }
 
+type UseUserPersonaOptions = {
+  /** undefined = 默认自设；null = 新建；string = 编辑指定自设 */
+  personaId?: string | null
+  isDefaultOnCreate?: boolean
+}
+
 type UseUserPersonaResult = {
   form: UserPersonaForm
   loading: boolean
@@ -43,16 +49,19 @@ type UseUserPersonaResult = {
   avatarUploading: boolean
   setForm: (updater: (prev: UserPersonaForm) => UserPersonaForm) => void
   pickAvatar: () => void
-  save: () => Promise<{ ok: boolean; auditFailed?: boolean }>
+  save: () => Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string }>
 }
 
-export function useUserPersona(enabled: boolean): UseUserPersonaResult {
+export function useUserPersona(
+  enabled: boolean,
+  { personaId, isDefaultOnCreate = true }: UseUserPersonaOptions = {},
+): UseUserPersonaResult {
   const [form, setFormState] = useState<UserPersonaForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
-  const loadedRef = useRef(false)
+  const loadKeyRef = useRef<string | null>(null)
   const avatarUriRef = useRef<string | null>(null)
 
   const setForm = useCallback((updater: (prev: UserPersonaForm) => UserPersonaForm) => {
@@ -80,8 +89,23 @@ export function useUserPersona(enabled: boolean): UseUserPersonaResult {
   }, [enabled])
 
   useEffect(() => {
-    if (!enabled || loadedRef.current) return
-    loadedRef.current = true
+    if (!enabled) {
+      loadKeyRef.current = null
+      return
+    }
+
+    const loadKey =
+      personaId === undefined ? '__default__' : personaId === null ? '__create__' : personaId
+    if (loadKeyRef.current === loadKey) return
+    loadKeyRef.current = loadKey
+
+    if (personaId === null) {
+      setFormState(EMPTY_FORM)
+      setLoading(false)
+      setError(false)
+      return
+    }
+
     setLoading(true)
     setError(false)
 
@@ -89,17 +113,21 @@ export function useUserPersona(enabled: boolean): UseUserPersonaResult {
       .list()
       .then(resp => {
         const items = resp.items ?? []
-        const picked = items.find(item => item.is_default) ?? items[0]
+        const picked =
+          personaId === undefined
+            ? (items.find(item => item.is_default) ?? items[0])
+            : items.find(item => item.persona_id === personaId)
         if (picked) setFormState(toForm(picked))
+        else if (personaId !== undefined) setFormState(EMPTY_FORM)
       })
       .catch(e => {
         console.error('[useUserPersona] load failed:', e)
         setError(true)
       })
       .finally(() => setLoading(false))
-  }, [enabled])
+  }, [enabled, personaId])
 
-  const save = useCallback(async (): Promise<{ ok: boolean; auditFailed?: boolean }> => {
+  const save = useCallback(async (): Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string }> => {
     if (!form.name.trim()) return { ok: false }
     setSaving(true)
     try {
@@ -124,20 +152,21 @@ export function useUserPersona(enabled: boolean): UseUserPersonaResult {
         })
         setFormState(toForm(resp.persona))
         syncMeProfileFromPersona(resp.persona)
-      } else {
-        const resp = await userPersonaApi.create({
-          name: form.name.trim(),
-          gender: form.gender,
-          profile: form.profile,
-          avatar_url: avatarUrl,
-          is_default: true,
-        })
-        setFormState(toForm(resp.persona))
-        syncMeProfileFromPersona(resp.persona)
+        avatarUriRef.current = null
+        return { ok: true, personaId: resp.persona.persona_id }
       }
 
+      const resp = await userPersonaApi.create({
+        name: form.name.trim(),
+        gender: form.gender,
+        profile: form.profile,
+        avatar_url: avatarUrl,
+        is_default: isDefaultOnCreate,
+      })
+      setFormState(toForm(resp.persona))
+      syncMeProfileFromPersona(resp.persona)
       avatarUriRef.current = null
-      return { ok: true }
+      return { ok: true, personaId: resp.persona.persona_id }
     } catch (e) {
       console.error('[useUserPersona] save failed:', e)
       if (e instanceof PersonaAvatarAuditError) {
@@ -147,7 +176,7 @@ export function useUserPersona(enabled: boolean): UseUserPersonaResult {
     } finally {
       setSaving(false)
     }
-  }, [form])
+  }, [form, isDefaultOnCreate])
 
   return { form, loading, saving, error, avatarUploading, setForm, pickAvatar, save }
 }

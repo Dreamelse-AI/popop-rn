@@ -428,6 +428,10 @@
     "addBackground": "Add background",
     "deleteBackground": "Delete background"
   },
+  "imageUpload": {
+    "uploadFailed": "Upload failed. Please retry.",
+    "auditFailed": "Image did not pass review. Please try another."
+  },
   "chatLocalAlbumSheet": {
     "title": "Select from Album",
     "recentlyUsed": "Recently used",

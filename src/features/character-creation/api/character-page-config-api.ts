@@ -189,7 +189,7 @@ export async function fetchGenderOptions(): Promise<PageConfigSelectOption<Gende
 export async function fetchSpeciesOptions(): Promise<PageConfigSelectOption[]> {
   try {
     const resp = await fetchCharacterPageConfig();
-    return mapPageConfigSpeciesOptions(resp.setting_options);
+    return mapPageConfigSpeciesOptions(resp.species);
   } catch (error) {
     console.warn('[fetchSpeciesOptions] page_config failed:', error);
     return [];

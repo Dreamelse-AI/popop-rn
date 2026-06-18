@@ -17,6 +17,11 @@ export {
   markFeedTabLeft,
   clearFeedTabLeft,
   shouldRefreshFeedOnReturn,
+  saveFeedScrollTop,
+  takeFeedScrollTop,
+  getFeedListSnapshot,
+  saveFeedListSnapshot,
+  clearFeedSessionState,
   FEED_TAB_STATE_TTL,
 } from './feed-session';
 export { useFeed, type FeedRefreshOutcome } from './hooks/use-feed';

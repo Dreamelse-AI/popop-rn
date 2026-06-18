@@ -1,5 +1,7 @@
 /** 角色主页帖子 feed 时间（如「1일 전」「5-27」） */
 export function formatCharacterProfilePostTime(publishedAtMs: number): string {
+  if (!Number.isFinite(publishedAtMs) || publishedAtMs <= 0) return '';
+
   const now = Date.now();
   const diff = now - publishedAtMs;
   const minutes = Math.floor(diff / 60000);

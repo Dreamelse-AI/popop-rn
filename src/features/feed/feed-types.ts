@@ -9,8 +9,14 @@ export type HomeFeedPost = {
   characterAvatar: string;
   content: string;
   imageUrl: string | null;
+  /** rec_post_entity.images 数量大于 1 时为多图帖子 */
+  hasMultipleImages: boolean;
   likeCount: number;
   isLiked: boolean;
+  /** 发布时间（UTC 毫秒时间戳） */
+  publishedAtMs: number;
+  /** 是否附带背景音乐 */
+  hasBgm: boolean;
   /** 帖子推荐来源（如 friend_new），待后端补充 */
   recSource?: string;
 };

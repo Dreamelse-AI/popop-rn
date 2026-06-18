@@ -1,4 +1,4 @@
-import type { LoginResp } from '@/generated';
+import type { LoginResp } from '@/generated/arca_apiComponents';
 
 export type AccountRegion = 'TW' | 'JP' | 'KR' | 'OTHER';
 

@@ -1,6 +1,7 @@
 import type { AccountRegion } from '@/features/auth/auth-types'
 import {
   DEFAULT_ACCOUNT_REGION,
+  getDeviceAccountRegion,
   mapCountryCodeToAccountRegion,
 } from '@/features/auth/region-config'
 import { API_BASE, IP_REGION_PATH } from '@/shared/api/api-base'
@@ -72,6 +73,12 @@ async function fetchIPRegionIso(): Promise<string | null | 'empty'> {
   }
 }
 
+/**
+ * 应用启动时调用：请求 /app/ip_region。
+ * - 有返回值：映射后写入 storage，下次复用
+ * - 无返回值：使用设备地区兜底（可用 MOCK_DEVICE_REGION 覆盖），不写入缓存
+ * - 请求失败：复用已有缓存（若有），否则使用设备地区兜底
+ */
 export function bootstrapAccountRegion(): Promise<AccountRegion> {
   if (regionReady) {
     return Promise.resolve(getAccountRegion())
@@ -90,9 +97,9 @@ export function bootstrapAccountRegion(): Promise<AccountRegion> {
         resolvedRegion = mapCountryCodeToAccountRegion(result)
         persistAccountRegion(resolvedRegion)
       } else if (result === 'empty') {
-        resolvedRegion = DEFAULT_ACCOUNT_REGION
+        resolvedRegion = getDeviceAccountRegion()
       } else {
-        resolvedRegion = cached ?? DEFAULT_ACCOUNT_REGION
+        resolvedRegion = cached ?? getDeviceAccountRegion()
       }
 
       regionReady = true

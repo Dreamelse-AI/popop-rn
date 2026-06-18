@@ -109,7 +109,7 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
     setCreating(true);
     try {
       const resp = await creationApi.saveCharacterDraft({
-        character_create_form: { landing_page_urls: [] },
+        character_create_form: {},
       });
       await refresh();
       return resp.draft_id;

@@ -1,6 +1,6 @@
 /** 登录成功后的统一副作用处理：写入 token / 登录态，并在新用户时标记待展示奖励弹窗 */
 import { apiClient } from '@/shared/api/api-client';
-import { refreshWallet } from '@/shared/wallet';
+import { refreshWallet } from '@/shared/wallet/wallet-store';
 
 import { useAuthStore } from './auth-store';
 // import type 仅导入类型，编译后会被擦除，不会引入实际的代码
@@ -8,6 +8,7 @@ import type { AuthResponse } from './auth-types';
 import { markUserRegisteredAt } from '@/features/feed/lib/feed-user-context';
 
 import { DEFAULT_NEW_USER_REWARD_COINS, setPendingNewUserReward } from './new-user-reward';
+import { env } from '@/shared/env';
 
 // 获取新用户奖励金币数量
 export function getNewUserRewardCoins(res: AuthResponse): number {
@@ -15,6 +16,9 @@ export function getNewUserRewardCoins(res: AuthResponse): number {
 }
 
 function withDevNewUserMock(res: AuthResponse): AuthResponse {
+  if (__DEV__ && env.mockNewUser) {
+    return { ...res, is_new: true };
+  }
   return res;
 }
 
