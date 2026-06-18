@@ -10,14 +10,15 @@ import IconTailWhite from '@/shared/assets/dialog/dialog-pop-down-white.svg'
 type BubbleTailProps = {
   variant: BubbleTailVariant
   side: 'left' | 'right'
+  style?: object
 }
 
-export function BubbleTail({ variant, side }: BubbleTailProps) {
+export function BubbleTail({ variant, side, style }: BubbleTailProps) {
   const positionStyle = side === 'left' ? styles.left : styles.right
 
   if (variant === 'black') {
     return (
-      <View style={[styles.tail, positionStyle]}>
+      <View style={[styles.tail, positionStyle, style]}>
         <IconBlackVector width={19} height={9} />
       </View>
     )
@@ -25,7 +26,7 @@ export function BubbleTail({ variant, side }: BubbleTailProps) {
 
   if (variant === 'yellow') {
     return (
-      <View style={[styles.tail, positionStyle]}>
+      <View style={[styles.tail, positionStyle, style]}>
         <IconTailYellow width={19} height={9} />
       </View>
     )
@@ -33,14 +34,14 @@ export function BubbleTail({ variant, side }: BubbleTailProps) {
 
   if (variant === 'white') {
     return (
-      <View style={[styles.tail, positionStyle]}>
+      <View style={[styles.tail, positionStyle, style]}>
         <IconTailWhite width={19} height={9} />
       </View>
     )
   }
 
   return (
-    <View style={[styles.tail, positionStyle]}>
+    <View style={[styles.tail, positionStyle, style]}>
       <Svg width={19} height={9} viewBox="0 0 19 9">
         <Path
           d="M18.299 8.52186C20.715 8.52186 12.5366 5.27452 14.6474 0L0 0C0 0 1.4529 3.71254 5.52495 6.18464C9.597 8.65674 15.883 8.52186 18.299 8.52186Z"

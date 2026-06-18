@@ -16,6 +16,8 @@ import type { VoiceRecorderPhase, VoiceCancelZone } from '../hooks/use-voice-rec
 import type { ChatCharacter, ChatMessage } from '../model/types'
 import type { BubbleStyleTokens } from '../lib/chat-atmosphere-presets'
 
+import { PopImage } from '@/shared/ui/pop-image'
+
 import { ChatEmojiBottomSheet } from './chat-emoji-bottom-sheet'
 import { ChatHeader } from './chat-header'
 import { ChatInputBar, VoiceRecordingBanner } from './chat-input-bar'
@@ -157,6 +159,17 @@ export function CharacterChatScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: pageBackground.baseColor }]}>
+      {pageBackground.imageSource ? (
+        <View style={styles.pageBackgroundImage} pointerEvents="none">
+          <PopImage
+            source={pageBackground.imageSource}
+            contentFit="cover"
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      ) : null}
+
+      <View style={styles.foreground}>
       <ChatHeader
         name={character.name}
         characterAka={characterAka}
@@ -279,6 +292,7 @@ export function CharacterChatScreen({
         onDismiss={() => onVersionSyncDismiss?.()}
         onClose={() => onVersionSyncClose?.()}
       />
+      </View>
     </View>
   )
 }
@@ -286,6 +300,14 @@ export function CharacterChatScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  pageBackgroundImage: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
+  },
+  foreground: {
+    flex: 1,
+    zIndex: 1,
   },
   messageArea: {
     flex: 1,

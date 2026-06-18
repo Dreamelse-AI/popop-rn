@@ -1,3 +1,7 @@
+import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
+
+import type { ImageProps } from 'expo-image'
+
 import { loadCustomBackgrounds, type StoredCustomBackground } from './chat-background-store'
 import { resolveTosAssetUrl } from './tos-upload'
 
@@ -18,7 +22,7 @@ export type PresetBackground = {
 export type ImageBackground = {
   id: string
   type: 'image'
-  image: string
+  image: string | number
   bkgMainColor?: string
 }
 
@@ -33,7 +37,7 @@ export type BackgroundItem = PresetBackground | ImageBackground | CustomBackgrou
 
 export type CustomTheme = {
   id: string
-  image: string
+  image: string | number
 }
 
 export type BubbleTailVariant = 'white' | 'yellow' | 'black' | 'blue'
@@ -59,9 +63,28 @@ export const DEFAULT_CHAT_ATMOSPHERE: ChatAtmosphereConfig = {
 
 export const PRESET_BACKGROUNDS: BackgroundItem[] = [
   { id: 'yellow', type: 'color', color: '#fbf2d8' },
+  {
+    id: 'default-1',
+    type: 'image',
+    image: dialogPageStyleSettingsAssets.default1,
+    bkgMainColor: '#fbf2d8',
+  },
+  {
+    id: 'default-2',
+    type: 'image',
+    image: dialogPageStyleSettingsAssets.default2,
+    bkgMainColor: '#fbf2d8',
+  },
 ]
 
-export const CUSTOM_THEMES: CustomTheme[] = []
+export const CUSTOM_THEMES: CustomTheme[] = [
+  { id: 'theme-1', image: dialogPageStyleSettingsAssets.tempImg1 },
+  { id: 'theme-2', image: dialogPageStyleSettingsAssets.tempImg2 },
+  { id: 'theme-3', image: dialogPageStyleSettingsAssets.tempImg3 },
+  { id: 'theme-4', image: dialogPageStyleSettingsAssets.tempImg4 },
+  { id: 'theme-5', image: dialogPageStyleSettingsAssets.tempImg5 },
+  { id: 'theme-6', image: dialogPageStyleSettingsAssets.tempImg6 },
+]
 
 export const BUBBLE_STYLE_TOKENS: Record<BubbleStyleId, BubbleStyleTokens> = {
   classic: {
@@ -70,11 +93,11 @@ export const BUBBLE_STYLE_TOKENS: Record<BubbleStyleId, BubbleStyleTokens> = {
   },
   dark: {
     received: { bgColor: '#ffffff', tail: 'white', textColor: '#000000' },
-    sent: { bgColor: '#1a1a1a', tail: 'black', textColor: '#ffffff' },
+    sent: { bgColor: '#000000', tail: 'black', textColor: '#ffffff' },
   },
   blue: {
-    received: { bgColor: '#ffffff', tail: 'white', textColor: '#000000' },
-    sent: { bgColor: '#3b82f6', tail: 'blue', textColor: '#ffffff' },
+    received: { bgColor: '#d7f0ff', tail: 'blue', textColor: '#000000' },
+    sent: { bgColor: '#fdeab3', tail: 'yellow', textColor: 'rgba(0,0,0,0.9)' },
   },
 }
 
@@ -96,18 +119,32 @@ export function getBubbleStyleTokens(bubbleStyleId: BubbleStyleId): BubbleStyleT
 
 export function getBackgroundPreview(backgroundId: string): {
   previewImage?: string
+  previewSource?: ImageProps['source']
   color?: string
 } {
-  const all = getAllBackgrounds()
-  const item = all.find(bg => bg.id === backgroundId)
-  if (!item) return { color: '#fbf2d8' }
-  if (item.type === 'color') return { color: item.color }
-  return { previewImage: item.image }
+  const background = findBackground(backgroundId)
+
+  if (!background || background.type === 'color') {
+    return { color: background?.type === 'color' ? background.color : '#fbf2d8' }
+  }
+
+  if (typeof background.image === 'number') {
+    return {
+      color: background.bkgMainColor ?? '#fbf2d8',
+      previewSource: background.image,
+    }
+  }
+
+  return {
+    color: background.bkgMainColor ?? '#fbf2d8',
+    previewImage: background.image,
+    previewSource: { uri: resolveTosAssetUrl(background.image) },
+  }
 }
 
 export type ResolvedPageBackground = {
   baseColor: string
-  imageUrl?: string
+  imageSource?: ImageProps['source']
 }
 
 export function findBackground(id: string): BackgroundItem | undefined {
@@ -122,9 +159,14 @@ export function resolvePageBackground(config: ChatAtmosphereConfig): ResolvedPag
   }
 
   if (background?.type === 'image' || background?.type === 'custom') {
+    const imageSource: ImageProps['source'] =
+      typeof background.image === 'number'
+        ? background.image
+        : { uri: resolveTosAssetUrl(background.image) }
+
     return {
       baseColor: background.bkgMainColor ?? '#fbf2d8',
-      imageUrl: resolveTosAssetUrl(background.image),
+      imageSource,
     }
   }
 
