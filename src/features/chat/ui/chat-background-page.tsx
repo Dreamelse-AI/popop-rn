@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { ChatBackgroundUploadResult } from '@/features/chat/lib/chat-background-upload'
+import {
+  getImageUploadErrorMessage,
+  pickAndUploadImages,
+} from '@/features/chat/lib/pick-and-upload-images'
 import {
   getAllBackgrounds,
   PRESET_BACKGROUNDS,
@@ -15,8 +19,8 @@ import {
   type StoredCustomBackground,
 } from '@/features/chat/lib/chat-background-store'
 
-import { ChatLocalAlbumSheet } from './chat-local-album-sheet'
 import { Image } from 'expo-image'
+import { Toast, useToast } from '@/shared/ui/toast'
 
 type ChatBackgroundPageProps = {
   open: boolean
@@ -33,9 +37,10 @@ export function ChatBackgroundPage({
 }: ChatBackgroundPageProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const { toast, showToast } = useToast()
   const [draftSelectedId, setDraftSelectedId] = useState(selectedBackgroundId)
   const [allBackgrounds, setAllBackgrounds] = useState<BackgroundItem[]>(PRESET_BACKGROUNDS)
-  const [albumSheetOpen, setAlbumSheetOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -75,6 +80,23 @@ export function ChatBackgroundPage({
     onSelectBackground?.(newBackground.id)
   }
 
+  const handlePickBackground = async () => {
+    if (uploading) return
+
+    setUploading(true)
+    try {
+      const results = await pickAndUploadImages({ scene: 'chatBackground' })
+      const uploaded = results[0]
+      if (uploaded) {
+        handleSelectPhoto(uploaded)
+      }
+    } catch (error) {
+      showToast(getImageUploadErrorMessage(error, t))
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -100,19 +122,19 @@ export function ChatBackgroundPage({
         ))}
 
         <Pressable
-          onPress={() => setAlbumSheetOpen(true)}
+          onPress={() => void handlePickBackground()}
+          disabled={uploading}
           style={styles.addCard}
           accessibilityLabel={t('chatBackgroundPage.addBackground')}
         >
-          <Text style={styles.addIcon}>+</Text>
+          {uploading ? (
+            <ActivityIndicator size="small" color="rgba(0,0,0,0.3)" />
+          ) : (
+            <Text style={styles.addIcon}>+</Text>
+          )}
         </Pressable>
       </ScrollView>
-
-      <ChatLocalAlbumSheet
-        open={albumSheetOpen}
-        onClose={() => setAlbumSheetOpen(false)}
-        onSelectPhoto={handleSelectPhoto}
-      />
+      <Toast message={toast} />
     </View>
   )
 }

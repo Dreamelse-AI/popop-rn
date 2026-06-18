@@ -20,6 +20,7 @@ type ChatPageStyleSheetProps = {
   initialConfig?: ChatAtmosphereConfig
   onClose: () => void
   onConfirm?: (config: ChatAtmosphereConfig) => void | Promise<void>
+  embedded?: boolean
 }
 
 const BUBBLE_STYLE_IDS: BubbleStyleId[] = ['classic', 'dark', 'blue']
@@ -29,6 +30,7 @@ export function ChatPageStyleSheet({
   initialConfig = DEFAULT_CHAT_ATMOSPHERE,
   onClose,
   onConfirm,
+  embedded = false,
 }: ChatPageStyleSheetProps) {
   const { t } = useTranslation()
   const [draftConfig, setDraftConfig] = useState<ChatAtmosphereConfig>(initialConfig)
@@ -59,6 +61,8 @@ export function ChatPageStyleSheet({
       <BottomSheet
         open={open}
         onClose={onClose}
+        embedded={embedded}
+        embeddedZIndex={60}
         scrollable={false}
         header={<SheetHeader title={t('chatPageStyleSheet.title')} />}
         footer={

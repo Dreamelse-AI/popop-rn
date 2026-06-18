@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-import type { RechargeVerifyResp } from '@/generated/arca_apiComponents';
-import { walletInfo } from '@/generated/arca_api';
+import type { RechargeVerifyResp, WalletInfoResp } from '@/generated/arca_apiComponents';
+import { apiClient } from '@/shared/api/api-client';
 
 type WalletState = {
   freeTokens: number | null;
@@ -25,7 +25,7 @@ export const useWalletStore = create<WalletState>(set => ({
   refresh: async () => {
     set({ isLoading: true });
     try {
-      const data = await walletInfo();
+      const data = await apiClient.request<WalletInfoResp>('/wallet/info', { method: 'GET' });
       const nextGrantAt =
         data.next_grant_at > 0
           ? Date.now() + data.next_grant_at - data.server_time

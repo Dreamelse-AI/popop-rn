@@ -306,6 +306,14 @@ export function getCharacterDraftDetail(params: components.GetCharacterDraftDeta
 
 /**
  * @description 
+ * @param params
+ */
+export function getCharacterDraftStatus(params: components.GetCharacterDraftDetailReqParams) {
+	return arcaWebapi.get<components.GetCharacterDraftStatusResp>(`/character/draft_status`, params)
+}
+
+/**
+ * @description 
  * @param req
  */
 export function forwardPostToCharacter(req: components.ForwardPostToCharacterReq) {
@@ -325,7 +333,7 @@ export function genAppearanceFromInput(req: components.GenAppearanceFromInputReq
  * @param req
  */
 export function genLandingPage(req: components.GenLandingPageReq) {
-	return arcaWebapi.post<components.GenLandingPageResp>(`/character/gen_landing_page`, req)
+	return arcaWebapi.post<components.AsyncTaskSubmitResp>(`/character/gen_landing_page`, req)
 }
 
 /**
@@ -381,6 +389,14 @@ export function list_character_phone_chat_history(req: components.ListCharacterP
  */
 export function listCharacterScheduleByDay(req: components.ListCharacterScheduleByDayReq) {
 	return arcaWebapi.post<components.ListCharacterScheduleByDayResp>(`/character/list_schedule_by_day`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function memoryRollback(req: components.MemoryRollbackReq) {
+	return arcaWebapi.post<components.MemoryRollbackResp>(`/character/memory_rollback`, req)
 }
 
 /**

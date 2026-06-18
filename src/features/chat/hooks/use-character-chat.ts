@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useRef } from 'react';
-import type { ScrollView } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { FlatList } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { takePendingForward } from '@/features/share';
 import type { EmojiItem } from '@/generated/arca_apiComponents';
+import { useToast } from '@/shared/ui/toast';
+
+import {
+  getImageUploadErrorMessage,
+  pickAndUploadImages,
+} from '../lib/pick-and-upload-images';
 
 import { markEmojiUsed, updateMessageClickStatus } from '../api/chat-api';
 import type { ChatMessage } from '../model/types';
@@ -14,6 +21,7 @@ import { useChatScroll } from './use-chat-scroll';
 import { useChatSession } from './use-chat-session';
 import { useEmojiPanel } from './use-emoji-panel';
 import { useFollowUpReply } from './use-follow-up-reply';
+import { useMessagePolling } from './use-message-polling';
 import { useMessageRollback } from './use-message-rollback';
 import { useOutboundQueue } from './use-outbound-queue';
 import { useReFriendGreeting } from './use-re-friend-greeting';
@@ -27,9 +35,17 @@ export type CharacterChatActions = {
 };
 
 export function useCharacterChat(characterId: string, actions: CharacterChatActions) {
+  const { t } = useTranslation();
   const session = useChatSession(characterId);
   const playback = useReplyPlayback();
-  const outbound = useOutboundQueue(characterId, playback);
+  const { toast, showToast } = useToast();
+  const outbound = useOutboundQueue(characterId, playback, {
+    onSendFailed: () => showToast('发送失败，请稍后重试'),
+  });
+  useMessagePolling(
+    characterId,
+    Boolean(characterId) && !session.isLoadingCharacter && !session.isLoadingHistory,
+  );
   useFollowUpReply();
   useReFriendGreeting(
     characterId,
@@ -57,11 +73,11 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     useEmojiPanel(session.showEmojiPanel);
   const { loadOlderHistory } = useChatHistory(characterId);
 
-  const scrollRef = useRef<ScrollView>(null);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useChatScroll({
+  const { onScroll, onContentSizeChange, onLayout, onScrollToIndexFailed } = useChatScroll({
     characterId,
-    scrollRef,
+    listRef,
     messages: session.messages,
     isTyping: session.isTyping,
     isLoadingCharacter: session.isLoadingCharacter,
@@ -72,6 +88,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
   });
 
   const pendingForwardSentRef = useRef(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (pendingForwardSentRef.current) return;
@@ -97,6 +114,17 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     },
     [outbound],
   );
+
+  const handlePickImages = useCallback(async () => {
+    try {
+      const results = await pickAndUploadImages({ scene: 'chat' });
+      for (const result of results) {
+        handleSendImage(result.imageUrl);
+      }
+    } catch (error) {
+      showToast(getImageUploadErrorMessage(error, t));
+    }
+  }, [handleSendImage, showToast, t]);
 
   const handleEmojiSelect = useCallback(
     (emoji: EmojiItem) => {
@@ -178,12 +206,31 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     });
   }, [outbound, voiceRecorder]);
 
+  const handleFailedMessagePress = useCallback(
+    (message: ChatMessage) => {
+      void outbound.resendFailedMessage(message);
+    },
+    [outbound],
+  );
+
+  const handleImagePress = useCallback((url: string) => {
+    setPreviewImageUrl(url);
+  }, []);
+
   return {
     character: session.character,
     isLoading: session.isLoadingCharacter,
-    scrollRef,
+    listRef,
+    toast,
+    previewImageUrl,
+    onPreviewImageClose: () => setPreviewImageUrl(null),
     screen: session.character
       ? {
+          listRef,
+          onScroll,
+          onContentSizeChange,
+          onLayout,
+          onScrollToIndexFailed,
           character: session.character,
           characterAka: session.characterAka,
           messages: session.messages,
@@ -207,7 +254,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           onBack: actions.onBack,
           onProfilePress: openProfile,
           onSendText: handleSendText,
-          onSendImage: handleSendImage,
+          onPickImages: handlePickImages,
           onToggleEmojiPanel: toggleEmojiPanel,
           onEmojiSelect: handleEmojiSelect,
           onEmojiPanelClose: () => setShowEmojiPanel(false),
@@ -218,6 +265,8 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           onVoiceHoldMove: handleVoiceHoldMove,
           onVoiceHoldEnd: handleVoiceHoldEnd,
           onMessageLongPress: rollback.openMenu,
+          onImagePress: handleImagePress,
+          onFailedMessagePress: handleFailedMessagePress,
           rollbackMenuOpen: Boolean(rollback.menuTarget),
           rollbackCanCopy: Boolean(rollback.menuCopyText),
           rollbackCanRollback: rollback.canRollback,

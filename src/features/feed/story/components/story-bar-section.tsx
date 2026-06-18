@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react'
 
+import { useAuthStore } from '@/features/auth/auth-store'
 import { useFriendshipList } from '@/features/friendship/hooks/use-friendship-list'
 import { useStoryReadStore } from '@/features/story/story-store'
 
@@ -16,12 +17,13 @@ type StoryBarSectionProps = {
 
 export const StoryBarSection = forwardRef<StoryBarSectionRef, StoryBarSectionProps>(
   function StoryBarSection({ onCharacterClick }, ref) {
-    const { data, loading: headlineLoading, error, refresh: refreshHeadline } = useStoryHeadline()
+    const hasToken = useAuthStore(s => Boolean(s.token))
+    const { data, loading: headlineLoading, error, refresh: refreshHeadline } = useStoryHeadline(hasToken)
     const {
       items: friends,
       loading: friendsLoading,
       refresh: refreshFriends,
-    } = useFriendshipList(true)
+    } = useFriendshipList(hasToken)
     const readStoryIds = useStoryReadStore(s => s.readStoryIds)
     const fullyReadCharacterIds = useStoryReadStore(s => s.fullyReadCharacterIds)
 
@@ -40,6 +42,8 @@ export const StoryBarSection = forwardRef<StoryBarSectionRef, StoryBarSectionPro
     }, [data?.items, readStoryIds, fullyReadCharacterIds])
 
     useImperativeHandle(ref, () => ({ refresh }), [refresh])
+
+    if (!hasToken) return null
 
     if (error) return null
 

@@ -5,7 +5,7 @@ import * as mock from '../api/character-creation-api.mock';
 import { USE_CHARACTER_CREATION_MOCK } from '../config';
 import { mapCharacterDetailToCreateForm } from './form-mapper';
 
-const EMPTY_PUBLISHED_FORM: CharacterCreateForm = { landing_page_urls: [] };
+const EMPTY_PUBLISHED_FORM: CharacterCreateForm = {};
 
 /** 从已发布角色拉取创作表单快照（Mock / 真实接口统一入口） */
 export async function loadPublishedCharacterCreateForm(

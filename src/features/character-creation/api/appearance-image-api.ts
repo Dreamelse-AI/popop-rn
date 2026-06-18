@@ -11,7 +11,6 @@ export async function persistAppearanceImages(
     draft_id: draftId,
     character_create_form: {
       images: mapImagesToApi(images),
-      landing_page_urls: [],
     },
   });
 }

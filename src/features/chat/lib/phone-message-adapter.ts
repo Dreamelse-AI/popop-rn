@@ -1,5 +1,6 @@
 import type { PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents';
 import { characterAssets } from '@/shared/assets/character';
+import { randomUUID } from '@/shared/lib/random-uuid';
 
 import { FOLLOW_UP_PROMPT, RE_FRIEND_GREETING_PROMPT } from '../config/chat-config';
 import { getEmojiLabel } from './character-adapter';
@@ -9,7 +10,7 @@ import { userVoiceDisplayDurationSec } from './voice-duration';
 import type { ChatMessage } from '../model/types';
 
 export function createLocalId() {
-  return crypto.randomUUID();
+  return randomUUID();
 }
 
 /** 额外回复 / 重新加好友等触发的内部提示语，落库但不展示在聊天 UI */
@@ -39,6 +40,22 @@ function parseMessageCursor(cursor?: string): bigint {
   }
 }
 
+/** 轮询分页：排除锚点及已加载 cursor，避免边界重复 */
+export function filterPhoneMessagesForNewerPage(
+  outputs: PhoneMessageOutput[],
+  anchorCursor: string,
+  existingCursors: ReadonlySet<string> = new Set(),
+): PhoneMessageOutput[] {
+  const anchor = parseMessageCursor(anchorCursor);
+
+  return filterVisiblePhoneMessages(outputs).filter(output => {
+    if (!output.cursor) return true;
+    const cursor = parseMessageCursor(output.cursor);
+    if (cursor <= anchor) return false;
+    return !existingCursors.has(output.cursor);
+  });
+}
+
 /** 上滑分页：排除锚点及已加载 cursor，避免边界重复 */
 export function filterPhoneMessagesForOlderPage(
   outputs: PhoneMessageOutput[],
@@ -62,6 +79,39 @@ export function collectExistingCursors(messages: ChatMessage[]): Set<string> {
     if (message.cursor) cursors.add(message.cursor);
   }
   return cursors;
+}
+
+/** 从已加载消息中取最新 cursor，用于轮询锚点 */
+export function getLatestCursorFromMessages(messages: ChatMessage[]): string | null {
+  let latest = 0n;
+  let latestCursor: string | null = null;
+
+  for (const message of messages) {
+    if (message.type === 'timestamp' || message.type === 'system') continue;
+    if (!message.cursor) continue;
+    const cursor = parseMessageCursor(message.cursor);
+    if (cursor >= latest) {
+      latest = cursor;
+      latestCursor = message.cursor;
+    }
+  }
+
+  return latestCursor;
+}
+
+/** 取较大 cursor，供 store 在本地 append 后同步 max 游标 */
+export function maxMessageCursor(a: string | null, b?: string | null): string | null {
+  if (!b) return a;
+  if (!a) return b;
+  return parseMessageCursor(b) >= parseMessageCursor(a) ? b : a;
+}
+
+/** 轮询 down 方向时使用的锚点：优先已加载消息，其次 store，最后 '0' */
+export function resolvePollingAnchorCursor(input: {
+  messages: ChatMessage[];
+  historyMaxCursor: string | null;
+}): string {
+  return getLatestCursorFromMessages(input.messages) ?? input.historyMaxCursor ?? '0';
 }
 
 /** 从 latest_messages 中选出最新一条（created_at 相同时以 cursor 较大者为准） */
@@ -285,6 +335,24 @@ export function toPhoneMessageInput(message: ChatMessage): PhoneMessageInput | n
           image: { id: '', url: message.url, media_type: 'image' },
         },
       };
+    case 'voice': {
+      const voice = message.voiceUrl
+        ? {
+            id: '',
+            url: message.voiceUrl,
+            media_type: 'audio' as const,
+            duration: message.durationSec * 1000,
+          }
+        : null;
+      if (!voice?.url) return null;
+      return {
+        msg_type: 'voice',
+        voice: {
+          voice,
+          text: message.transcript,
+        },
+      };
+    }
     default:
       return null;
   }
@@ -392,7 +460,7 @@ export function applyCurrentMessages(
             }
           : existing.type === 'image'
             ? {
-                url: serverMsg.image?.image?.url ?? existing.url,
+                url: serverMsg.image?.image?.url || existing.url,
               }
             : {}),
       };
@@ -489,6 +557,26 @@ export function phoneMessagesToDisplayList(
 
 export function stripTimestampSeparators(messages: ChatMessage[]): ChatMessage[] {
   return messages.filter(message => message.type !== 'timestamp');
+}
+
+/** 将更新的消息 append 到已有列表，并重新计算衔接处的时间分隔条 */
+export function mergeNewerDisplayMessages(
+  existing: ChatMessage[],
+  newer: ChatMessage[],
+): ChatMessage[] {
+  const existingIds = new Set(
+    stripTimestampSeparators(existing).map(message => message.id),
+  );
+  const newerUnique = stripTimestampSeparators(newer).filter(
+    message => !existingIds.has(message.id),
+  );
+
+  if (newerUnique.length === 0) return existing;
+
+  return injectTimestampSeparators([
+    ...stripTimestampSeparators(existing),
+    ...newerUnique,
+  ]);
 }
 
 /** 将更早的历史 prepend 到已有列表，并重新计算衔接处的时间分隔条 */

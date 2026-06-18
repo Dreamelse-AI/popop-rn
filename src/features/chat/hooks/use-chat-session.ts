@@ -22,7 +22,7 @@ import {
   setMountedChatCharacter,
 } from '../lib/chat-screen-presence';
 import { markCharacterMessagesReadFromOutputs } from '../lib/mark-messages-read';
-import { phoneMessagesToDisplayList } from '../lib/phone-message-adapter';
+import { getLatestCursorFromMessages, phoneMessagesToDisplayList } from '../lib/phone-message-adapter';
 import type { ChatCharacter, ChatMessage } from '../model/types';
 import { useChatSessionStore } from '../store/chat-session-store';
 
@@ -40,6 +40,7 @@ export function useChatSession(characterId: string) {
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
 
   const initSession = useChatSessionStore(s => s.initSession);
+  const setFriendshipId = useChatSessionStore(s => s.setFriendshipId);
   const setMessages = useChatSessionStore(s => s.setMessages);
   const setLoadingHistory = useChatSessionStore(s => s.setLoadingHistory);
   const setHistoryPagination = useChatSessionStore(s => s.setHistoryPagination);
@@ -90,6 +91,7 @@ export function useChatSession(characterId: string) {
         if (cancelled) return;
 
         const friend = friendshipResp.friends.find(item => item.character_id === characterId);
+        setFriendshipId(friend?.friendship_id ?? null);
         setCharacterAka(friend?.aka ?? '');
         setFriendVersionInfo(
           friend
@@ -129,9 +131,20 @@ export function useChatSession(characterId: string) {
           setMessages(displayMessages);
           setHistoryPagination({
             minCursor: historyResp.min_cursor,
+            maxCursor: historyResp.max_cursor,
             upHasMore: historyResp.up_has_more,
+            downHasMore: historyResp.down_has_more,
           });
           markCharacterMessagesReadFromOutputs(characterId, historyResp.msgs);
+        } else {
+          const maxCursor =
+            getLatestCursorFromMessages(prev.messages) ?? prev.historyMaxCursor ?? '0';
+          setHistoryPagination({
+            minCursor: prev.historyMinCursor ?? maxCursor,
+            maxCursor,
+            upHasMore: prev.historyUpHasMore,
+            downHasMore: prev.historyDownHasMore,
+          });
         }
       } catch {
         if (!cancelled && !preserveInMemory) {
@@ -152,6 +165,7 @@ export function useChatSession(characterId: string) {
   }, [
     characterId,
     initSession,
+    setFriendshipId,
     setCharacterStatus,
     setEmojiDescriptions,
     setEmojiList,

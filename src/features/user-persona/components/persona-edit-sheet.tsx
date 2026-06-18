@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
+import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 import {
@@ -11,7 +13,6 @@ import {
   resolvePersonaAvatarUrl,
 } from '../lib/persona-utils'
 import type { PersonaGender } from '../types'
-import { Image } from 'expo-image'
 
 export type PersonaEditValues = {
   name: string
@@ -89,11 +90,11 @@ export function PersonaEditSheet({
         <View style={styles.form}>
           {/* Avatar */}
           <View style={styles.avatarSection}>
-            <Image
-              source={{ uri: avatarUrl || undefined }}
-              style={styles.avatarImage}
-              defaultSource={require('@/shared/assets/me/avatar-placeholder.svg')}
-            />
+            {avatarUrl ? (
+              <PopImage uri={avatarUrl} style={styles.avatarImage} />
+            ) : (
+              <AvatarPlaceholder width={144} height={144} />
+            )}
           </View>
 
           {/* Name */}

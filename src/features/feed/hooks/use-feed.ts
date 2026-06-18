@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { feedApi } from '../feed-api';
+import { getFeedListSnapshot, saveFeedListSnapshot } from '../feed-session';
 import type { HomeFeedCharacter, HomeFeedPost, HomeFeedResponse, FeedStreamItem } from '../feed-types';
 import {
   getPendingInsert,
@@ -25,7 +26,7 @@ import {
   FEED_CHARACTER_ROW_PREVIEW_LIMIT,
   FEED_PAGE_SIZE,
 } from '../lib/feed-layout-config';
-import { getFeedRankingSession, resolveCharacterTags } from '../lib/feed-ranking-session';
+import { getFeedRankingSession } from '../lib/feed-ranking-session';
 
 export type FeedRefreshOutcome = 'success' | 'no_content' | 'error';
 
@@ -44,12 +45,17 @@ type UseFeedResult = {
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
+  loadError: boolean;
   refresh: () => Promise<FeedRefreshOutcome>;
   loadMore: () => Promise<void>;
   syncPostLike: (postId: string, likeState: PostLikeState) => void;
   onPostLiked: (post: HomeFeedPost, likeState: PostLikeState, options?: PostLikedOptions) => void;
   onPostDetailClosed: (postId: string) => Promise<void>;
 };
+
+function logFeedLoadError(error: unknown, context: string) {
+  console.error(context, error);
+}
 
 function appendUniqueItems(existing: FeedLayoutItem[], incoming: FeedLayoutItem[]): FeedLayoutItem[] {
   const keys = new Set(existing.map(item => item.key));
@@ -62,14 +68,17 @@ function toRowCharacters(characters: HomeFeedCharacter[]): HomeFeedCharacter[] {
 }
 
 export function useFeed(): UseFeedResult {
-  const [items, setItems] = useState<FeedLayoutItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const restoredSnapshot = getFeedListSnapshot();
+  const [items, setItems] = useState<FeedLayoutItem[]>(() => restoredSnapshot?.items ?? []);
+  const [loading, setLoading] = useState(() => !restoredSnapshot);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(() => restoredSnapshot?.hasMore ?? true);
+  const [loadError, setLoadError] = useState(false);
   const requestIdRef = useRef(0);
-  const initialLoadedRef = useRef(false);
   const itemsRef = useRef(items);
+  const hasMoreRef = useRef(hasMore);
   itemsRef.current = items;
+  hasMoreRef.current = hasMore;
 
   const applyBatch = useCallback(
     (
@@ -113,6 +122,8 @@ export function useFeed(): UseFeedResult {
   const refresh = useCallback(async (): Promise<FeedRefreshOutcome> => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
+    setLoadError(false);
+    setHasMore(true);
 
     try {
       resetFeedInteractions();
@@ -127,7 +138,9 @@ export function useFeed(): UseFeedResult {
       return 'success';
     } catch (e) {
       if (requestId !== requestIdRef.current) return 'error';
-      console.error('[useFeed] refresh failed:', e);
+      logFeedLoadError(e, '[useFeed] refresh failed:');
+      setHasMore(false);
+      setLoadError(true);
       return 'error';
     } finally {
       if (requestId === requestIdRef.current) {
@@ -137,7 +150,7 @@ export function useFeed(): UseFeedResult {
   }, [applyBatch]);
 
   const loadMore = useCallback(async () => {
-    if (loading || loadingMore || !hasMore) return;
+    if (loading || loadingMore || !hasMore || loadError) return;
 
     const requestId = ++requestIdRef.current;
     setLoadingMore(true);
@@ -153,17 +166,21 @@ export function useFeed(): UseFeedResult {
       applyBatch(res.stream, res.characters, res.requestIndex, res.isNewUser, false, res.postCount);
     } catch (e) {
       if (requestId !== requestIdRef.current) return;
-      console.error('[useFeed] load more failed:', e);
+      logFeedLoadError(e, '[useFeed] load more failed:');
+      setHasMore(false);
+      setLoadError(true);
     } finally {
       if (requestId === requestIdRef.current) {
         setLoadingMore(false);
       }
     }
-  }, [applyBatch, hasMore, loading, loadingMore]);
+  }, [applyBatch, hasMore, loadError, loading, loadingMore]);
 
   const loadInitial = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
+    setLoadError(false);
+    setHasMore(true);
 
     try {
       resetFeedInteractions();
@@ -171,10 +188,14 @@ export function useFeed(): UseFeedResult {
       if (requestId !== requestIdRef.current) return;
       if (res.hasNewContent) {
         applyBatch(res.stream, res.characters, res.requestIndex, res.isNewUser, true, res.postCount);
+      } else {
+        setHasMore(false);
       }
     } catch (e) {
       if (requestId !== requestIdRef.current) return;
-      console.error('[useFeed] initial load failed:', e);
+      logFeedLoadError(e, '[useFeed] initial load failed:');
+      setHasMore(false);
+      setLoadError(true);
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);
@@ -183,10 +204,17 @@ export function useFeed(): UseFeedResult {
   }, [applyBatch]);
 
   useEffect(() => {
-    if (initialLoadedRef.current) return;
-    initialLoadedRef.current = true;
+    if (getFeedListSnapshot()) return;
     void loadInitial();
   }, [loadInitial]);
+
+  useEffect(() => {
+    return () => {
+      if (itemsRef.current.length > 0) {
+        saveFeedListSnapshot(itemsRef.current, hasMoreRef.current);
+      }
+    };
+  }, []);
 
   const syncPostLike = useCallback((postId: string, likeState: PostLikeState) => {
     setItems(prev =>
@@ -243,11 +271,8 @@ export function useFeed(): UseFeedResult {
   }, []);
 
   const fetchInteractionCharacters = useCallback(async (post: HomeFeedPost) => {
-    const tags = resolveCharacterTags(post.characterId, itemsRef.current);
-    if (!tags.length) return [];
-
     const session = getFeedRankingSession();
-    const characters = await feedApi.fetchInteractionCharacters(tags, session.excludeIds);
+    const characters = await feedApi.fetchInteractionCharacters(post.postId, session.requestId);
     return toRowCharacters(characters);
   }, []);
 
@@ -256,10 +281,7 @@ export function useFeed(): UseFeedResult {
       syncPostLike(post.postId, likeState);
       if (!likeState.isLiked) return;
 
-      const tags = resolveCharacterTags(post.characterId, itemsRef.current);
-      if (!tags.length) return;
-
-      recordPostLiked(post.postId, post.characterId, tags);
+      recordPostLiked(post.postId, post.characterId);
 
       try {
         const rowCharacters = await fetchInteractionCharacters(post);
@@ -296,6 +318,7 @@ export function useFeed(): UseFeedResult {
     loading,
     loadingMore,
     hasMore,
+    loadError,
     refresh,
     loadMore,
     syncPostLike,

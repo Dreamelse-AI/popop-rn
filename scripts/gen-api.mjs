@@ -11,8 +11,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const generatedDir = path.join(root, 'src', 'generated');
 
 const submoduleApiFile = path.join(root, 'external', 'common-idl', 'arca', 'api', 'arca.api');
-const rootApiFile = path.join(root, 'arca.api');
-const apiFile = fs.existsSync(submoduleApiFile) ? submoduleApiFile : rootApiFile;
+const apiFile = submoduleApiFile;
 
 if (!fs.existsSync(apiFile)) {
   console.error(
@@ -48,7 +47,7 @@ fs.writeFileSync(
 const indexPath = path.join(generatedDir, 'index.ts');
 fs.writeFileSync(
   indexPath,
-  `/** goctl 生成物统一入口（勿手改 arca_api*.ts，请改 arca.api 后执行 npm run gen:api） */\nexport * from './arca_api';\n`,
+  `/** goctl 生成物统一入口（勿手改 arca_api*.ts，请改 external/common-idl 后执行 pnpm gen:api） */\nexport * from './arca_api';\n`,
 );
 
 console.log('gen:api done → src/generated/');

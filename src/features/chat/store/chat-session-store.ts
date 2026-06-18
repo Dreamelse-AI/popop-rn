@@ -9,19 +9,26 @@ import { create } from 'zustand';
 import {
   applyCurrentMessages,
   clearPendingByLocalIds,
+  injectTimestampSeparators,
   markPendingByLocalIds,
+  maxMessageCursor,
+  mergeNewerDisplayMessages,
   mergeOlderDisplayMessages,
+  stripTimestampSeparators,
 } from '../lib/phone-message-adapter';
 import type { ChatMessage, OutboundPhase } from '../model/types';
 
 interface ChatSessionState {
   characterId: string | null;
+  friendshipId: string | null;
   messages: ChatMessage[];
   isTyping: boolean;
   isLoadingHistory: boolean;
   isLoadingOlderHistory: boolean;
   historyMinCursor: string | null;
+  historyMaxCursor: string | null;
   historyUpHasMore: boolean;
+  historyDownHasMore: boolean;
   characterStatus: CharacterStatus | null;
   followUpConsumed: boolean;
   outboundPhase: OutboundPhase;
@@ -32,6 +39,7 @@ interface ChatSessionState {
   emojiDescriptions: Map<string, string>;
 
   initSession: (characterId: string) => void;
+  setFriendshipId: (friendshipId: string | null) => void;
   setMessages: (messages: ChatMessage[]) => void;
   appendMessage: (message: ChatMessage) => void;
   appendMessages: (messages: ChatMessage[]) => void;
@@ -46,8 +54,14 @@ interface ChatSessionState {
   setTyping: (value: boolean) => void;
   setLoadingHistory: (value: boolean) => void;
   setLoadingOlderHistory: (value: boolean) => void;
-  setHistoryPagination: (pagination: { minCursor: string; upHasMore: boolean }) => void;
+  setHistoryPagination: (pagination: {
+    minCursor: string;
+    maxCursor: string;
+    upHasMore: boolean;
+    downHasMore?: boolean;
+  }) => void;
   prependMessages: (messages: ChatMessage[]) => void;
+  appendNewerMessages: (messages: ChatMessage[]) => void;
   setCharacterStatus: (status: CharacterStatus | null) => void;
   setOutboundPhase: (phase: OutboundPhase) => void;
   setShowEmojiPanel: (value: boolean) => void;
@@ -59,16 +73,20 @@ interface ChatSessionState {
   markFollowUpConsumed: () => void;
   markVoiceRead: (messageId: string) => void;
   revealVoiceTranscript: (messageId: string) => void;
+  removeMessageById: (messageId: string) => void;
 }
 
 export const useChatSessionStore = create<ChatSessionState>(set => ({
   characterId: null,
+  friendshipId: null,
   messages: [],
   isTyping: false,
   isLoadingHistory: false,
   isLoadingOlderHistory: false,
   historyMinCursor: null,
+  historyMaxCursor: null,
   historyUpHasMore: false,
+  historyDownHasMore: false,
   characterStatus: null,
   followUpConsumed: false,
   outboundPhase: 'idle',
@@ -81,12 +99,15 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
   initSession: characterId =>
     set({
       characterId,
+      friendshipId: null,
       messages: [],
       isTyping: false,
       isLoadingHistory: true,
       isLoadingOlderHistory: false,
       historyMinCursor: null,
+      historyMaxCursor: null,
       historyUpHasMore: false,
+      historyDownHasMore: false,
       characterStatus: null,
       followUpConsumed: false,
       outboundPhase: 'idle',
@@ -97,27 +118,49 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
       emojiDescriptions: new Map(),
     }),
 
+  setFriendshipId: friendshipId => set({ friendshipId }),
+
   setMessages: messages => set({ messages }),
 
   appendMessage: message =>
     set(state => ({
       messages: [...state.messages, message],
+      historyMaxCursor:
+        'cursor' in message && message.cursor
+          ? maxMessageCursor(state.historyMaxCursor, message.cursor)
+          : state.historyMaxCursor,
     })),
 
   appendMessages: messages =>
-    set(state => ({
-      messages: [...state.messages, ...messages],
-    })),
+    set(state => {
+      let historyMaxCursor = state.historyMaxCursor;
+      for (const message of messages) {
+        if ('cursor' in message && message.cursor) {
+          historyMaxCursor = maxMessageCursor(historyMaxCursor, message.cursor);
+        }
+      }
+      return {
+        messages: [...state.messages, ...messages],
+        historyMaxCursor,
+      };
+    }),
 
   applyApiCurrentMessages: (currentMessages, pendingLocalIds, options) =>
-    set(state => ({
-      messages: applyCurrentMessages(
+    set(state => {
+      const messages = applyCurrentMessages(
         state.messages,
         currentMessages,
         pendingLocalIds,
         options,
-      ),
-    })),
+      );
+      let historyMaxCursor = state.historyMaxCursor;
+      for (const output of currentMessages) {
+        if (output.cursor) {
+          historyMaxCursor = maxMessageCursor(historyMaxCursor, output.cursor);
+        }
+      }
+      return { messages, historyMaxCursor };
+    }),
 
   clearPendingByLocalIds: pendingLocalIds =>
     set(state => ({
@@ -143,15 +186,30 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
   setTyping: value => set({ isTyping: value }),
   setLoadingHistory: value => set({ isLoadingHistory: value }),
   setLoadingOlderHistory: value => set({ isLoadingOlderHistory: value }),
-  setHistoryPagination: ({ minCursor, upHasMore }) =>
+  setHistoryPagination: ({ minCursor, maxCursor, upHasMore, downHasMore = false }) =>
     set({
       historyMinCursor: minCursor,
+      historyMaxCursor: maxCursor,
       historyUpHasMore: upHasMore,
+      historyDownHasMore: downHasMore,
     }),
   prependMessages: messages =>
     set(state => ({
       messages: mergeOlderDisplayMessages(messages, state.messages),
     })),
+  appendNewerMessages: messages =>
+    set(state => {
+      let historyMaxCursor = state.historyMaxCursor;
+      for (const message of stripTimestampSeparators(messages)) {
+        if ('cursor' in message && message.cursor) {
+          historyMaxCursor = maxMessageCursor(historyMaxCursor, message.cursor);
+        }
+      }
+      return {
+        messages: mergeNewerDisplayMessages(state.messages, messages),
+        historyMaxCursor,
+      };
+    }),
   setCharacterStatus: status => set({ characterStatus: status }),
   setOutboundPhase: phase => set({ outboundPhase: phase }),
   setShowEmojiPanel: value => set({ showEmojiPanel: value }),
@@ -177,6 +235,13 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
         message.id === messageId && message.type === 'voice'
           ? { ...message, transcriptRevealed: true }
           : message,
+      ),
+    })),
+
+  removeMessageById: messageId =>
+    set(state => ({
+      messages: injectTimestampSeparators(
+        stripTimestampSeparators(state.messages).filter(message => message.id !== messageId),
       ),
     })),
 }));

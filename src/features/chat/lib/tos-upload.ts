@@ -1,17 +1,33 @@
 import { getTosUploadCredential } from '@/generated'
 import type { GetTosUploadCredentialResp } from '@/generated/arca_apiComponents'
 import * as Crypto from 'expo-crypto'
+import { File } from 'expo-file-system'
+
+import { randomUUID } from '@/shared/lib/random-uuid'
+
+import { hmacSha256Bytes } from './hmac-sha256'
+
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 
 const PRESIGNED_URL_EXPIRES_SECONDS = 3600
 
 export function resolveTosAssetUrl(url: string): string {
-  return url
+  return normalizeAssetUrl(url)
 }
 
-/** 聊天图片展示：保留 blob 预览，TOS 链接走开发代理 */
+/** 聊天图片展示：本地 URI 原样返回，远程 TOS 链接做 hostname 修正 */
 export function resolveChatImageDisplayUrl(url: string): string {
-  if (!url || url.startsWith('blob:')) return url
-  return resolveTosAssetUrl(url)
+  if (!url) return url
+  if (
+    url.startsWith('blob:') ||
+    url.startsWith('file://') ||
+    url.startsWith('ph://') ||
+    url.startsWith('content://') ||
+    url.startsWith('assets-library://')
+  ) {
+    return url
+  }
+  return normalizeAssetUrl(url)
 }
 
 function toHex(bytes: Uint8Array): string {
@@ -23,12 +39,7 @@ async function sha256(data: string): Promise<string> {
 }
 
 async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
-  // web-to-rn: expo-crypto 不直接支持 HMAC with raw key bytes
-  // 方案1: 使用 crypto-js 库 (npm install crypto-js)
-  // 方案2: 使用 react-native-quick-crypto
-  // 当前使用 JS 纯实现 fallback
-  const { hmacSha256Impl } = await import('./hmac-sha256')
-  return hmacSha256Impl(key, message)
+  return hmacSha256Bytes(key, message)
 }
 
 async function getTosSigningKey(
@@ -36,11 +47,10 @@ async function getTosSigningKey(
   dateStamp: string,
   region: string,
 ): Promise<Uint8Array> {
-  const encoder = new TextEncoder()
-  const kDate = await hmacSha256(encoder.encode(secretKey), dateStamp)
-  const kRegion = await hmacSha256(kDate, region)
-  const kService = await hmacSha256(kRegion, 'tos')
-  return hmacSha256(kService, 'request')
+  const kDate = await hmacSha256Bytes(secretKey, dateStamp)
+  const kRegion = await hmacSha256Bytes(kDate, region)
+  const kService = await hmacSha256Bytes(kRegion, 'tos')
+  return hmacSha256Bytes(kService, 'request')
 }
 
 function encodeRfc3986(value: string): string {
@@ -61,7 +71,7 @@ function getExtensionFromUri(uri: string): string {
 
 function buildObjectKey(uri: string, prefix: string): string {
   const ext = getExtensionFromUri(uri)
-  return `${prefix}/${Date.now()}-${Crypto.randomUUID()}.${ext}`
+  return `${prefix}/${Date.now()}-${randomUUID()}.${ext}`
 }
 
 function normalizeTosEndpointHost(endpoint: string): string {
@@ -154,7 +164,11 @@ export type TosImageUploadResult = {
   objectKey: string
 }
 
-// web-to-rn: RN 中使用 fetch 上传本地文件，RN 的 fetch 原生支持 file URI
+// RN：用 expo-file-system 读取本地相册 URI，避免 fetch(file://) 在 iOS 上不稳定
+async function readUploadBody(fileUri: string): Promise<Uint8Array> {
+  return new File(fileUri).bytes()
+}
+
 async function uploadToTos(
   fileUri: string,
   { prefix = 'chat-backgrounds' }: TosUploadOptions = {},
@@ -162,14 +176,11 @@ async function uploadToTos(
   const credential = await getTosUploadCredential({})
   const objectKey = buildObjectKey(fileUri, prefix)
   const presignedUrl = await signPresignedPutUrl(credential, objectKey)
-
-  // RN fetch 支持直接传 file URI 作为 body（通过 FormData 或直接 blob）
-  const response = await fetch(fileUri)
-  const fileBlob = await response.blob()
+  const fileBytes = await readUploadBody(fileUri)
 
   const uploadResponse = await fetch(presignedUrl, {
     method: 'PUT',
-    body: fileBlob,
+    body: fileBytes,
   })
 
   if (!uploadResponse.ok) {

@@ -1,29 +1,83 @@
+import { Platform } from 'react-native'
 import {
   ExpoSpeechRecognitionModule,
-  type ExpoSpeechRecognitionResultEvent,
   type ExpoSpeechRecognitionErrorEvent,
+  type ExpoSpeechRecognitionResultEvent,
 } from 'expo-speech-recognition'
 
-export type SpeechRecognitionSession = {
-  start: () => void
-  stop: () => Promise<string>
-  abort: () => void
-  getInterimTranscript: () => string
+import i18n from '@/i18n'
+import { toApiLanguage } from '@/shared/api/locale-headers'
+
+const FILE_TRANSCRIBE_TIMEOUT_MS = 30_000
+
+export function resolveSpeechRecognitionLang(language: string = i18n.language): string {
+  switch (toApiLanguage(language)) {
+    case 'ko':
+      return 'ko-KR'
+    case 'ja':
+      return 'ja-JP'
+    case 'en':
+      return 'en-US'
+    case 'zh-Hans':
+      return 'zh-CN'
+    case 'zh-Hant':
+      return 'zh-TW'
+    default:
+      return 'zh-CN'
+  }
 }
 
 export function isSpeechRecognitionSupported(): boolean {
-  return true
+  try {
+    return ExpoSpeechRecognitionModule.isRecognitionAvailable()
+  } catch {
+    return Platform.OS === 'ios' || Platform.OS === 'android'
+  }
 }
 
-export function createSpeechRecognitionSession(
-  options: { lang?: string } = {},
-): SpeechRecognitionSession | null {
-  const lang = options.lang ?? 'zh-CN'
+export async function requestSpeechRecognitionPermissions(): Promise<boolean> {
+  try {
+    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync()
+    return result.granted
+  } catch {
+    return false
+  }
+}
+
+export type TranscribeAudioFileOptions = {
+  lang?: string
+  onInterim?: (text: string) => void
+}
+
+/** 录音结束后对本地音频文件做 ASR（不占用麦克风，可与 expo-audio 录音解耦） */
+export function transcribeAudioFile(
+  uri: string,
+  options: TranscribeAudioFileOptions = {},
+): Promise<string> {
+  const lang = options.lang ?? resolveSpeechRecognitionLang()
 
   let finalTranscript = ''
   let interimTranscript = ''
-  let stopped = false
-  let resolveStop: ((value: string) => void) | null = null
+  let finished = false
+  let resolveDone: ((value: string) => void) | null = null
+
+  const emitInterim = () => {
+    options.onInterim?.((finalTranscript + interimTranscript).trim())
+  }
+
+  const finish = (text?: string) => {
+    if (finished) return
+    finished = true
+    cleanup()
+    try {
+      ExpoSpeechRecognitionModule.abort()
+    } catch {
+      /* noop */
+    }
+    const transcript = (text ?? finalTranscript + interimTranscript).trim()
+    resolveDone?.(transcript)
+    resolveDone = null
+  }
 
   const resultListener = (event: ExpoSpeechRecognitionResultEvent) => {
     if (!event.results || event.results.length === 0) return
@@ -36,26 +90,25 @@ export function createSpeechRecognitionSession(
     } else {
       interimTranscript = text
     }
+    emitInterim()
   }
 
   const errorListener = (_event: ExpoSpeechRecognitionErrorEvent) => {
-    cleanup()
-    resolveStop?.((finalTranscript + interimTranscript).trim())
-    resolveStop = null
+    finish()
   }
 
   const endListener = () => {
-    cleanup()
-    if (stopped && resolveStop) {
-      resolveStop((finalTranscript + interimTranscript).trim())
-      resolveStop = null
-    }
+    finish()
   }
 
   function cleanup() {
     ExpoSpeechRecognitionModule.removeListener('result', resultListener)
     ExpoSpeechRecognitionModule.removeListener('error', errorListener)
     ExpoSpeechRecognitionModule.removeListener('end', endListener)
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
   }
 
   function attachListeners() {
@@ -64,49 +117,23 @@ export function createSpeechRecognitionSession(
     ExpoSpeechRecognitionModule.addListener('end', endListener)
   }
 
-  return {
-    start: () => {
-      finalTranscript = ''
-      interimTranscript = ''
-      stopped = false
-      attachListeners()
-      try {
-        ExpoSpeechRecognitionModule.start({
-          lang,
-          interimResults: true,
-          continuous: true,
-        })
-      } catch {
-        cleanup()
-      }
-    },
-    stop: () =>
-      new Promise(resolve => {
-        stopped = true
-        resolveStop = resolve
-        try {
-          ExpoSpeechRecognitionModule.stop()
-        } catch {
-          cleanup()
-          resolve((finalTranscript + interimTranscript).trim())
-          resolveStop = null
-        }
-        setTimeout(() => {
-          if (resolveStop) {
-            cleanup()
-            resolveStop((finalTranscript + interimTranscript).trim())
-            resolveStop = null
-          }
-        }, 2000)
-      }),
-    abort: () => {
-      stopped = true
-      resolveStop = null
-      cleanup()
-      try {
-        ExpoSpeechRecognitionModule.abort()
-      } catch { /* noop */ }
-    },
-    getInterimTranscript: () => (finalTranscript + interimTranscript).trim(),
-  }
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  return new Promise(resolve => {
+    resolveDone = resolve
+    attachListeners()
+    options.onInterim?.('')
+    timeoutId = setTimeout(() => finish(), FILE_TRANSCRIBE_TIMEOUT_MS)
+
+    try {
+      ExpoSpeechRecognitionModule.start({
+        lang,
+        interimResults: true,
+        requiresOnDeviceRecognition: Platform.OS === 'ios',
+        audioSource: { uri },
+      })
+    } catch {
+      finish()
+    }
+  })
 }

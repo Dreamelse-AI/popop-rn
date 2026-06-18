@@ -5,10 +5,12 @@ import Svg, { Path } from 'react-native-svg'
 
 import type { HomeFeedPost } from '@/features/feed/feed-types'
 import { useOpenCharacterChat } from '@/features/friendship/hooks/use-open-character-chat'
-import { postApi } from '@/features/post'
+import { formatCharacterProfilePostTime, postApi } from '@/features/post'
 
 import IconLike from '@/shared/assets/feed/icon/like 1.svg'
 import IconMusic from '@/shared/assets/feed/icon/音乐 1.svg'
+import IconMoreImg from '@/shared/assets/feed/icon/moreImg-icon.svg'
+import { ExpandableText } from '@/shared/ui/expandable-text'
 import { Image } from 'expo-image'
 
 type PostLikeState = {
@@ -73,7 +75,6 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
 
   return (
     <View style={styles.container}>
-      {/* Post image */}
       <Pressable
         onPress={() => onImageClick?.(post)}
         style={styles.imageWrapper}
@@ -91,12 +92,18 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
             </Text>
           </View>
         )}
-        <View style={styles.musicIconWrapper}>
-          <IconMusic width={36} height={36} />
-        </View>
+        {post.hasMultipleImages ? (
+          <View style={styles.multiImageIconWrapper} pointerEvents="none">
+            <IconMoreImg width={34} height={34} />
+          </View>
+        ) : null}
+        {post.hasBgm ? (
+          <View style={styles.musicIconWrapper} pointerEvents="none">
+            <IconMusic width={36} height={36} />
+          </View>
+        ) : null}
       </Pressable>
 
-      {/* Character info row */}
       <View style={styles.characterRow}>
         <Pressable
           onPress={() => onCharacterClick?.(post)}
@@ -128,15 +135,20 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
         </Pressable>
       </View>
 
-      {/* Content text */}
       {post.imageUrl && post.content ? (
-        <Text style={styles.contentText}>{post.content}</Text>
+        <View style={styles.contentWrapper}>
+          <ExpandableText
+            style={styles.contentText}
+            expandLabel={t('feed.viewAll')}
+          >
+            {post.content}
+          </ExpandableText>
+        </View>
       ) : null}
 
-      {/* Like row */}
       <View style={styles.likeRow}>
-        <Text style={styles.likeCount}>
-          {likeCount > 0 ? `${likeCount}` : ''}
+        <Text style={styles.postTime}>
+          {formatCharacterProfilePostTime(post.publishedAtMs)}
         </Text>
         <Pressable
           onPress={() => void handleLikeClick()}
@@ -183,6 +195,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: 'rgba(0,0,0,0.7)',
     textAlign: 'center',
+  },
+  multiImageIconWrapper: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 12,
   },
   musicIconWrapper: {
     position: 'absolute',
@@ -246,9 +264,11 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     color: '#000000',
   },
-  contentText: {
+  contentWrapper: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  contentText: {
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
@@ -260,7 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
   },
-  likeCount: {
+  postTime: {
     flex: 1,
     fontSize: 12,
     lineHeight: 16,

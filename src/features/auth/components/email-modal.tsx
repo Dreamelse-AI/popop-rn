@@ -10,8 +10,29 @@ type EmailModalProps = {
   loginHook: ReturnType<typeof useLogin>
 }
 
+function EmailValidIcon() {
+  return (
+    <View style={styles.validIcon}>
+      <IconValidCircle width={24} height={24} />
+      <View style={styles.validCheckOverlay}>
+        <IconCheck width={20} height={20} />
+      </View>
+    </View>
+  )
+}
+
 export function EmailModal({ loginHook }: EmailModalProps) {
-  const { state, countdown, setEmail, setCode, sendCode, verifyAndLogin, closeEmailModal, isValidEmail } = loginHook
+  const {
+    state,
+    countdown,
+    setEmail,
+    setCode,
+    sendCode,
+    verifyAndLogin,
+    closeEmailModal,
+    handleEmailModalClosed,
+    isValidEmail,
+  } = loginHook
   const { t } = useTranslation()
 
   const email = state.email.trim()
@@ -23,6 +44,12 @@ export function EmailModal({ loginHook }: EmailModalProps) {
     <AuthBottomSheet
       open={state.showEmailModal}
       onClose={closeEmailModal}
+      onClosed={handleEmailModalClosed}
+      logoPeek
+      fullHeight
+      showLogo={false}
+      sheetBackgroundColor="#ffffff"
+      footerStyle={styles.footer}
       footer={
         <Pressable
           onPress={verifyAndLogin}
@@ -55,14 +82,7 @@ export function EmailModal({ loginHook }: EmailModalProps) {
                 autoFocus
                 style={[styles.input, emailValid && styles.inputValid]}
               />
-              {emailValid && (
-                <View style={styles.validIcon}>
-                  <IconValidCircle width={24} height={24} />
-                  <View style={styles.validCheckOverlay}>
-                    <IconCheck width={20} height={20} />
-                  </View>
-                </View>
-              )}
+              {emailValid && <EmailValidIcon />}
             </View>
           </View>
 
@@ -83,7 +103,7 @@ export function EmailModal({ loginHook }: EmailModalProps) {
                 disabled={!canSendCode}
                 style={[styles.sendCodeButton, !canSendCode && styles.sendCodeButtonDisabled]}
               >
-                <Text style={[styles.sendCodeText, !canSendCode && styles.sendCodeTextDisabled]}>
+                <Text style={styles.sendCodeText}>
                   {state.loading && state.step === 'email'
                     ? t('email.sending')
                     : countdown.isActive
@@ -106,20 +126,25 @@ export function EmailModal({ loginHook }: EmailModalProps) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 24,
+  footer: {
     paddingHorizontal: 12,
     paddingBottom: 12,
-    paddingTop: 16,
+    paddingTop: 0,
+    paddingVertical: 0,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   titleSection: {
     gap: 12,
-    paddingHorizontal: 12,
   },
   title: {
     textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
+    lineHeight: 25,
     color: '#000000',
   },
   divider: {
@@ -127,8 +152,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   fieldsSection: {
+    marginTop: 24,
     gap: 24,
-    paddingHorizontal: 12,
   },
   fieldGroup: {
     gap: 12,
@@ -145,7 +170,7 @@ const styles = StyleSheet.create({
     gap: 8,
     height: 60,
     borderRadius: 24,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f7f7f7',
     paddingHorizontal: 12,
   },
   input: {
@@ -187,9 +212,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
   },
-  sendCodeTextDisabled: {
-    color: '#000000',
-  },
   errorText: {
     paddingHorizontal: 8,
     textAlign: 'center',
@@ -204,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonDisabled: {
-    opacity: 0.2,
+    backgroundColor: '#c8c8c8',
   },
   submitText: {
     fontSize: 18,

@@ -18,10 +18,12 @@ import type {
   UpdateMessageReadStatusResp,
 } from '@/generated/arca_apiComponents';
 import * as real from '@/generated/arca_api';
-import { arcaWebapi } from '@/shared/api/arca-webapi';
+
+import { enrichChatWithCharacterReq } from '../lib/resolve-friendship-id';
 
 export function chatWithCharacter(req: ChatWithCharacterReq): Promise<ChatWithCharacterResp> {
-  return real.chatWithCharacter(req);
+  const enriched = enrichChatWithCharacterReq(req);
+  return real.chatWithCharacter(enriched);
 }
 
 export function listCharacterPhoneChatHistory(
@@ -39,7 +41,7 @@ export function markEmojiUsed(req: MarkEmojiUsedReq): Promise<MarkEmojiUsedResp>
 }
 
 export function memoryRollback(req: MemoryRollbackReq): Promise<MemoryRollbackResp> {
-  return arcaWebapi.post<MemoryRollbackResp>('/character/memory_rollback', req);
+  return real.memoryRollback(req);
 }
 
 export function updateMessageClickStatus(

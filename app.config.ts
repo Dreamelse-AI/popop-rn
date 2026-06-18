@@ -90,5 +90,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',
     devAuthToken: process.env.DEV_AUTH_TOKEN ?? '',
+    mockNewUser: process.env.MOCK_NEW_USER === 'true',
+    mockDeviceRegion: process.env.MOCK_DEVICE_REGION ?? '',
+    mockCharacterPosts: process.env.MOCK_CHARACTER_POSTS ?? '',
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
+    characterCreationUseMock: process.env.CHARACTER_CREATION_USE_MOCK === 'true',
+    previewPublishSuccessModal: process.env.PREVIEW_PUBLISH_SUCCESS_MODAL === 'true',
   },
 })

@@ -4,6 +4,7 @@ import iconSearchSolid from './icon/icon-search-solid.svg';
 import iconClose from './icon/Frame 2117132466.svg';
 import iconLike from './icon/like 1.svg';
 import iconMusic from './icon/音乐 1.svg';
+import iconMoreImg from './icon/moreImg-icon.svg';
 import iconFlash from './icon/white_image-flash-1-Streamline-Plump.svg';
 import iconChat from './icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.svg';
 import iconCreate from './icon/Group 2117131456.svg';
@@ -29,6 +30,7 @@ export const feedAssets = {
   iconClose,
   iconLike,
   iconMusic,
+  iconMoreImg,
   iconFlash,
   iconChat,
   iconCreate,

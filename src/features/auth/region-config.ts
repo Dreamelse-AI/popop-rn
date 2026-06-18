@@ -1,5 +1,6 @@
 import type { AccountRegion, AgreementKey, AuthProvider } from './auth-types';
 import { getLocales } from 'expo-localization';
+import { env } from '@/shared/env';
 
 /** 登录/注册页及未命中 IP、缓存时的默认账户地区 */
 export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'KR';
@@ -36,8 +37,21 @@ function readDeviceCountryCode(): string | null {
   return null
 }
 
-/** 读取设备地区设置，无法解析时回退到 i18n 语言 */
+function parseMockDeviceRegion(value: string | undefined): AccountRegion | null {
+  const code = value?.trim().toUpperCase();
+  if (code === 'JP' || code === 'KR' || code === 'TW' || code === 'OTHER') {
+    return code;
+  }
+  return null;
+}
+
+/** 读取设备地区设置，无法解析时回退到 i18n 语言；开发环境可用 MOCK_DEVICE_REGION 覆盖 */
 export function getDeviceAccountRegion(): AccountRegion {
+  const mockRegion = parseMockDeviceRegion(env.mockDeviceRegion);
+  if (mockRegion) {
+    return mockRegion;
+  }
+
   const countryCode = readDeviceCountryCode();
   if (countryCode) {
     return mapCountryCodeToAccountRegion(countryCode);
@@ -45,6 +59,27 @@ export function getDeviceAccountRegion(): AccountRegion {
   const locales = getLocales()
   const lang = locales[0]?.languageCode ?? 'en'
   return getRegionFromLanguage(lang);
+}
+
+/** 登录页语言选择器选项（Figma：KO / JP / EN / CN） */
+export type LanguageOption = {
+  language: string;
+  code: string;
+};
+
+export const SELECTABLE_LANGUAGE_OPTIONS: LanguageOption[] = [
+  { language: 'ko', code: 'KO' },
+  { language: 'ja', code: 'JP' },
+  { language: 'zh', code: 'CN' },
+  { language: 'en', code: 'EN' },
+];
+
+export function getLanguageOption(language: string): LanguageOption {
+  const normalized = language.split('-')[0];
+  return (
+    SELECTABLE_LANGUAGE_OPTIONS.find(option => option.language === normalized)
+    ?? SELECTABLE_LANGUAGE_OPTIONS.find(option => option.language === 'en')!
+  );
 }
 
 /** 登录页地区选择器选项（Figma：KO / JP / EN / CN） */

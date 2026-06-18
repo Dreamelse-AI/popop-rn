@@ -4,7 +4,6 @@ import {
   Text,
   Pressable,
   ScrollView,
-  Modal,
   StyleSheet,
   Animated,
   Easing,
@@ -14,13 +13,13 @@ import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 
-import type { ChatAtmosphereConfig } from '@/features/chat/lib/chat-atmosphere-presets'
-import type { ChatModelDisplay } from '@/features/chat/lib/chat-model-display'
 import { useChatPreference } from '@/features/chat/hooks/use-chat-preference'
+import type { ChatModelDisplay } from '@/features/chat/lib/chat-model-display'
+import type { ChatAtmosphereConfig } from '@/features/chat/lib/chat-atmosphere-presets'
 import { useUserPersonaList } from '@/features/user-persona/hooks/use-user-persona-list'
 import { dialogAssets } from '@/shared/assets/dialog'
 import { PopIcon } from '@/shared/ui/pop-icon'
-import { Toast, useToast } from '@/shared/ui/toast'
+import { showGlobalToast } from '@/shared/wallet'
 
 import { ChatModeCustomSheet, DEFAULT_CHAT_MODE_CUSTOM_SETTINGS } from './chat-mode-custom-sheet'
 import { ChatPageStyleSheet } from './chat-page-style-sheet'
@@ -120,22 +119,32 @@ export function ChatSettingsDrawer({
 }: ChatSettingsDrawerProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const { toast, showToast } = useToast()
   const { getActivePersona } = useUserPersonaList({ enabled: open, characterId })
+  const [mounted, setMounted] = useState(open)
   const [profileSheetOpen, setProfileSheetOpen] = useState(false)
   const [pageStyleSheetOpen, setPageStyleSheetOpen] = useState(false)
   const [modeCustomSheetOpen, setModeCustomSheetOpen] = useState(false)
   const [modeCustomTargetId, setModeCustomTargetId] = useState<string | null>(null)
   const [appliedPersona, setAppliedPersona] = useState<ChatPersonaView | null>(null)
-  const [mounted, setMounted] = useState(open)
   const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current
   const backdropAnim = useRef(new Animated.Value(0)).current
 
   const chatPreference = useChatPreference({
     characterId,
     enabled: open,
-    onApplied: () => showToast(t('chatSettings.changeApplied')),
+    onApplied: () => showGlobalToast(t('chatSettings.changeApplied')),
   })
+  const modeCustomInitialSettings = modeCustomTargetId
+    ? chatPreference.getModelSettings(modeCustomTargetId)
+    : DEFAULT_CHAT_MODE_CUSTOM_SETTINGS
+
+  useEffect(() => {
+    if (open) return
+    setProfileSheetOpen(false)
+    setPageStyleSheetOpen(false)
+    setModeCustomSheetOpen(false)
+    setModeCustomTargetId(null)
+  }, [open])
 
   const activePersona = getActivePersona()
   const selectedProfileName =
@@ -158,10 +167,6 @@ export function ChatSettingsDrawer({
       subtitle: t('chatSettings.chatAtmosphereValue'),
     },
   ]
-
-  const modeCustomInitialSettings = modeCustomTargetId
-    ? chatPreference.getModelSettings(modeCustomTargetId)
-    : DEFAULT_CHAT_MODE_CUSTOM_SETTINGS
 
   useEffect(() => {
     if (open) {
@@ -212,7 +217,10 @@ export function ChatSettingsDrawer({
   if (!mounted) return null
 
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={handleClose}>
+    <View
+      style={styles.host}
+      pointerEvents={mounted || open ? 'auto' : 'box-none'}
+    >
       <View style={styles.overlay}>
         <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
           <Pressable
@@ -346,27 +354,30 @@ export function ChatSettingsDrawer({
       <ChatProfileSheet
         open={profileSheetOpen}
         characterId={characterId}
+        embedded
         onClose={() => setProfileSheetOpen(false)}
         onConfirm={persona => {
           setAppliedPersona(persona)
           setProfileSheetOpen(false)
-          showToast(t('chatSettings.changeApplied'))
+          showGlobalToast(t('chatSettings.changeApplied'))
         }}
       />
 
       <ChatPageStyleSheet
         open={pageStyleSheetOpen}
         initialConfig={atmosphereConfig}
+        embedded
         onClose={() => setPageStyleSheetOpen(false)}
-        onConfirm={async config => {
-          await onApplyAtmosphere(config)
-          showToast(t('chatSettings.changeApplied'))
+        onConfirm={async nextConfig => {
+          await onApplyAtmosphere(nextConfig)
+          showGlobalToast(t('chatSettings.changeApplied'))
         }}
       />
 
       <ChatModeCustomSheet
         open={modeCustomSheetOpen}
         initialSettings={modeCustomInitialSettings}
+        embedded
         onClose={() => setModeCustomSheetOpen(false)}
         onConfirm={settings => {
           if (!modeCustomTargetId) {
@@ -378,13 +389,15 @@ export function ChatSettingsDrawer({
           })
         }}
       />
-
-      <Toast message={toast} />
-    </Modal>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  host: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 50,
+  },
   overlay: {
     flex: 1,
     flexDirection: 'row',

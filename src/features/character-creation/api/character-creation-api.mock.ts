@@ -40,7 +40,7 @@ const mockDrafts: MockDraftRecord[] = [
     draft_id: 'mock-draft-1',
     character_create_form: {
       name: '',
-      landing_page_urls: [],
+      landing_page_url: undefined,
     },
     updated_at: Date.now() - 3600 * 1000,
     status: 'draft',
@@ -57,7 +57,7 @@ const mockDrafts: MockDraftRecord[] = [
           is_main_pic: true,
         },
       ],
-      landing_page_urls: [],
+      landing_page_url: undefined,
     },
     updated_at: Date.now() - 120 * 1000,
     status: 'draft',
@@ -117,7 +117,7 @@ export async function getCharacterDraftDetail(
     draft: {
       draft_id: draft.draft_id,
       target_character_id: draft.target_character_id,
-      character_create_form: draft.character_create_form ?? { landing_page_urls: [] },
+      character_create_form: draft.character_create_form ?? {},
       updated_at: draft.updated_at,
       status: draft.status,
       reject_reason: draft.reject_reason,
@@ -170,7 +170,7 @@ export async function saveCharacterDraft(
           : cover
             ? [{ name: 'main', image_type: 'aigc' as const, url: cover.url, is_main_pic: true }]
             : undefined,
-        landing_page_urls: form.landing_page_urls ?? [],
+        landing_page_url: form.landing_page_url,
       };
     }
   }
@@ -243,7 +243,7 @@ export async function getPublishedCharacterCreateForm(
 ): Promise<CharacterCreateForm> {
   await delay();
   const published = mockPublished.find(item => item.basic_info.character_id === characterId);
-  if (!published) return { landing_page_urls: [] };
+  if (!published) return {};
 
   const cover = published.basic_info.image;
   return {
@@ -251,7 +251,6 @@ export async function getPublishedCharacterCreateForm(
     images: cover
       ? [{ name: 'main', image_type: 'aigc' as const, url: cover.url, is_main_pic: true }]
       : undefined,
-    landing_page_urls: [],
   };
 }
 
@@ -339,12 +338,14 @@ export async function getCharacterPageConfig() {
       tag_icon: '',
       tag_name: name,
     })),
-    setting_options: [
+    species: [
       { tag_key: 'human', tag_icon: '☺️', tag_name: '人类' },
       { tag_key: 'elf', tag_icon: '🧚', tag_name: '精灵' },
       { tag_key: 'beast', tag_icon: '🐱', tag_name: '兽人' },
       { tag_key: 'animal', tag_icon: '🐶', tag_name: '动物' },
       { tag_key: 'other', tag_icon: '👾', tag_name: '其他' },
+    ],
+    setting_options: [
       { tag_key: 'private', tag_icon: '🔒', tag_name: '私密' },
       { tag_key: 'public', tag_icon: '👀', tag_name: '公开' },
       { tag_key: 'birthplace', tag_icon: '👶🏻', tag_name: '出生地' },

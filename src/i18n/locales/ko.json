@@ -428,6 +428,10 @@
     "addBackground": "배경 추가",
     "deleteBackground": "배경 삭제"
   },
+  "imageUpload": {
+    "uploadFailed": "업로드 실패, 다시 시도해 주세요",
+    "auditFailed": "이미지가 심사를 통과하지 못했습니다. 다른 이미지를 선택해 주세요"
+  },
   "chatLocalAlbumSheet": {
     "title": "로컬 앨범 선택",
     "recentlyUsed": "최근 사용",

@@ -9,4 +9,11 @@ export const env = {
   appOrigin: (extra.appOrigin as string) ?? 'https://app.popop.com',
   /** 本地开发用登录 token，见 .env.example */
   devAuthToken: (extra.devAuthToken as string) ?? '',
+  mockNewUser: extra.mockNewUser === true,
+  /** 覆盖设备地区兜底（AccountRegion：KR / JP / TW / OTHER），见 .env.example */
+  mockDeviceRegion: (extra.mockDeviceRegion as string) ?? '',
+  mockCharacterPostsFlag: (extra.mockCharacterPosts as string) ?? '',
+  stripePublishableKey: (extra.stripePublishableKey as string) ?? '',
+  characterCreationUseMock: extra.characterCreationUseMock === true,
+  previewPublishSuccessModal: extra.previewPublishSuccessModal === true,
 }

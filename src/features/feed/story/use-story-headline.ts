@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useAuthStore } from '@/features/auth/auth-store'
 import { useStoryReadStore } from '@/features/story/story-store'
 
 import { storyApi } from './api'
@@ -13,13 +14,15 @@ type UseStoryHeadlineResult = {
   refresh: () => Promise<void>
 }
 
-export function useStoryHeadline(): UseStoryHeadlineResult {
+export function useStoryHeadline(enabled = true): UseStoryHeadlineResult {
   const [data, setData] = useState<StoryHeadlineList | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const requestIdRef = useRef(0)
 
   const fetchHeadlineList = useCallback(async () => {
+    if (!enabled || !useAuthStore.getState().token) return
+
     const requestId = ++requestIdRef.current
     setLoading(true)
     setError(false)
@@ -39,11 +42,12 @@ export function useStoryHeadline(): UseStoryHeadlineResult {
         setLoading(false)
       }
     }
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
+    if (!enabled) return
     void fetchHeadlineList()
-  }, [fetchHeadlineList])
+  }, [enabled, fetchHeadlineList])
 
   return {
     data,

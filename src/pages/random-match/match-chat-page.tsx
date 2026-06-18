@@ -27,7 +27,10 @@ import { showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { useVoiceRecorder } from '@/features/chat/hooks/use-voice-recorder'
 import { VoiceRecordingBanner } from '@/features/chat/ui/chat-input-bar'
-import { ChatLocalAlbumSheet } from '@/features/chat/ui/chat-local-album-sheet'
+import {
+  getImageUploadErrorMessage,
+  pickAndUploadImages,
+} from '@/features/chat/lib/pick-and-upload-images'
 
 import { MATCH_TEMPLATES, type MatchTemplate } from './match-templates'
 import { getMatchPreference, savePreference, MOODS } from './random-match-page'
@@ -92,7 +95,7 @@ export function MatchChatPage({
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [genderFilter, setGenderFilter] = useState<string | null>(null)
   const [genderMenuOpen, setGenderMenuOpen] = useState(false)
-  const [albumSheetOpen, setAlbumSheetOpen] = useState(false)
+  const [imageUploading, setImageUploading] = useState(false)
   const [sentImageUrl, setSentImageUrl] = useState('')
 
   const [myTags, setMyTags] = useState<string[]>(() => getMatchPreference().tags)
@@ -183,6 +186,23 @@ export function MatchChatPage({
     if (!imageUrl) return
     setSentImageUrl(imageUrl)
   }, [])
+
+  const handlePickImage = useCallback(async () => {
+    if (imageUploading) return
+
+    setImageUploading(true)
+    try {
+      const results = await pickAndUploadImages({ scene: 'randomMatchChat' })
+      const uploaded = results[0]
+      if (uploaded?.imageUrl) {
+        handleSendImage(uploaded.imageUrl)
+      }
+    } catch (error) {
+      showGlobalToast(getImageUploadErrorMessage(error, t))
+    } finally {
+      setImageUploading(false)
+    }
+  }, [handleSendImage, imageUploading, t])
 
   const handleAddFriend = useCallback(async () => {
     if (!chatSessionId) return
@@ -343,7 +363,11 @@ export function MatchChatPage({
             />
           </View>
           <View style={styles.myCardBottom}>
-            <Pressable style={styles.photoButton} onPress={() => setAlbumSheetOpen(true)}>
+            <Pressable
+              style={styles.photoButton}
+              onPress={() => void handlePickImage()}
+              disabled={imageUploading}
+            >
               <IconPhoto width={36} height={36} />
             </Pressable>
             <View style={styles.rightActions}>
@@ -387,12 +411,6 @@ export function MatchChatPage({
           />
         </View>
       )}
-
-      <ChatLocalAlbumSheet
-        open={albumSheetOpen}
-        onClose={() => setAlbumSheetOpen(false)}
-        onSelectPhoto={({ imageUrl }) => handleSendImage(imageUrl)}
-      />
 
       {/* Exit confirm */}
       {showExitConfirm && (

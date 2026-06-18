@@ -5,11 +5,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native'
 import { Image } from 'expo-image'
+import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Circle, Path } from 'react-native-svg'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { EmojiItem, ListEmojiPanelResp } from '@/generated/arca_apiComponents'
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
@@ -40,6 +43,9 @@ export function ChatEmojiBottomSheet({
   onRetry,
   onSelect,
 }: ChatEmojiBottomSheetProps) {
+  const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
+  const panelHeight = Math.min(EMOJI_PANEL.heightPx, Math.round(windowHeight * 0.52))
   const tabs = useMemo(() => (panel ? buildEmojiPanelTabs(panel) : []), [panel])
   const [activeTabId, setActiveTabId] = useState<string>('')
   const [showScrollFade, setShowScrollFade] = useState(false)
@@ -71,8 +77,8 @@ export function ChatEmojiBottomSheet({
   const isEmpty = panel ? isEmojiPanelEmpty(panel) : false
 
   return (
-    <View style={styles.container}>
-      <View style={styles.panel}>
+    <View style={[styles.wrapper, { paddingBottom: Math.max(8, insets.bottom) }]}>
+      <View style={[styles.panelCard, { height: panelHeight }]}>
         {tabs.length > 0 && (
           <EmojiPanelTabBar
             tabs={tabs}
@@ -102,7 +108,14 @@ export function ChatEmojiBottomSheet({
             )}
           </ScrollView>
 
-          {showScrollFade ? <View style={styles.scrollFade} pointerEvents="none" /> : null}
+          {showScrollFade ? (
+            <LinearGradient
+              colors={['#ffffff', '#ffffff', 'rgba(255,255,255,0)']}
+              locations={[0, EMOJI_PANEL.scrollFadeGradientStop, 1]}
+              style={styles.scrollFade}
+              pointerEvents="none"
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -328,19 +341,16 @@ function EmojiSticker({ emoji }: { emoji: EmojiItem }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: EMOJI_PANEL.horizontalInsetPx,
+  /** 与 chat-input-bar collapsedRow 同宽：左右 16px，对齐加号左缘与输入框右缘 */
+  wrapper: {
     paddingTop: 4,
-    paddingBottom: 8,
+    paddingHorizontal: EMOJI_PANEL.horizontalInsetPx,
+  },
+  panelCard: {
+    width: '100%',
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-  },
-  panel: {
-    maxWidth: EMOJI_PANEL.maxWidthPx,
-    width: '100%',
-    alignSelf: 'center',
-    height: 328,
     overflow: 'hidden',
   },
   tabBarContainer: {
@@ -348,7 +358,7 @@ const styles = StyleSheet.create({
   },
   tabBarContent: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 24,
     alignItems: 'center',
   },
   tabButton: {
@@ -373,9 +383,9 @@ const styles = StyleSheet.create({
   },
   tabDivider: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    height: 1,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   gridArea: {
@@ -396,16 +406,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: EMOJI_PANEL.scrollFadeHeightPx,
-    backgroundColor: 'rgba(255,255,255,0.95)',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     columnGap: 12,
     rowGap: 16,
+    justifyContent: 'space-between',
   },
   emojiButton: {
-    width: '22%',
+    width: '23%',
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -422,7 +432,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   skeletonItem: {
-    width: '22%',
+    width: '23%',
     aspectRatio: 1,
     borderRadius: 8,
     backgroundColor: 'rgba(0,0,0,0.04)',

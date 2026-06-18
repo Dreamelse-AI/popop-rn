@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import type { PhoneMessageInput } from '@/generated/arca_apiComponents';
 
@@ -18,34 +19,67 @@ import {
   createOptimisticImageMessage,
   createOptimisticTextMessage,
   createOptimisticVoiceMessage,
+  toPhoneMessageInput,
 } from '../lib/phone-message-adapter';
 import { deliverCharacterRepliesImmediately } from '../lib/reply-delivery';
 import { isActiveChatSession } from '../lib/session-guard';
 import { transcribeVoice, userVoiceDisplaySecFromTranscript } from '../api/voice-api';
+import type { ChatMessage } from '../model/types';
 import { useChatSessionStore } from '../store/chat-session-store';
 import { runPaidAction } from '@/shared/wallet';
 
 import type { ReplyPlaybackControls } from './use-reply-playback';
+
+type OutboundQueueOptions = {
+  onSendFailed?: () => void;
+};
+
+function isResendableMessage(
+  message: ChatMessage,
+): message is Extract<
+  ChatMessage,
+  { type: 'text' | 'emoji' | 'image' | 'voice'; status?: 'pending' | 'failed' }
+> {
+  if (!('status' in message) || message.status !== 'failed') return false;
+
+  if (message.type === 'text' || message.type === 'emoji' || message.type === 'image') {
+    return true;
+  }
+
+  if (message.type === 'voice') {
+    return Boolean(message.voiceUrl);
+  }
+
+  return false;
+}
 
 function randomReadDelayMs() {
   const { min, max } = READ_DELAY_MS;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function useOutboundQueue(characterId: string, playback: ReplyPlaybackControls) {
+export function useOutboundQueue(
+  characterId: string,
+  playback: ReplyPlaybackControls,
+  options: OutboundQueueOptions = {},
+) {
   const appendMessage = useChatSessionStore(s => s.appendMessage);
   const applyApiCurrentMessages = useChatSessionStore(s => s.applyApiCurrentMessages);
   const clearPendingByLocalIds = useChatSessionStore(s => s.clearPendingByLocalIds);
   const markPendingByLocalIds = useChatSessionStore(s => s.markPendingByLocalIds);
   const markMessagesAsFailed = useChatSessionStore(s => s.markMessagesAsFailed);
+  const removeMessageById = useChatSessionStore(s => s.removeMessageById);
   const setTyping = useChatSessionStore(s => s.setTyping);
   const setOutboundPhase = useChatSessionStore(s => s.setOutboundPhase);
   const setCharacterStatus = useChatSessionStore(s => s.setCharacterStatus);
 
+  const onSendFailedRef = useRef(options.onSendFailed);
+  onSendFailedRef.current = options.onSendFailed;
+
   const queueRef = useRef<PhoneMessageInput[]>([]);
   const pendingLocalIdsRef = useRef<string[]>([]);
-  const readDelayTimerRef = useRef<number | null>(null);
-  const maxWaitTimerRef = useRef<number | null>(null);
+  const readDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxWaitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstEnqueueAtRef = useRef<number | null>(null);
   const flushingRef = useRef(false);
   const mountedRef = useRef(true);
@@ -70,87 +104,91 @@ export function useOutboundQueue(characterId: string, playback: ReplyPlaybackCon
     firstEnqueueAtRef.current = null;
   }, [clearMaxWaitTimer, clearReadDelayTimer]);
 
+  const sendImmediate = useCallback(
+    async (messages: PhoneMessageInput[], pendingIds: string[], resendMessageId?: string) => {
+      if (flushingRef.current) return;
+      flushingRef.current = true;
+      resetQueueTimers();
+
+      if (isActiveChatSession(characterId)) {
+        setOutboundPhase('awaitingApi');
+        setTyping(true);
+      }
+
+      try {
+        const resp = await runPaidAction(
+          () =>
+            chatWithCharacter({
+              character_id: characterId,
+              chat_scene: 1,
+              messages,
+              ...(resendMessageId ? { resend_message_id: resendMessageId } : {}),
+            }),
+          {
+            source: 'chat_with_character',
+            onInsufficientBalance: () => {
+              if (!isActiveChatSession(characterId)) return;
+              markPendingByLocalIds(pendingIds);
+              setTyping(false);
+              setOutboundPhase('idle');
+            },
+          },
+        );
+
+        if (resp === null) return;
+        if (!isActiveChatSession(characterId)) return;
+
+        const hasCharacterReply = resp.character_messages.length > 0;
+        applyApiCurrentMessages(resp.current_messages, pendingIds, {
+          ignoreServerFailed: !hasCharacterReply,
+        });
+        clearPendingByLocalIds(pendingIds);
+        setCharacterStatus(resp.character_status);
+
+        if (hasCharacterReply) {
+          if (mountedRef.current || isChatScreenMounted(characterId)) {
+            playback.startPlayback(characterId, resp.character_messages);
+          } else {
+            deliverCharacterRepliesImmediately(characterId, resp.character_messages);
+            scheduleFollowUp(characterId);
+          }
+        } else {
+          setTyping(false);
+          setOutboundPhase('idle');
+        }
+      } catch {
+        if (isActiveChatSession(characterId)) {
+          markMessagesAsFailed(pendingIds);
+          setTyping(false);
+          setOutboundPhase('idle');
+          onSendFailedRef.current?.();
+        }
+      } finally {
+        flushingRef.current = false;
+      }
+    },
+    [
+      applyApiCurrentMessages,
+      characterId,
+      clearPendingByLocalIds,
+      markPendingByLocalIds,
+      markMessagesAsFailed,
+      playback,
+      resetQueueTimers,
+      setCharacterStatus,
+      setOutboundPhase,
+      setTyping,
+    ],
+  );
+
   const flush = useCallback(async () => {
     if (flushingRef.current) return;
     if (queueRef.current.length === 0) return;
 
-    flushingRef.current = true;
-    clearReadDelayTimer();
-    clearMaxWaitTimer();
-    firstEnqueueAtRef.current = null;
-
     const messages = queueRef.current.splice(0);
     const pendingIds = pendingLocalIdsRef.current.splice(0);
-
-    if (isActiveChatSession(characterId)) {
-      setOutboundPhase('awaitingApi');
-      setTyping(true);
-    }
-
-    try {
-      const resp = await runPaidAction(
-        () =>
-          chatWithCharacter({
-            character_id: characterId,
-            chat_scene: 1,
-            messages,
-          }),
-        {
-          source: 'chat_with_character',
-          onInsufficientBalance: () => {
-            if (!isActiveChatSession(characterId)) return;
-            markPendingByLocalIds(pendingIds);
-            setTyping(false);
-            setOutboundPhase('idle');
-          },
-        },
-      );
-
-      if (resp === null) return;
-      if (!isActiveChatSession(characterId)) return;
-
-      const hasCharacterReply = resp.character_messages.length > 0;
-      applyApiCurrentMessages(resp.current_messages, pendingIds, {
-        ignoreServerFailed: !hasCharacterReply,
-      });
-      clearPendingByLocalIds(pendingIds);
-      setCharacterStatus(resp.character_status);
-
-      if (hasCharacterReply) {
-        // 当前仍停留在该角色聊天页（可能是切出去又回来后的新实例）：逐条播放回复。
-        // 否则（真正离开了该会话）一次性写入并安排 follow-up。
-        if (mountedRef.current || isChatScreenMounted(characterId)) {
-          playback.startPlayback(characterId, resp.character_messages);
-        } else {
-          deliverCharacterRepliesImmediately(characterId, resp.character_messages);
-          scheduleFollowUp(characterId);
-        }
-      } else {
-        setTyping(false);
-        setOutboundPhase('idle');
-      }
-    } catch {
-      if (isActiveChatSession(characterId)) {
-        markMessagesAsFailed(pendingIds);
-        setTyping(false);
-        setOutboundPhase('idle');
-      }
-    } finally {
-      flushingRef.current = false;
-    }
-  }, [
-    applyApiCurrentMessages,
-    characterId,
-    clearMaxWaitTimer,
-    clearPendingByLocalIds,
-    clearReadDelayTimer,
-    markPendingByLocalIds,
-    markMessagesAsFailed,
-    playback,
-    setCharacterStatus,
-    setOutboundPhase,
-    setTyping,
-  ]);
+    await sendImmediate(messages, pendingIds);
+  }, [sendImmediate]);
 
   const scheduleReadDelay = useCallback(() => {
     clearReadDelayTimer();
@@ -287,11 +325,61 @@ export function useOutboundQueue(characterId: string, playback: ReplyPlaybackCon
     [appendMessage, enqueue],
   );
 
+  const resendFailedMessage = useCallback(
+    async (message: ChatMessage) => {
+      if (!isResendableMessage(message)) return;
+
+      const input = toPhoneMessageInput(message);
+      if (!input) return;
+
+      interruptIfNeeded();
+      resetFollowUpConsumed(characterId);
+      removeMessageById(message.id);
+
+      let optimistic: ChatMessage;
+      switch (message.type) {
+        case 'text':
+          optimistic = createOptimisticTextMessage(message.text);
+          break;
+        case 'emoji':
+          optimistic = createOptimisticEmojiMessage({
+            emoji_id: message.emojiId,
+            media: { url: message.url },
+            description: message.description,
+          });
+          break;
+        case 'image':
+          optimistic = createOptimisticImageMessage({ url: message.url });
+          break;
+        case 'voice':
+          optimistic = createOptimisticVoiceMessage({
+            durationSec: message.durationSec,
+            voiceUrl: message.voiceUrl ?? '',
+            transcript: message.transcript,
+          });
+          break;
+      }
+
+      appendMessage(optimistic);
+      await sendImmediate([input], [optimistic.id], message.serverMessageId);
+    },
+    [appendMessage, characterId, interruptIfNeeded, removeMessageById, sendImmediate],
+  );
+
   useEffect(() => {
     mountedRef.current = true;
 
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'background' && queueRef.current.length > 0) {
+        void flush();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
       mountedRef.current = false;
+      subscription.remove();
       if (queueRef.current.length > 0) {
         void flush();
         return;
@@ -300,5 +388,5 @@ export function useOutboundQueue(characterId: string, playback: ReplyPlaybackCon
     };
   }, [flush, resetQueueTimers]);
 
-  return { sendText, sendEmoji, sendImage, sendVoice };
+  return { sendText, sendEmoji, sendImage, sendVoice, resendFailedMessage };
 }

@@ -13,7 +13,17 @@ export function toPersonaGender(value?: string): PersonaGender {
 
 export function resolvePersonaAvatarUrl(avatar?: string | Media): string {
   const url = typeof avatar === 'string' ? avatar : avatar?.url;
-  if (url?.startsWith('http://') || url?.startsWith('https://')) {
+  if (!url) return '';
+  if (
+    url.startsWith('blob:') ||
+    url.startsWith('file://') ||
+    url.startsWith('ph://') ||
+    url.startsWith('content://') ||
+    url.startsWith('assets-library://')
+  ) {
+    return url;
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
   return '';

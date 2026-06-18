@@ -428,6 +428,10 @@
     "addBackground": "背景を追加",
     "deleteBackground": "背景を削除"
   },
+  "imageUpload": {
+    "uploadFailed": "アップロードに失敗しました",
+    "auditFailed": "画像が審査を通過しませんでした。別の画像をお試しください"
+  },
   "chatLocalAlbumSheet": {
     "title": "ローカルアルバムから選択",
     "recentlyUsed": "最近使った画像",

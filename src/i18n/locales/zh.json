@@ -428,6 +428,10 @@
     "addBackground": "添加背景",
     "deleteBackground": "删除背景"
   },
+  "imageUpload": {
+    "uploadFailed": "上传失败，请重试",
+    "auditFailed": "图片未通过审核，请换一张试试"
+  },
   "chatLocalAlbumSheet": {
     "title": "选择本地相册",
     "recentlyUsed": "最近选用",

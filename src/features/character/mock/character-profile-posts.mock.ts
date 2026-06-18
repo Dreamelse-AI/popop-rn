@@ -1,5 +1,6 @@
 import type { PostInfo } from '@/generated';
 import { MOCK_CHARACTER_VOICE_URL } from '@/features/chat/config/chat-config';
+import { env } from '@/shared/env';
 
 const IMG = {
   a: 'https://picsum.photos/seed/mock-a/400/600',
@@ -140,7 +141,8 @@ export function getMockCharacterProfilePosts(characterId: string): PostInfo[] {
 }
 
 function readMockCharacterPostsFlag(): string | undefined {
-  return undefined;
+  const raw = env.mockCharacterPostsFlag.trim().toLowerCase();
+  return raw || undefined;
 }
 
 export function shouldUseMockCharacterPosts(): boolean {

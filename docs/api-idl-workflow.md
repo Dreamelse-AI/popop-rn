@@ -17,13 +17,13 @@ npm install
 npm run gen:api
 ```
 
-若 submodule clone 失败，可临时从 popop-fe 复制 IDL：
+若 submodule clone 失败，可先初始化完整 submodule 仓库（不要只复制单个 `arca.api` 文件）：
 
 ```bash
-mkdir -p external/common-idl/arca/api
-cp ../popop-fe/external/common-idl/arca/api/arca.api external/common-idl/arca/api/
-npm run gen:api
+git submodule update --init external/common-idl
 ```
+
+仅在无法访问远程仓库的极端情况下，可临时从 popop-fe 复制整个 `external/common-idl` 目录后再 `pnpm gen:api`。
 
 **重要**：`gen:api` 更新 generated 后，须用 `sync-from-fe` 同步对应业务代码（character-creation、chat-preference 等），否则 `npm run typecheck` 会失败。
 
