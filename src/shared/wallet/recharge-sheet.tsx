@@ -1,13 +1,21 @@
-import { useMemo, useState } from 'react'
-import { View, Text, Pressable, ActivityIndicator, ScrollView, StyleSheet, Linking } from 'react-native'
-import { useTranslation } from 'react-i18next'
-import Svg, { Path } from 'react-native-svg'
+import { useMemo } from 'react'
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Linking,
+} from 'react-native'
+import { Trans, useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
 import type { RechargePackageItem, TermsInfo } from '@/generated/arca_apiComponents'
 import { getAccountRegion } from '@/shared/api/account-region-store'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
-import { SheetFooterButton } from '@/shared/ui/sheet-primitives'
+import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 
 import { getProviderProductId, getRechargeProvider } from './iap-utils'
 import { useWalletStore } from './wallet-store'
@@ -25,6 +33,8 @@ type RechargeSheetProps = {
   onSelectPackage: (packageId: string) => void
   onRetryPackages: () => void
   onContinue: () => void
+  onOpenHistory?: () => void
+  presentation?: 'sheet' | 'fullscreen'
 }
 
 const RECHARGE_TERMS_TYPES = new Set([
@@ -93,7 +103,15 @@ function formatPackageAmount(pkg: RechargePackageItem): string {
   return String(pkg.tokens)
 }
 
-function getPackageDisplayPrice(pkg: RechargePackageItem): string {
+function getPackageDisplayPrice(
+  pkg: RechargePackageItem,
+  iapPriceLabels: Record<string, string>,
+): string {
+  const productId = getProviderProductId(pkg)
+  if (productId && iapPriceLabels[productId]) {
+    return iapPriceLabels[productId]
+  }
+
   const displayPrice = pkg.provider_products?.[getRechargeProvider()]?.display_price?.trim()
   if (displayPrice) return displayPrice
 
@@ -103,59 +121,58 @@ function getPackageDisplayPrice(pkg: RechargePackageItem): string {
   const dollarPrefix = pkg.name.match(/\$\s*([\d.]+)/)
   if (dollarPrefix?.[1]) return `$${dollarPrefix[1]}`
 
-  return pkg.name
+  return ''
 }
 
-function getPackagePriceLabel(
+function getPackagePriceAmount(
   pkg: RechargePackageItem,
   iapPriceLabels: Record<string, string>,
 ): string {
   const productId = getProviderProductId(pkg)
-  if (productId && iapPriceLabels[productId]) {
-    return iapPriceLabels[productId]
+  const displayPrice = productId && iapPriceLabels[productId]
+    ? iapPriceLabels[productId]
+    : pkg.provider_products?.[getRechargeProvider()]?.display_price?.trim() ?? ''
+
+  if (displayPrice) {
+    const match = displayPrice.match(/([\d]+(?:[.,]\d+)?)/)
+    if (match?.[1]) return match[1].replace(',', '.')
   }
 
-  const displayPrice = getPackageDisplayPrice(pkg)
-  if (displayPrice) return displayPrice
-
   const dollarSuffix = pkg.name.match(/([\d.]+)\s*\$/)
-  if (dollarSuffix?.[1]) return `$${dollarSuffix[1]}`
+  if (dollarSuffix?.[1]) return dollarSuffix[1]
 
   const dollarPrefix = pkg.name.match(/\$\s*([\d.]+)/)
-  if (dollarPrefix?.[1]) return `$${dollarPrefix[1]}`
+  if (dollarPrefix?.[1]) return dollarPrefix[1]
 
-  return pkg.name
+  return String(Math.round(pkg.tokens / 100))
 }
 
-function AgreeCheckbox({
-  checked,
-  onToggle,
+function RechargeTerms({
   title,
   link,
 }: {
-  checked: boolean
-  onToggle: () => void
   title: string
   link?: string
 }) {
-  const { t } = useTranslation()
   const openTerms = () => {
     if (!link) return
     void Linking.openURL(link)
   }
 
   return (
-    <View style={styles.agreeRow}>
-      <Pressable onPress={onToggle} style={[styles.checkbox, checked && styles.checkboxChecked]}>
-        {checked && (
-          <Svg width={10} height={8} viewBox="0 0 10 8" fill="none">
-            <Path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        )}
-      </Pressable>
-      <Text style={styles.agreeText}>
-        {t('wallet.rechargeAgreementPrefix', 'I have read and agree to ')}
-        <Text style={styles.agreeLink} onPress={openTerms}>{title}</Text>
+    <View style={styles.termsRow}>
+      <Text style={styles.termsText}>
+        <Trans
+          i18nKey="wallet.rechargeAgreement"
+          values={{ title }}
+          components={{
+            terms: link ? (
+              <Text style={styles.termsLink} onPress={openTerms} />
+            ) : (
+              <Text style={styles.termsBold} />
+            ),
+          }}
+        />
       </Text>
     </View>
   )
@@ -174,13 +191,14 @@ export function RechargeSheet({
   onSelectPackage,
   onRetryPackages,
   onContinue,
+  onOpenHistory,
+  presentation = 'sheet',
 }: RechargeSheetProps) {
   const { t } = useTranslation()
-  const [agreed, setAgreed] = useState(false)
+  const insets = useSafeAreaInsets()
   const termsList = useAppTerms(getAccountRegion())
   const totalTokens = useWalletStore(s => s.totalTokens)
   const freeTokens = useWalletStore(s => s.freeTokens)
-  const isOutOfCubes = (totalTokens ?? 0) === 0
 
   const selectedPackage = useMemo(
     () => packages.find(pkg => pkg.package_id === selectedPackageId) ?? null,
@@ -188,181 +206,167 @@ export function RechargeSheet({
   )
 
   const packageRows = useMemo(() => chunkPackages(packages, 3), [packages])
+
   const rechargeTerms = useMemo(() => findRechargeTerms(termsList), [termsList])
-  const rechargeTermsTitle = t('wallet.rechargeAgreementTitle', 'Top-up Terms & Policy')
+  const rechargeTermsTitle = t('wallet.rechargeAgreementTitle')
   const rechargeTermsLink = rechargeTerms?.link.trim() || findFallbackTermsLink(termsList)
 
   const handleContinue = () => {
-    if (!agreed || !selectedPackage || isPurchasing) return
+    if (!selectedPackage || isPurchasing) return
     onContinue()
   }
 
-  const selectedPriceLabel = selectedPackage
-    ? getPackagePriceLabel(selectedPackage, iapPriceLabels)
-    : null
-
   const rechargeButtonLabel = (() => {
-    if (isPurchasing) return t('wallet.processing', 'Processing...')
-    if (!selectedPackage) return t('wallet.rechargeNow', 'Recharge Now')
-    if (isOutOfCubes && selectedPriceLabel) {
-      return t('wallet.rechargePriceNow', { price: selectedPriceLabel, defaultValue: `Recharge ${selectedPriceLabel} Now` })
-    }
-    return t('wallet.rechargeTokensNow', {
-      amount: formatPackageAmount(selectedPackage),
-      defaultValue: `Recharge ${formatPackageAmount(selectedPackage)} Now`,
+    if (isPurchasing) return t('wallet.processing')
+    if (!selectedPackage) return t('wallet.rechargeNow')
+    return t('wallet.rechargeDollarNow', {
+      amount: getPackagePriceAmount(selectedPackage, iapPriceLabels),
     })
   })()
 
-  const canPay = agreed && !!selectedPackage && !packagesLoading && !isPurchasing
+  const canPay = !!selectedPackage && !packagesLoading && !isPurchasing
+
+  const contentNode = (
+    <View style={styles.contentRoot}>
+      <View style={styles.heroSection}>
+        <Text style={styles.heroEmoji}>🧊</Text>
+        <Text style={styles.heroBalance}>{totalTokens ?? 0}</Text>
+        <View style={styles.giftBadge}>
+          <Text style={styles.giftBadgeText}>
+            {t('wallet.includingGiftTokens', { amount: freeTokens ?? 0 })}
+          </Text>
+        </View>
+      </View>
+
+      {packagesLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="rgba(0,0,0,0.4)" />
+          <Text style={styles.loadingText}>{t('wallet.loadingPackages')}</Text>
+        </View>
+      ) : packagesError ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{packagesError}</Text>
+          <Pressable onPress={onRetryPackages} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>{t('history.retry')}</Text>
+          </Pressable>
+        </View>
+      ) : packages.length === 0 ? (
+        <Text style={styles.emptyText}>{t('wallet.noPackages')}</Text>
+      ) : (
+        <View style={styles.packagesContainer}>
+          {packageRows.map((row, rowIdx) => (
+            <View key={rowIdx} style={styles.packageRow}>
+              {row.map(pkg => {
+                const selected = selectedPackageId === pkg.package_id
+                return (
+                  <Pressable
+                    key={pkg.package_id}
+                    onPress={() => onSelectPackage(pkg.package_id)}
+                    style={[styles.packageCard, selected && styles.packageCardSelected]}
+                  >
+                    <View style={styles.packageAmountRow}>
+                      <Text style={styles.packageEmoji}>🧊</Text>
+                      <Text style={styles.packageAmount}>{formatPackageAmount(pkg)}</Text>
+                    </View>
+                    <Text style={styles.packagePrice}>
+                      {getPackageDisplayPrice(pkg, iapPriceLabels)}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        {orderError ? <Text style={styles.orderErrorText}>{orderError}</Text> : null}
+        <Pressable
+          style={[styles.continueButton, !canPay && styles.continueButtonDisabled]}
+          onPress={handleContinue}
+          disabled={!canPay}
+        >
+          <Text style={styles.continueButtonText}>{rechargeButtonLabel}</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+
+  const termsNode = (
+    <RechargeTerms title={rechargeTermsTitle} link={rechargeTermsLink} />
+  )
+
+  if (presentation === 'fullscreen') {
+    if (!open) return null
+
+    return (
+      <FullscreenPage backgroundColor="#dff4ff" zIndex={50}>
+        <PageHeaderBar>
+          <BackButton onPress={onClose} />
+          {onOpenHistory ? (
+            <Pressable style={styles.historyButton} onPress={onOpenHistory}>
+              <Text style={styles.historyButtonText}>{t('wallet.transactionDetail')}</Text>
+            </Pressable>
+          ) : null}
+        </PageHeaderBar>
+        <ScrollView
+          style={styles.fullscreenScroll}
+          contentContainerStyle={styles.fullscreenScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {contentNode}
+        </ScrollView>
+        <View style={[styles.fullscreenTerms, { paddingBottom: Math.max(16, insets.bottom) }]}>
+          {termsNode}
+        </View>
+      </FullscreenPage>
+    )
+  }
 
   return (
-    <BottomSheet open={open} onClose={onClose} scrollable={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {isOutOfCubes ? (
-          <View style={styles.headerOutOfCubes}>
-            <View style={styles.balanceBadge}>
-              <Text style={styles.balanceEmoji}>🧊</Text>
-              <Text style={styles.balanceText}>0</Text>
-            </View>
-            <Text style={styles.outOfCubesTitle}>Out of Cubes !</Text>
-            <Text style={styles.heroEmoji}>🧊</Text>
-          </View>
-        ) : (
-          <View style={styles.headerNormal}>
-            <Text style={styles.heroEmoji}>🧊</Text>
-            <Text style={styles.headerSubtitle}>Recharge Cubes</Text>
-            <Text style={styles.totalTokens}>{totalTokens ?? 0}</Text>
-            <Text style={styles.giftTokens}>
-              {t('wallet.includingGiftTokens', { amount: freeTokens ?? 0, defaultValue: `Including ${freeTokens ?? 0} gift cubes` })}
-            </Text>
-          </View>
-        )}
-
-        {packagesLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="rgba(0,0,0,0.4)" />
-            <Text style={styles.loadingText}>{t('wallet.loadingPackages', 'Loading packages...')}</Text>
-          </View>
-        ) : packagesError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{packagesError}</Text>
-            <Pressable onPress={onRetryPackages} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>{t('common.retry', 'Retry')}</Text>
-            </Pressable>
-          </View>
-        ) : packages.length === 0 ? (
-          <Text style={styles.emptyText}>{t('wallet.noPackages', 'No packages available')}</Text>
-        ) : (
-          <View style={styles.packagesContainer}>
-            {packageRows.map((row, rowIdx) => (
-              <View key={rowIdx} style={styles.packageRow}>
-                {row.map(pkg => {
-                  const selected = selectedPackageId === pkg.package_id
-                  return (
-                    <Pressable
-                      key={pkg.package_id}
-                      onPress={() => onSelectPackage(pkg.package_id)}
-                      style={[styles.packageCard, selected && styles.packageCardSelected]}
-                    >
-                      <View style={styles.packageAmountRow}>
-                        <Text style={styles.packageEmoji}>🧊</Text>
-                        <Text style={styles.packageAmount}>{formatPackageAmount(pkg)}</Text>
-                      </View>
-                      <Text style={styles.packagePrice}>
-                        {getPackagePriceLabel(pkg, iapPriceLabels)}
-                      </Text>
-                    </Pressable>
-                  )
-                })}
-              </View>
-            ))}
-          </View>
-        )}
-
-        <View style={styles.footer}>
-          {orderError ? (
-            <Text style={styles.orderErrorText}>{orderError}</Text>
-          ) : null}
-          <SheetFooterButton
-            label={rechargeButtonLabel}
-            onPress={handleContinue}
-            disabled={!canPay}
-          />
-        </View>
-
-        <AgreeCheckbox
-          checked={agreed}
-          onToggle={() => setAgreed(a => !a)}
-          title={rechargeTermsTitle}
-          link={rechargeTermsLink}
-        />
-      </ScrollView>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      scrollable={false}
+      fitContent
+      backgroundColor="#dff4ff"
+      footer={termsNode}
+    >
+      {contentNode}
     </BottomSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  headerOutOfCubes: {
+  contentRoot: {
+    position: 'relative',
+  },
+  heroSection: {
     alignItems: 'center',
-    paddingTop: 48,
-    paddingBottom: 16,
+    paddingTop: 32,
+    paddingBottom: 32,
     paddingHorizontal: 16,
   },
-  balanceBadge: {
-    position: 'absolute',
-    left: 16,
-    top: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  heroEmoji: {
+    fontSize: 92,
+    lineHeight: 92,
+  },
+  heroBalance: {
+    marginTop: 8,
+    fontSize: 48,
+    fontWeight: '600',
+    lineHeight: 48,
+    color: '#000000',
+  },
+  giftBadge: {
+    marginTop: 12,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
     backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 6,
   },
-  balanceEmoji: {
-    fontSize: 16,
-  },
-  balanceText: {
+  giftBadgeText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  outOfCubesTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  headerNormal: {
-    alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 8,
-  },
-  heroEmoji: {
-    fontSize: 100,
-    marginTop: 16,
-  },
-  headerSubtitle: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  totalTokens: {
-    marginTop: 6,
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#000000',
-  },
-  giftTokens: {
-    marginTop: 8,
-    borderRadius: 999,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    fontSize: 13,
     fontWeight: '600',
     color: '#000000',
   },
@@ -408,36 +412,39 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
   },
   packagesContainer: {
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 8,
+    paddingHorizontal: 20,
     paddingBottom: 8,
   },
   packageRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   packageCard: {
     flex: 1,
+    minHeight: 92,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: 'transparent',
     backgroundColor: '#ffffff',
     paddingHorizontal: 4,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   packageCardSelected: {
-    borderColor: 'transparent',
-    backgroundColor: '#fdeab3',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   packageAmountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   packageEmoji: {
-    fontSize: 20,
+    fontSize: 18,
+    lineHeight: 18,
   },
   packageAmount: {
     fontSize: 18,
@@ -446,12 +453,13 @@ const styles = StyleSheet.create({
   },
   packagePrice: {
     fontSize: 14,
+    fontWeight: '500',
     color: '#000000',
   },
   footer: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
     paddingTop: 16,
+    paddingBottom: 12,
   },
   orderErrorText: {
     marginBottom: 8,
@@ -474,33 +482,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
   },
-  agreeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.3)',
+  termsRow: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
-  checkboxChecked: {
-    borderColor: '#000000',
-    backgroundColor: '#000000',
-  },
-  agreeText: {
+  termsText: {
     fontSize: 12,
     color: 'rgba(0,0,0,0.6)',
-    flex: 1,
+    textAlign: 'center',
   },
-  agreeLink: {
+  termsLink: {
     fontWeight: '500',
     color: '#000000',
+  },
+  termsBold: {
+    fontWeight: '500',
+    color: '#000000',
+  },
+  historyButton: {
+    position: 'absolute',
+    right: 16,
+    top: '50%',
+    marginTop: -12,
+  },
+  historyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  fullscreenScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  fullscreenScrollContent: {
+    flexGrow: 1,
+  },
+  fullscreenTerms: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
   },
 })

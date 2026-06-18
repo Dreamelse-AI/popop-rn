@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ErrorCode, useIAP } from 'expo-iap'
+
+import { HistoryPage } from '@/pages/home/history-page'
 
 import {
   clearPendingRechargeSession,
@@ -40,6 +42,7 @@ export function RechargeHost() {
   const isPurchasing = useRechargeStore(s => s.isPurchasing)
   const orderError = useRechargeStore(s => s.orderError)
   const successTokenAmount = useRechargeStore(s => s.successTokenAmount)
+  const source = useRechargeStore(s => s.source)
   const close = useRechargeStore(s => s.close)
   const selectPackage = useRechargeStore(s => s.selectPackage)
   const loadPackages = useRechargeStore(s => s.loadPackages)
@@ -51,6 +54,7 @@ export function RechargeHost() {
   const applyVerifyResult = useWalletStore(s => s.applyVerifyResult)
   const pendingPurchaseRef = useRef<PendingPurchaseContext | null>(null)
   const purchaseRequestRef = useRef<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const selectedTokenAmount = getSelectedTokenAmount(packages, selectedPackageId)
 
@@ -104,6 +108,10 @@ export function RechargeHost() {
   useEffect(() => {
     if (!isOpen) return
     void refreshWallet()
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) setShowHistory(false)
   }, [isOpen])
 
   useEffect(() => {
@@ -200,6 +208,7 @@ export function RechargeHost() {
     <>
       <RechargeSheet
         open={showPackageSheet}
+        presentation={source === 'me_page' ? 'fullscreen' : 'sheet'}
         packages={packages}
         packagesLoading={packagesLoading}
         packagesError={packagesError}
@@ -211,7 +220,10 @@ export function RechargeHost() {
         onSelectPackage={selectPackage}
         onRetryPackages={() => void loadPackages()}
         onContinue={() => void handleContinue()}
+        onOpenHistory={() => setShowHistory(true)}
       />
+
+      {showHistory ? <HistoryPage onBack={() => setShowHistory(false)} /> : null}
 
       <RechargeSuccessDialog
         open={showSuccessDialog}

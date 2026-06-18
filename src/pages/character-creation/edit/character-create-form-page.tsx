@@ -9,6 +9,7 @@ import type { FlushToServerResult } from '@/features/character-creation/hooks/us
 import type { CharacterDraftFormState } from '@/features/character-creation/types/form';
 
 import { CharacterCreateForm } from './character-create-form';
+import { LandingPagePreviewHeaderButton } from './components/landing-page-preview-header-button';
 
 type CharacterCreateFormPageProps = {
   draftId?: string;
@@ -27,8 +28,10 @@ export function CharacterCreateFormPage({ draftId }: CharacterCreateFormPageProp
     characterId,
   });
   const flushRef = useRef<(() => Promise<FlushToServerResult>) | null>(null);
+  const previewRef = useRef<(() => void) | null>(null);
   const [form, setForm] = useState<CharacterDraftFormState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const handleBack = useCallback(async () => {
     if (flushRef.current) {
@@ -53,11 +56,17 @@ export function CharacterCreateFormPage({ draftId }: CharacterCreateFormPageProp
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
         <Text style={styles.pageTitle} numberOfLines={1}>{pageTitle}</Text>
-        {saving && (
-          <Text style={styles.savingText}>
-            {t('character.createPage.save')}…
-          </Text>
-        )}
+        <View style={styles.headerRight}>
+          {saving && (
+            <Text style={styles.savingText}>
+              {t('character.createPage.save')}…
+            </Text>
+          )}
+          <LandingPagePreviewHeaderButton
+            onPress={() => previewRef.current?.()}
+            loading={previewLoading}
+          />
+        </View>
       </View>
 
       <CharacterCreateForm
@@ -65,6 +74,8 @@ export function CharacterCreateFormPage({ draftId }: CharacterCreateFormPageProp
         editMode={editMode}
         characterId={characterId}
         flushRef={flushRef}
+        previewRef={previewRef}
+        onPreviewLoadingChange={setPreviewLoading}
         onFormChange={setForm}
         onSavingChange={setSaving}
       />
@@ -109,9 +120,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#000000',
   },
-  savingText: {
+  headerRight: {
     position: 'absolute',
     right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  savingText: {
     fontSize: 12,
     color: 'rgba(0,0,0,0.4)',
   },

@@ -2,6 +2,10 @@ import type { CharacterCreateForm } from '@/generated/arca_apiComponents';
 import { getCharacterDetail } from '@/generated/arca_api';
 
 import * as mock from '../api/character-creation-api.mock';
+import {
+  buildPageConfigLookups,
+  fetchCharacterPageConfig,
+} from '../api/character-page-config-api';
 import { USE_CHARACTER_CREATION_MOCK } from '../config';
 import { mapCharacterDetailToCreateForm } from './form-mapper';
 
@@ -16,8 +20,12 @@ export async function loadPublishedCharacterCreateForm(
   }
 
   try {
-    const detail = await getCharacterDetail({ character_id: characterId, source: 'direct' });
-    return mapCharacterDetailToCreateForm(detail.character);
+    const [detail, pageConfig] = await Promise.all([
+      getCharacterDetail({ character_id: characterId, source: 'direct' }),
+      fetchCharacterPageConfig().catch(() => null),
+    ]);
+    const lookups = pageConfig ? buildPageConfigLookups(pageConfig) : undefined;
+    return mapCharacterDetailToCreateForm(detail.character, lookups);
   } catch (error) {
     console.warn('[loadPublishedCharacterCreateForm] load failed:', error);
     return EMPTY_PUBLISHED_FORM;

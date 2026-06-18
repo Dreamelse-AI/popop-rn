@@ -17,6 +17,7 @@ description: Use before marking a popop-rn feature complete. Mock-first parity c
 ## 质量
 
 - [ ] `npm run typecheck` 通过
+- [ ] 全屏 overlay / 二级页的 `PageHeaderBar` safe area 与挂载层级一致（rule `rn-top-nav-spacing`）
 - [ ] 无未处理 rejection / 无多余 `console.error`
 - [ ] 核心路径手测记录
 

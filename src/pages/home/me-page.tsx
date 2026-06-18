@@ -13,7 +13,6 @@ import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from 
 import { CenterDialog } from '@/shared/ui/center-dialog'
 import { PopImage } from '@/shared/ui/pop-image'
 import { UserPersonaSheet } from '@/features/user-persona/components/user-persona-sheet'
-import { HistoryPage } from './history-page'
 import { AboutPage } from './about-page'
 import { InvitePage } from './invite-page'
 import { useLongPress } from './messages/use-long-press'
@@ -23,6 +22,7 @@ import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
 import IconLogout from '@/shared/assets/me/icon-logout.svg'
 import IconAbout from '@/shared/assets/me/icon-about.svg'
 import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
+import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
 
 type MeNav = NativeStackNavigationProp<RootStackParamList, 'Home'>
 
@@ -67,7 +67,6 @@ export function MePage({ isActive = true }: MePageProps) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [showLangPicker, setShowLangPicker] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showPersona, setShowPersona] = useState(false)
@@ -126,6 +125,10 @@ export function MePage({ isActive = true }: MePageProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.logoHeader}>
+          <LogoPopop width={190} height={30} />
+        </View>
+
         <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
           <View style={styles.avatarWrapper}>
             {remoteAvatarUrl ? (
@@ -150,10 +153,7 @@ export function MePage({ isActive = true }: MePageProps) {
         </Pressable>
 
         <View style={styles.cardsContainer}>
-          <WalletBalanceCard
-            onRecharge={() => openRecharge({ source: 'me_page' })}
-            onOpenHistory={() => setShowHistory(true)}
-          />
+          <WalletBalanceCard onRecharge={() => openRecharge({ source: 'me_page' })} />
 
           {menuItems.map((item, idx) => (
             <Pressable key={idx} style={styles.menuItem} onPress={item.onPress}>
@@ -239,10 +239,6 @@ export function MePage({ isActive = true }: MePageProps) {
         </View>
       </CenterDialog>
 
-      {showHistory ? (
-        <HistoryPage onBack={() => setShowHistory(false)} />
-      ) : null}
-
       {showAbout ? (
         <AboutPage onBack={() => setShowAbout(false)} />
       ) : null}
@@ -268,6 +264,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     alignItems: 'center',
     paddingBottom: 16,
+  },
+  logoHeader: {
+    height: 56,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   profileSection: {

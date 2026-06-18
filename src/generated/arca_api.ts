@@ -805,6 +805,14 @@ export function inviteInfo() {
  * @description 
  * @param req
  */
+export function inviteRedeem(req: components.InviteRedeemReq) {
+	return arcaWebapi.post<components.InviteRedeemResp>(`/invite/redeem`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function deleteUserEmoji(req: components.DeleteUserEmojiReq) {
 	return arcaWebapi.post<components.DeleteUserEmojiResp>(`/emoji/delete`, req)
 }

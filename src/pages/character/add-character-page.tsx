@@ -9,6 +9,7 @@ import type { RootStackParamList } from '@/app/navigation'
 import { useAddableCharacters } from '@/features/character/hooks/use-addable-characters'
 import type { FlushToServerResult } from '@/features/character-creation/hooks/use-character-draft-form'
 import { CharacterCreateForm } from '@/pages/character-creation/edit/character-create-form'
+import { LandingPagePreviewHeaderButton } from '@/pages/character-creation/edit/components/landing-page-preview-header-button'
 import { SpinnerIcon } from '@/pages/character-creation/components/creation-icons'
 import { showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
@@ -32,8 +33,10 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
   const [activeTab, setActiveTab] = useState<AddCharacterTab>('chat')
   const [goChatLoading, setGoChatLoading] = useState(false)
   const [goChatReady, setGoChatReady] = useState(false)
+  const [previewLoading, setPreviewLoading] = useState(false)
   const flushRef = useRef<(() => Promise<FlushToServerResult>) | null>(null)
   const goChatRef = useRef<((signal?: AbortSignal) => Promise<string | null>) | null>(null)
+  const previewRef = useRef<(() => void) | null>(null)
   const goChatAbortRef = useRef<AbortController | null>(null)
   const { items, loading, error } = useAddableCharacters(activeTab === 'chat')
 
@@ -134,13 +137,11 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
         </View>
 
         {activeTab === 'create' ? (
-          <Pressable
-            onPress={() => void handleGoChat()}
-            disabled={pageLocked || !goChatReady}
-            style={[styles.goChatButton, (pageLocked || !goChatReady) && styles.disabled]}
-          >
-            <Text style={styles.goChatButtonText}>{t('character.detailPage.goChat')}</Text>
-          </Pressable>
+          <LandingPagePreviewHeaderButton
+            onPress={() => previewRef.current?.()}
+            loading={previewLoading}
+            disabled={pageLocked}
+          />
         ) : (
           <View style={styles.headerRight} />
         )}
@@ -182,11 +183,29 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
           </ScrollView>
         </>
       ) : (
-        <CharacterCreateForm
-          flushRef={flushRef}
-          goChatRef={goChatRef}
-          onGoChatReadyChange={setGoChatReady}
-        />
+        <>
+          <CharacterCreateForm
+            flushRef={flushRef}
+            goChatRef={goChatRef}
+            previewRef={previewRef}
+            onPreviewLoadingChange={setPreviewLoading}
+            onGoChatReadyChange={setGoChatReady}
+            contentPaddingBottom={112}
+          />
+
+          <View
+            pointerEvents="box-none"
+            style={[styles.goChatFooter, { paddingBottom: Math.max(16, insets.bottom) }]}
+          >
+            <Pressable
+              onPress={() => void handleGoChat()}
+              disabled={pageLocked || !goChatReady}
+              style={[styles.goChatFooterButton, (pageLocked || !goChatReady) && styles.disabled]}
+            >
+              <Text style={styles.goChatFooterButtonText}>{t('character.detailPage.goChat')}</Text>
+            </Pressable>
+          </View>
+        </>
       )}
 
       {pageLocked && (
@@ -244,17 +263,6 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 1,
     backgroundColor: '#000000',
-  },
-  goChatButton: {
-    borderRadius: 9999,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  goChatButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
   },
   headerRight: {
     width: 36,
@@ -333,5 +341,26 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     color: 'rgba(0,0,0,0.4)',
+  },
+  goChatFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 40,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  goChatFooterButton: {
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9999,
+    backgroundColor: '#000000',
+  },
+  goChatFooterButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 })

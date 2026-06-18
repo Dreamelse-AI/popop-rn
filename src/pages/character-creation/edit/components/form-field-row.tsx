@@ -123,30 +123,45 @@ export function FormSectionCard({
   );
 }
 
+export function RequiredMark() {
+  return (
+    <Text style={styles.requiredMark} accessibilityElementsHidden>
+      *
+    </Text>
+  );
+}
+
 export function FormSectionTitle({
   children,
   style,
+  required,
 }: {
   children: ReactNode;
   style?: object;
+  required?: boolean;
 }) {
   return (
-    <Text style={[styles.sectionTitle, style]}>
-      {children}
-    </Text>
+    <View style={[styles.sectionTitleRow, style]}>
+      <Text style={styles.sectionTitle}>{children}</Text>
+      {required ? <RequiredMark /> : null}
+    </View>
   );
 }
 
 type ModuleSectionTitleProps = {
   emoji: string;
   title: string;
+  trailing?: ReactNode;
 };
 
-export function ModuleSectionTitle({ emoji, title }: ModuleSectionTitleProps) {
+export function ModuleSectionTitle({ emoji, title, trailing }: ModuleSectionTitleProps) {
   return (
     <View style={styles.moduleTitleContainer}>
-      <Text style={styles.moduleTitleEmoji}>{emoji}</Text>
-      <Text style={styles.moduleTitleText}>{title}</Text>
+      <View style={styles.moduleTitleMain}>
+        <Text style={styles.moduleTitleEmoji}>{emoji}</Text>
+        <Text style={styles.moduleTitleText}>{title}</Text>
+      </View>
+      {trailing ? <View style={styles.moduleTitleTrailing}>{trailing}</View> : null}
     </View>
   );
 }
@@ -216,6 +231,20 @@ export function ModulePlainInput({ value, placeholder, onChange }: ModulePlainIn
   );
 }
 
+export function BeautifyPromptInput({ value, placeholder, onChange }: ModulePlainInputProps) {
+  return (
+    <TextInput
+      value={value}
+      placeholder={placeholder}
+      placeholderTextColor="rgba(0,0,0,0.35)"
+      onChangeText={onChange}
+      multiline
+      numberOfLines={3}
+      style={styles.beautifyPromptInput}
+    />
+  );
+}
+
 type FormAnchorSectionProps = {
   id?: string;
   sectionKey: string;
@@ -238,12 +267,16 @@ export function FormAnchorSection({
 type BasicFieldCardProps = {
   label: string;
   children: ReactNode;
+  required?: boolean;
 };
 
-export function BasicFieldCard({ label, children }: BasicFieldCardProps) {
+export function BasicFieldCard({ label, children, required }: BasicFieldCardProps) {
   return (
     <View style={styles.basicFieldCard}>
-      <Text style={styles.basicFieldCardLabel}>{label}</Text>
+      <View style={styles.basicFieldCardLabelRow}>
+        <Text style={styles.basicFieldCardLabel}>{label}</Text>
+        {required ? <RequiredMark /> : null}
+      </View>
       <View style={styles.basicFieldCardContent}>{children}</View>
     </View>
   );
@@ -358,18 +391,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 20,
     color: '#000000',
-    marginBottom: 12,
+  },
+  requiredMark: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 12,
+    color: '#ff4d4f',
   },
   moduleTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 12,
+  },
+  moduleTitleMain: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  moduleTitleTrailing: {
+    flexShrink: 0,
   },
   moduleTitleEmoji: {
     fontSize: 17,
@@ -425,6 +480,19 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 12,
   },
+  beautifyPromptInput: {
+    width: '100%',
+    minHeight: 76,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#000000',
+    textAlignVertical: 'top',
+  },
   anchorSection: {
     flexDirection: 'column',
     gap: 12,
@@ -434,6 +502,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  basicFieldCardLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   basicFieldCardLabel: {
     fontSize: 12,

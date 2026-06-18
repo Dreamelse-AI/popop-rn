@@ -5,6 +5,26 @@ alwaysApply: true
 
 # RN 顶部导航间距
 
-- 修改顶部 nav、页面壳层或 `PageHeaderBar` safe area 逻辑时，必须同步检查相关页面的顶部距离。
-- 嵌在已有顶部 chrome 下的子页面不要重复叠加 `insets.top`；必要时使用 `includeSafeAreaTop={false}`。
-- 全屏独立 screen 仍需保留安全区，避免内容贴到刘海/状态栏。
+修改顶部 nav、页面壳层或 `PageHeaderBar` safe area 逻辑时，必须同步检查相关页面的顶部距离。
+
+## `PageHeaderBar` 决策
+
+| 挂载位置 | `includeSafeAreaTop` | 原因 |
+| --- | --- | --- |
+| **App 根级**（`App.tsx` 下的 `RechargeHost` 等） | `true`（默认） | 覆盖整屏，无父级 safe area |
+| **Home tab 内嵌**（Me 邀请/关于等 `FullscreenPage`） | `false` | `home-page` 已在 container 上 `paddingTop: insets.top` |
+| **Stack 独立 screen** | 视父级是否已处理；通常 `true` | 全屏 route 需自己留刘海区 |
+
+判断方法：看 `FullscreenPage` 的父级是否已有 `insets.top` / `paddingTop`；有则 `false`，无则 `true`。
+
+## 典型场景
+
+- **充值全屏**（`RechargeSheet presentation=fullscreen`）：App 根级 → 默认 safe area ✓
+- **充值明细**（`HistoryPage` via `RechargeHost`）：App 根级 → 必须 `includeSafeAreaTop={true}`，可设更高 `zIndex` 叠在充值页上
+- **Me 二级页**（邀请/关于）：Home tab 内嵌 → `includeSafeAreaTop={false}`
+
+## 其他约定
+
+- 顶部 chrome（logo、Tab header）由各自页面自行渲染，不要用父级显隐回调控制。
+- Me 页二级页用 `FullscreenPage` 覆盖 tab 内容区全高，自然盖住本页 logo，无需隐藏父级 header。
+- 嵌套全屏叠层（如充值 → 明细）每一层都按**自身挂载位置**判断 safe area，不能沿用 sibling 页的设置。

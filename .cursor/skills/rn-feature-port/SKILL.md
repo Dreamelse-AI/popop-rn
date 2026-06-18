@@ -10,7 +10,7 @@ description: Use when porting or verifying a feature module between popop-fe and
 1. 读 FE spec（如 `popop-fe/docs/mobile-chat-development.md`）
 2. Inventory：列出 FE ↔ RN 路径（`sync-from-fe`）
 3. Sync logic：合并 hooks/store/api
-4. Verify UI：StyleSheet 交互 parity
+4. Verify UI：StyleSheet 交互 parity；全屏页检查 `PageHeaderBar` safe area（见 rule `rn-top-nav-spacing`）
 5. 注册 navigation（`src/app/navigation.tsx`）
 6. 跑 `rn-migration-verify` checklist
 

@@ -3,6 +3,7 @@ import { cdnImage } from '@/shared/lib/cdn';
 import iconMenu from './back.svg';
 import mascotEmpty from './popop-logo-grey.svg';
 const sceneBanner = { uri: cdnImage('assets/character/character-banner.png') };
+const creationDraftCardEmptyPattern = { uri: cdnImage('assets/character/creation-draft-card-empty-pattern.png') };
 import tagPillBg from './character-rectangle.svg';
 import iconLocation from './location.svg';
 import iconPin from './dialog-pin.svg';
@@ -19,6 +20,7 @@ export const characterAssets = {
   iconMenu,
   mascotEmpty,
   sceneBanner,
+  creationDraftCardEmptyPattern,
   tagPillBg,
   iconLocation,
   iconPin,

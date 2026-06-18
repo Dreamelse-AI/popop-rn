@@ -6,7 +6,9 @@ import {
   useCharacterDraftForm,
   type FlushToServerResult,
 } from '@/features/character-creation/hooks/use-character-draft-form';
+import { useLandingPageBeautify } from '@/features/character-creation/hooks/use-landing-page-beautify';
 import type { CharacterEditMode } from '@/features/character-creation/lib/character-edit-mode';
+import { resolveDraftStorageId } from '@/features/character-creation/lib/draft-local-store';
 import { submitCreateFormAndGoChat } from '@/features/character-creation/lib/submit-create-form-and-go-chat';
 import { useSectionScrollSpy } from '@/features/character-creation/hooks/use-section-scroll-spy';
 import type { CharacterDraftFormState, CreationFormSection } from '@/features/character-creation/types/form';
@@ -20,6 +22,7 @@ import {
   DetailsSection,
   OpeningSection,
 } from './components/form-sections';
+import { LandingPagePreviewOverlay } from './components/landing-page-preview-overlay';
 import { SpinnerIcon } from '../components/creation-icons';
 
 export type CharacterCreateFormProps = {
@@ -31,6 +34,9 @@ export type CharacterCreateFormProps = {
   flushRef?: React.MutableRefObject<(() => Promise<FlushToServerResult>) | null>;
   goChatRef?: React.MutableRefObject<((signal?: AbortSignal) => Promise<string | null>) | null>;
   onGoChatReadyChange?: (ready: boolean) => void;
+  previewRef?: React.MutableRefObject<(() => void) | null>;
+  onPreviewLoadingChange?: (loading: boolean) => void;
+  contentPaddingBottom?: number;
 };
 
 export function CharacterCreateForm({
@@ -42,6 +48,9 @@ export function CharacterCreateForm({
   flushRef,
   goChatRef,
   onGoChatReadyChange,
+  previewRef,
+  onPreviewLoadingChange,
+  contentPaddingBottom = 40,
 }: CharacterCreateFormProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
@@ -52,6 +61,16 @@ export function CharacterCreateForm({
       editMode,
       characterId: editMode === 'character' ? characterId : undefined,
     });
+
+  const storageId = resolveDraftStorageId(editMode, { draftId, characterId });
+  const beautify = useLandingPageBeautify({
+    form,
+    patchForm,
+    flushToServer,
+    storageId,
+    editMode,
+    characterId,
+  });
 
   const { activeSection, setSectionOffset, scrollToSection, handleScroll } = useSectionScrollSpy(
     scrollRef,
@@ -92,12 +111,26 @@ export function CharacterCreateForm({
   }, [onSavingChange, saving]);
 
   useEffect(() => {
+    onPreviewLoadingChange?.(beautify.previewLoading);
+  }, [beautify.previewLoading, onPreviewLoadingChange]);
+
+  useEffect(() => {
     if (!flushRef) return;
     flushRef.current = flushToServer;
     return () => {
       flushRef.current = null;
     };
   }, [flushRef, flushToServer]);
+
+  useEffect(() => {
+    if (!previewRef) return;
+    previewRef.current = () => {
+      void beautify.openPreview();
+    };
+    return () => {
+      previewRef.current = null;
+    };
+  }, [beautify.openPreview, previewRef]);
 
   useEffect(() => {
     if (!goChatRef) return;
@@ -155,7 +188,7 @@ export function CharacterCreateForm({
           <FormSectionNav activeSection={activeSection} onSelect={scrollToSection} />
         </View>
 
-        <View style={styles.sectionsContainer}>
+        <View style={[styles.sectionsContainer, { paddingBottom: contentPaddingBottom }]}>
           <BasicInfoSection form={form} setRef={setSectionRef('basic')} onChange={patchForm} />
           <AppearanceSection
             form={form}
@@ -164,9 +197,23 @@ export function CharacterCreateForm({
           />
           <OpeningSection form={form} setRef={setSectionRef('opening')} onChange={patchForm} />
           <DetailsSection form={form} setRef={setSectionRef('details')} onChange={patchForm} />
-          <BeautifySection setRef={setSectionRef('beautify')} />
+          <BeautifySection
+            form={form}
+            setRef={setSectionRef('beautify')}
+            onChange={patchForm}
+            generateState={beautify.generateState}
+            onGenerate={beautify.handleGenerate}
+            onRestoreDefault={beautify.handleRestoreDefault}
+          />
         </View>
       </ScrollView>
+
+      <LandingPagePreviewOverlay
+        open={beautify.previewOpen}
+        previewUrl={beautify.previewUrl}
+        loading={beautify.previewLoading}
+        onClose={beautify.closePreview}
+      />
     </View>
   );
 }
@@ -191,7 +238,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 16,
     paddingHorizontal: 16,
-    paddingBottom: 40,
   },
   centerContainer: {
     flex: 1,

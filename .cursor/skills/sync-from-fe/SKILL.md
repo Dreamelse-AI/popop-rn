@@ -35,6 +35,7 @@ description: Use when syncing changes from popop-fe to popop-rn, or implementing
 - [ ] `createPortal` → RN `Modal` / `BottomSheet`
 - [ ] `document`/`window` → 删除或 expo 等价 API
 - [ ] 埋点 SDK / 数据统计上报 → 删除，不移植（见 `h5-to-rn-migration`「埋点 / 数据统计」）
+- [ ] 全屏 overlay 的 `PageHeaderBar includeSafeAreaTop` 与挂载层级一致（App 根级 true；Home tab 内嵌 false）
 
 ## 长期演进
 

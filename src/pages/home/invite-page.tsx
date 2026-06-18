@@ -1,34 +1,35 @@
-import { useState } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView, TextInput, ActivityIndicator, Platform } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { LinearGradient } from 'expo-linear-gradient'
 
+import { inviteInfo, inviteRedeem } from '@/generated/arca_api'
+import type { InviteInfoResp } from '@/generated/arca_apiComponents'
+import { refreshWallet } from '@/shared/wallet'
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { SheetBody, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { CenterDialog } from '@/shared/ui/center-dialog'
+
+const INVITE_REWARD_TOKENS = 88
+const INVITE_LIMIT_PER_DAY = 3
 
 async function copyToClipboard(text: string) {
   try {
     const Clipboard = require('expo-clipboard')
     await Clipboard.setStringAsync(text)
   } catch {
-    // fallback: silent fail
+    // silent fail
   }
 }
-
-type InviteRecord = {
-  id: string
-  name: string
-  avatar: string
-  date: string
-  reward: number
-}
-
-const MOCK_RECORDS: InviteRecord[] = [
-  { id: '1', name: '爱吃火鸡面的人', avatar: '', date: '2025/04/01 12:36', reward: 88 },
-  { id: '2', name: '小火', avatar: '', date: '2025/04/01 12:36', reward: 88 },
-  { id: '3', name: '沈星移的死忠粉', avatar: '', date: '2025/04/01 12:36', reward: 88 },
-]
 
 type InvitePageProps = {
   onBack: () => void
@@ -43,10 +44,35 @@ export function InvitePage({ onBack }: InvitePageProps) {
   const [codeLoading, setCodeLoading] = useState(false)
   const [codeSuccess, setCodeSuccess] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [info, setInfo] = useState<InviteInfoResp | null>(null)
+  const [infoLoading, setInfoLoading] = useState(true)
+  const [infoError, setInfoError] = useState<string | null>(null)
+  const [successReward, setSuccessReward] = useState(INVITE_REWARD_TOKENS)
 
-  const inviteCode = 'BE6A6B6C'
+  const inviteCode = info?.invite_code ?? ''
+  const invitedCount = info?.invited_count ?? 0
+  const totalRewardTokens = info?.total_reward_tokens ?? 0
+  const todayInviteCount = Math.min(invitedCount, INVITE_LIMIT_PER_DAY)
+
+  const loadInviteInfo = useCallback(async () => {
+    setInfoLoading(true)
+    setInfoError(null)
+    try {
+      const resp = await inviteInfo()
+      setInfo(resp)
+    } catch (err) {
+      setInfoError(err instanceof Error ? err.message : t('character.detailPage.loadFailed'))
+    } finally {
+      setInfoLoading(false)
+    }
+  }, [t])
+
+  useEffect(() => {
+    void loadInviteInfo()
+  }, [loadInviteInfo])
 
   const handleCopy = async () => {
+    if (!inviteCode) return
     await copyToClipboard(inviteCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -57,25 +83,29 @@ export function InvitePage({ onBack }: InvitePageProps) {
     setTimeout(() => setToast(null), 2500)
   }
 
-  const handleCodeSubmit = () => {
+  const handleCodeSubmit = async () => {
     if (!codeInput.trim()) return
     setCodeLoading(true)
-    setTimeout(() => {
-      setCodeLoading(false)
-      const code = codeInput.trim().toUpperCase()
-      if (code === 'LIMIT') {
-        showToast('您的好友今日邀请人数达上限，请明日再输入')
-      } else if (code === 'ERROR') {
-        showToast('请输入正确的邀请码')
-      } else {
+    try {
+      const resp = await inviteRedeem({ invite_code: codeInput.trim().toUpperCase() })
+      if (resp.success) {
+        setSuccessReward(resp.reward_tokens)
         setCodeSuccess(true)
+        void refreshWallet()
+        void loadInviteInfo()
+      } else {
+        showToast(resp.message || t('invite.invalidCodeToast'))
       }
-    }, 1500)
+    } catch (err) {
+      showToast(err instanceof Error && err.message ? err.message : t('invite.invalidCodeToast'))
+    } finally {
+      setCodeLoading(false)
+    }
   }
 
   return (
     <FullscreenPage>
-      <PageHeaderBar>
+      <PageHeaderBar includeSafeAreaTop={false}>
         <BackButton onPress={onBack} />
         <View style={styles.tabRow}>
           <Pressable style={styles.tabButton} onPress={() => setTab('invite')}>
@@ -98,7 +128,12 @@ export function InvitePage({ onBack }: InvitePageProps) {
           <InviteTab
             copied={copied}
             inviteCode={inviteCode}
-            onCopy={handleCopy}
+            infoLoading={infoLoading}
+            infoError={infoError}
+            invitedCount={todayInviteCount}
+            totalRewardTokens={totalRewardTokens}
+            onCopy={() => void handleCopy()}
+            onRetry={() => void loadInviteInfo()}
             onShowRecords={() => setShowRecords(true)}
           />
         ) : (
@@ -106,45 +141,34 @@ export function InvitePage({ onBack }: InvitePageProps) {
             codeInput={codeInput}
             codeLoading={codeLoading}
             onChangeCode={setCodeInput}
-            onSubmit={handleCodeSubmit}
+            onSubmit={() => void handleCodeSubmit()}
           />
         )}
       </ScrollView>
 
-      {/* Records bottom sheet */}
       <BottomSheet
         open={showRecords}
         onClose={() => setShowRecords(false)}
-        header={<SheetHeader title="累计获得" />}
+        header={<SheetHeader title={t('invite.totalEarned')} />}
       >
         <SheetBody>
           <View style={styles.recordsSummary}>
             <View style={styles.recordsSummaryLeft}>
               <Text style={styles.recordsIceEmoji}>🧊</Text>
-              <Text style={styles.recordsTotal}>264</Text>
+              <Text style={styles.recordsTotal}>{totalRewardTokens}</Text>
             </View>
             <View style={styles.recordsBadge}>
-              <Text style={styles.recordsBadgeText}>3天内邀请了3人</Text>
+              <Text style={styles.recordsBadgeText}>
+                {t('invite.invitedInDays', { days: 3, count: invitedCount })}
+              </Text>
             </View>
           </View>
-          <View style={styles.recordsList}>
-          {MOCK_RECORDS.map(record => (
-            <View key={record.id} style={styles.recordItem}>
-              <View style={styles.recordLeft}>
-                <View style={styles.recordAvatar} />
-                <View style={styles.recordInfo}>
-                  <Text style={styles.recordName}>{record.name}</Text>
-                  <Text style={styles.recordDate}>{record.date}</Text>
-                </View>
-              </View>
-              <Text style={styles.recordReward}>+{record.reward}</Text>
-            </View>
-          ))}
-        </View>
+          <View style={styles.recordsEmpty}>
+            <Text style={styles.recordsEmptyText}>{t('history.empty')}</Text>
+          </View>
         </SheetBody>
       </BottomSheet>
 
-      {/* Loading overlay */}
       {codeLoading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingBox}>
@@ -153,95 +177,135 @@ export function InvitePage({ onBack }: InvitePageProps) {
         </View>
       )}
 
-      {/* Toast */}
       {toast && (
         <View style={styles.toastContainer}>
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       )}
 
-      {/* Success dialog */}
       <CenterDialog
         open={codeSuccess}
-        onClose={() => { setCodeSuccess(false); setCodeInput('') }}
+        onClose={() => {
+          setCodeSuccess(false)
+          setCodeInput('')
+        }}
         closeOnBackdrop={false}
       >
-        <View style={styles.successContent}>
+        <LinearGradient
+          colors={['#d7f0ff', '#d7f0ff', '#ffffff']}
+          locations={[0.02, 0.16, 0.38]}
+          style={styles.successContent}
+        >
           <View style={styles.successInner}>
             <Text style={styles.successEmoji}>🧊</Text>
-            <Text style={styles.successAmount}>88</Text>
-            <Text style={styles.successTitle}>🎉 恭喜完成注册，</Text>
-            <Text style={styles.successSubtitle}>你的 88 星星币已到账</Text>
+            <Text style={styles.successAmount}>{successReward}</Text>
+            <Text style={styles.successTitle}>{t('invite.codeSuccessTitle')}</Text>
+            <Text style={styles.successSubtitle}>
+              {t('invite.codeSuccessMessage', { amount: successReward })}
+            </Text>
           </View>
           <View style={styles.successButtonWrapper}>
             <Pressable
               style={styles.successButton}
-              onPress={() => { setCodeSuccess(false); setCodeInput('') }}
+              onPress={() => {
+                setCodeSuccess(false)
+                setCodeInput('')
+              }}
             >
-              <Text style={styles.successButtonText}>OK</Text>
+              <Text style={styles.successButtonText}>{t('me.confirm')}</Text>
             </Pressable>
           </View>
-        </View>
+        </LinearGradient>
       </CenterDialog>
     </FullscreenPage>
   )
 }
 
-function InviteTab({ copied, inviteCode, onCopy, onShowRecords }: {
+function InviteTab({
+  copied,
+  inviteCode,
+  infoLoading,
+  infoError,
+  invitedCount,
+  totalRewardTokens,
+  onCopy,
+  onRetry,
+  onShowRecords,
+}: {
   copied: boolean
   inviteCode: string
+  infoLoading: boolean
+  infoError: string | null
+  invitedCount: number
+  totalRewardTokens: number
   onCopy: () => void
+  onRetry: () => void
   onShowRecords: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <View style={styles.inviteContainer}>
-      {/* Main invite card */}
       <View style={styles.inviteCard}>
         <View style={styles.inviteHeadline}>
-          <Text style={styles.inviteHeadlineText}>邀好友赢</Text>
-          <Text style={styles.inviteHeadlineNumber}>88</Text>
+          <Text style={styles.inviteHeadlineText}>{t('invite.inviteFriendsWin')}</Text>
+          <Text style={styles.inviteHeadlineNumber}>{INVITE_REWARD_TOKENS}</Text>
           <Text style={styles.inviteHeadlineEmoji}>🧊</Text>
         </View>
-        <Text style={styles.inviteDesc}>每日可邀请n个新用户下载并完成注册，得积分</Text>
+        <Text style={styles.inviteDesc}>{t('invite.inviteHint')}</Text>
+
+        {infoError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{infoError}</Text>
+            <Pressable onPress={onRetry}>
+              <Text style={styles.errorBannerRetry}>{t('history.retry')}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.statsRow}>
           <Pressable style={styles.statCard} onPress={onShowRecords}>
-            <Text style={styles.statLabel}>累计获得</Text>
+            <Text style={styles.statLabel}>{t('invite.totalEarned')}</Text>
             <View style={styles.statValueRow}>
-              <Text style={styles.statValue}>264</Text>
+              <Text style={styles.statValue}>{infoLoading ? '...' : totalRewardTokens}</Text>
               <Text style={styles.statChevron}>›</Text>
             </View>
           </Pressable>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>今日邀请人数</Text>
+            <Text style={styles.statLabel}>{t('invite.todayInvites')}</Text>
             <View style={styles.statValueRow}>
-              <Text style={styles.statValue}>1</Text>
-              <Text style={styles.statValueGray}>/3</Text>
+              <Text style={styles.statValue}>{infoLoading ? '...' : invitedCount}</Text>
+              <Text style={styles.statValueGray}>/{INVITE_LIMIT_PER_DAY}</Text>
             </View>
           </View>
         </View>
 
-        <Pressable style={styles.copyButton} onPress={onCopy}>
+        <Pressable
+          style={[styles.copyButton, !inviteCode && styles.disabledButton]}
+          onPress={onCopy}
+          disabled={!inviteCode}
+        >
           <Text style={styles.copyButtonText}>
-            {copied ? '✅ 复制成功！' : '📋 复制邀请码'}
+            {copied ? t('invite.copySuccess') : t('invite.copyInviteCode')}
           </Text>
-          <Text style={styles.copyButtonSub}>（我的邀请码：{inviteCode}）</Text>
+          <Text style={styles.copyButtonSub}>
+            {t('invite.myInviteCode', { code: inviteCode })}
+          </Text>
         </Pressable>
       </View>
 
-      {/* Steps card */}
       <View style={styles.stepsCard}>
         <View style={styles.stepsDividerRow}>
           <View style={styles.stepsDivider} />
-          <Text style={styles.stepsTitle}>仅需3步即可获得星星币</Text>
+          <Text style={styles.stepsTitle}>{t('invite.stepsTitle')}</Text>
           <View style={styles.stepsDivider} />
         </View>
         <View style={styles.stepsContent}>
-          <StepItem emoji="🔗" title="Step1. 分享专属邀请链接/邀请码" desc="点击按钮，把链接/邀请码发给好友" />
+          <StepItem emoji="🔗" title={t('invite.step1Title')} desc={t('invite.step1Desc')} />
           <View style={styles.stepSeparator} />
-          <StepItem emoji="✨" title="Step2. 好友下载演我App" desc="好友通过邀请链接/邀请码，下载演我" />
+          <StepItem emoji="✨" title={t('invite.step2Title')} desc={t('invite.step2Desc')} />
           <View style={styles.stepSeparator} />
-          <StepItem emoji="🎉" title="Step3. 好友完成新账号注册" desc="好友注册账号并登录演我，完成邀请" />
+          <StepItem emoji="🎉" title={t('invite.step3Title')} desc={t('invite.step3Desc')} />
         </View>
       </View>
     </View>
@@ -262,21 +326,28 @@ function StepItem({ emoji, title, desc }: { emoji: string; title: string; desc: 
   )
 }
 
-function CodeTab({ codeInput, codeLoading, onChangeCode, onSubmit }: {
+function CodeTab({
+  codeInput,
+  codeLoading,
+  onChangeCode,
+  onSubmit,
+}: {
   codeInput: string
   codeLoading: boolean
   onChangeCode: (v: string) => void
   onSubmit: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <View style={styles.codeContainer}>
       <View style={styles.codeCard}>
-        <Text style={styles.codeTitle}>邀请码</Text>
+        <Text style={styles.codeTitle}>{t('invite.inviteCode')}</Text>
         <View style={styles.codeInputWrapper}>
           <TextInput
             value={codeInput}
             onChangeText={v => onChangeCode(v.toUpperCase())}
-            placeholder="输入邀请码"
+            placeholder={t('invite.codePlaceholder')}
             placeholderTextColor="#b5b6b3"
             style={styles.codeInput}
             maxLength={8}
@@ -288,7 +359,7 @@ function CodeTab({ codeInput, codeLoading, onChangeCode, onSubmit }: {
           onPress={onSubmit}
           disabled={!codeInput.trim() || codeLoading}
         >
-          <Text style={styles.codeSubmitText}>确认</Text>
+          <Text style={styles.codeSubmitText}>{t('me.confirm')}</Text>
         </Pressable>
       </View>
     </View>
@@ -296,7 +367,6 @@ function CodeTab({ codeInput, codeLoading, onChangeCode, onSubmit }: {
 }
 
 const styles = StyleSheet.create({
-  // Tabs
   tabRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,8 +390,6 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     backgroundColor: '#000000',
   },
-
-  // Scroll
   scrollArea: {
     flex: 1,
     minHeight: 0,
@@ -331,8 +399,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
   },
-
-  // Invite tab
   inviteContainer: {
     gap: 8,
   },
@@ -369,6 +435,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(0,0,0,0.6)',
     textAlign: 'center',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    width: '100%',
+    borderRadius: 16,
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#dc2626',
+  },
+  errorBannerRetry: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#b91c1c',
   },
   statsRow: {
     flexDirection: 'row',
@@ -423,8 +510,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(0,0,0,0.6)',
   },
-
-  // Steps
   stepsCard: {
     backgroundColor: '#ffffff',
     borderWidth: 1,
@@ -485,8 +570,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(0,0,0,0.4)',
   },
-
-  // Code tab
   codeContainer: {
     alignItems: 'flex-start',
     justifyContent: 'center',
@@ -537,19 +620,6 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
-
-  // Records bottom sheet
-  recordsHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    gap: 8,
-  },
-  recordsTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-  },
   recordsSummary: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -579,50 +649,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000000',
   },
-  recordsList: {
-    paddingHorizontal: 16,
+  recordsEmpty: {
+    minHeight: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingBottom: 12,
-    gap: 8,
   },
-  recordItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 76,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 16,
-  },
-  recordLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  recordAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#e5e7eb',
-  },
-  recordInfo: {
-    gap: 4,
-  },
-  recordName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-  },
-  recordDate: {
+  recordsEmptyText: {
     fontSize: 14,
-    color: 'rgba(0,0,0,0.6)',
+    color: 'rgba(0,0,0,0.5)',
   },
-  recordReward: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-  },
-
-  // Loading overlay
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -638,8 +674,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
   },
-
-  // Toast
   toastContainer: {
     position: 'absolute',
     top: '40%',
@@ -658,15 +692,16 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
   },
-
-  // Success dialog
   successContent: {
     alignItems: 'center',
+    borderRadius: 30,
+    overflow: 'hidden',
   },
   successInner: {
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 16,
   },
   successEmoji: {

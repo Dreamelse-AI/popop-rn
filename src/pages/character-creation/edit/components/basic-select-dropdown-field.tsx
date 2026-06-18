@@ -16,6 +16,7 @@ type BasicSelectDropdownFieldProps<T extends string> = {
   options: ResolvedSelectOption<T>[];
   placeholder: string;
   onChange: (value: T) => void;
+  required?: boolean;
 };
 
 function CheckIcon() {
@@ -38,13 +39,14 @@ export function BasicSelectDropdownField<T extends string>({
   options,
   placeholder,
   onChange,
+  required,
 }: BasicSelectDropdownFieldProps<T>) {
   const [open, setOpen] = useState(false);
   const selected = options.find((option) => option.value === value);
 
   return (
     <View>
-      <BasicFieldCard label={label}>
+      <BasicFieldCard label={label} required={required}>
         <BasicSelectRow
           value={selected?.label ?? ''}
           placeholder={placeholder}

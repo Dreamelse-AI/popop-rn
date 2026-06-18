@@ -13,7 +13,7 @@ type AboutPageProps = {
 export function AboutPage({ onBack }: AboutPageProps) {
   return (
     <FullscreenPage>
-      <PageHeaderBar>
+      <PageHeaderBar includeSafeAreaTop={false}>
         <BackButton onPress={onBack} />
         <Text style={styles.headerTitle}>About popop</Text>
       </PageHeaderBar>

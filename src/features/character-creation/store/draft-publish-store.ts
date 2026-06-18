@@ -75,11 +75,18 @@ function getResponseMsg(error: unknown): string | null {
   return null;
 }
 
-function isFirstCreateDraft(detail: {
-  character_id?: string;
-  target_character_id?: string;
-}): boolean {
-  return !detail.character_id?.trim() && !detail.target_character_id?.trim();
+/** 新建发布：无 target_character_id；编辑已发布角色：有 target_character_id */
+function isFirstCreateDraft(detail: { target_character_id?: string }): boolean {
+  return !detail.target_character_id?.trim();
+}
+
+async function fetchDraftDetail(draftId: string) {
+  const resp = await creationApi.getCharacterDraftDetail({ draft_id: draftId });
+  const detail = resp.draft;
+  if (!detail) {
+    throw new Error('Draft not found');
+  }
+  return detail;
 }
 
 type DraftDisplayMeta = {
@@ -89,13 +96,7 @@ type DraftDisplayMeta = {
 };
 
 async function resolveDraftDisplayMeta(draftId: string): Promise<DraftDisplayMeta> {
-  const resp = await creationApi.getCharacterDraftDetail({ draft_id: draftId });
-
-  const detail = resp.draft;
-  if (!detail) {
-    throw new Error('Draft not found');
-  }
-
+  const detail = await fetchDraftDetail(draftId);
   let lookups;
   try {
     lookups = buildPageConfigLookups(await fetchCharacterPageConfig());
@@ -221,9 +222,8 @@ async function runResumePublishJob(
   set: (partial: Partial<DraftPublishStore> | ((state: DraftPublishStore) => Partial<DraftPublishStore>)) => void,
   get: () => DraftPublishStore,
 ): Promise<{ characterId: string } | null> {
-  const resp = await creationApi.getCharacterDraftDetail({ draft_id: draftId });
-  const detail = resp.draft;
-  if (!detail || detail.status !== 'auditing') {
+  const detail = await fetchDraftDetail(draftId);
+  if (detail.status !== 'auditing') {
     return null;
   }
 

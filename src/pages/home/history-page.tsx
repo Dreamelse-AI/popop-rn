@@ -27,8 +27,8 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
   }, [hasMore, loadMore, loading, loadingMore])
 
   return (
-    <FullscreenPage>
-      <PageHeaderBar includeSafeAreaTop={false}>
+    <FullscreenPage zIndex={60}>
+      <PageHeaderBar>
         <BackButton onPress={onBack} />
         <View style={styles.tabRow}>
           <Pressable style={styles.tabButton} onPress={() => setTab('income')}>
@@ -71,7 +71,7 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.3}
             renderItem={({ item }) => {
-              const note = getWalletTransactionNote(item, t)
+              const note = getWalletTransactionNote(item)
               return (
                 <View style={styles.transactionItem}>
                   <View style={styles.transactionLeft}>

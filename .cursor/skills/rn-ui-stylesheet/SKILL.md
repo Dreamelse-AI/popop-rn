@@ -15,8 +15,20 @@ description: Use when writing RN screens or components in popop-rn. StyleSheet c
 ## 屏幕模板
 
 - SafeArea：`useSafeAreaInsets()` 或 `SafeAreaProvider`
+- 全屏 overlay：用 `FullscreenPage` + `PageHeaderBar`（`src/shared/ui/fullscreen-page.tsx`）
 - 三态：loading / error / empty
 - 导航：改 screen 时同步 `src/app/navigation.tsx`
+
+## 顶部间距（`PageHeaderBar`）
+
+迁移或新增全屏 overlay 时必须确认挂载层级（详见 rule `rn-top-nav-spacing`）：
+
+| 挂载位置 | `includeSafeAreaTop` |
+| --- | --- |
+| App 根级（`RechargeHost` 等） | `true`（默认） |
+| Home tab 内嵌（Me 邀请/关于） | `false` |
+
+`home-page` 在 container 上已有 `paddingTop: insets.top`；App 根级 host 没有。
 
 ## 布局对照
 

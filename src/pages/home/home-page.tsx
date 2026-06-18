@@ -25,8 +25,6 @@ import { MePage } from './me-page'
 import { TopNavBar } from './nav/top-nav-bar'
 import { CreatePage } from './create-page'
 
-import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
-
 const FEED_TOAST = {
   error: '加载失败，请重试',
   no_content: '暂无新内容',
@@ -161,18 +159,11 @@ export function HomePage() {
   }, [])
 
   const showHomeChrome = !searchOpen && isFeedTab
-  const showMeChrome = !searchOpen && bottomTab === 'me'
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {showHomeChrome && (
         <TopNavBar onSearchPress={() => setSearchOpen(true)} />
-      )}
-
-      {showMeChrome && (
-        <View style={styles.meHeader}>
-          <LogoPopop width={190} height={30} />
-        </View>
       )}
 
       <View style={styles.contentArea}>
@@ -233,12 +224,6 @@ export function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-  },
-  meHeader: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#f7f7f7',
   },
   contentArea: {

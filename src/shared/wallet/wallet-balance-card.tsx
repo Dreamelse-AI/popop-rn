@@ -6,7 +6,6 @@ import { useWalletStore } from './wallet-store'
 
 type WalletBalanceCardProps = {
   onRecharge: () => void
-  onOpenHistory?: () => void
   compact?: boolean
 }
 
@@ -74,7 +73,7 @@ export function useWalletGrantProgress(): WalletGrantProgress {
   }
 }
 
-export function WalletBalanceCard({ onRecharge, onOpenHistory, compact = false }: WalletBalanceCardProps) {
+export function WalletBalanceCard({ onRecharge, compact = false }: WalletBalanceCardProps) {
   const { t } = useTranslation()
   const paidTokens = useWalletStore(s => s.paidTokens)
   const totalTokens = useWalletStore(s => s.totalTokens)
@@ -90,19 +89,13 @@ export function WalletBalanceCard({ onRecharge, onOpenHistory, compact = false }
           <Text style={styles.iceEmoji}>🧊</Text>
           <Text style={styles.paidBalance}>{paidBalance}</Text>
           <View style={styles.giftBadge}>
-            <Text style={styles.giftBadgeText}>+ {grantProgress.giftBalance} 🧊</Text>
+            <Text style={styles.giftBadgeText}>+ {grantProgress.giftBalance}</Text>
+            <Text style={styles.giftBadgeEmoji}>🧊</Text>
           </View>
         </View>
-        <View style={styles.actions}>
-          <Pressable style={styles.rechargeButton} onPress={onRecharge}>
-            <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
-          </Pressable>
-          {onOpenHistory ? (
-            <Pressable style={styles.detailButton} onPress={onOpenHistory}>
-              <Text style={styles.detailText}>{t('me.detail')}</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <Pressable style={styles.rechargeButton} onPress={onRecharge}>
+          <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
+        </Pressable>
       </View>
 
       {grantProgress.cap > 0 ? (
@@ -172,47 +165,35 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   giftBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderRadius: 999,
     backgroundColor: '#f0f2f4',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    height: 23,
   },
   giftBadgeText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000000',
   },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  giftBadgeEmoji: {
+    fontSize: 10,
+    lineHeight: 10,
   },
   rechargeButton: {
     height: 36,
-    minWidth: 72,
+    width: 72,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
     backgroundColor: '#000000',
-    paddingHorizontal: 12,
   },
   rechargeText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#ffffff',
-  },
-  detailButton: {
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-    backgroundColor: '#f0f2f4',
-    paddingHorizontal: 12,
-  },
-  detailText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
   },
   progressTrack: {
     position: 'relative',

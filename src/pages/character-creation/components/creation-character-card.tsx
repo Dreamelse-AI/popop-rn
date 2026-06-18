@@ -4,9 +4,32 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import type { CreationCharacterItem } from '@/features/character-creation/types';
+import { characterAssets } from '@/shared/assets/character';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
+import { PopImage } from '@/shared/ui/pop-image';
 
-import { IconLightning, IconPencil, IconPublish, IconTrash } from './creation-icons';
+import { IconLightning, IconPencil, IconPublish, IconTrash, SpinnerIcon } from './creation-icons';
+
+/** 358×268 卡片内图案尺寸/偏移（对齐 PC EmptyCoverPattern） */
+const DRAFT_EMPTY_PATTERN = {
+  widthRatio: 1728 / 358,
+  heightRatio: 1037 / 268,
+  leftRatio: -19 / 358,
+  topRatio: -99 / 268,
+} as const;
+
+function DraftEmptyCoverBackground() {
+  return (
+    <View style={styles.draftEmptyBg}>
+      <PopImage
+        uri={characterAssets.creationDraftCardEmptyPattern.uri}
+        style={styles.draftEmptyPattern}
+        contentFit="cover"
+        accessibilityLabel=""
+      />
+    </View>
+  );
+}
 
 type CreationCharacterCardProps = {
   item: CreationCharacterItem;
@@ -57,10 +80,18 @@ function DraftCharacterCard({
         <Pressable
           onPress={onPublish}
           disabled={publishing}
-          style={[draftStyles.publishButton, publishing ? draftStyles.publishButtonDisabled : undefined]}
+          style={[
+            draftStyles.publishButton,
+            publishing ? draftStyles.publishButtonPublishing : undefined,
+            publishing ? draftStyles.publishButtonDisabled : undefined,
+          ]}
         >
-          <IconPublish size={14} color="#000000" />
-          <Text style={draftStyles.publishText}>
+          {publishing ? (
+            <SpinnerIcon size={14} color="rgba(0,0,0,0.7)" />
+          ) : (
+            <IconPublish size={14} color="#000000" />
+          )}
+          <Text style={[draftStyles.publishText, publishing ? draftStyles.publishTextPublishing : undefined]}>
             {publishing ? t('character.creation.publishing') : t('character.creation.publish')}
           </Text>
         </Pressable>
@@ -150,7 +181,7 @@ export function CreationCharacterCard({
           style={styles.publishedEmptyBg}
         />
       ) : (
-        <View style={styles.draftEmptyBg} />
+        <DraftEmptyCoverBackground />
       )}
 
       {hasCover && (
@@ -220,6 +251,15 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: '#ffffff',
+    overflow: 'hidden',
+  },
+  draftEmptyPattern: {
+    position: 'absolute',
+    width: `${DRAFT_EMPTY_PATTERN.widthRatio * 100}%`,
+    height: `${DRAFT_EMPTY_PATTERN.heightRatio * 100}%`,
+    left: `${DRAFT_EMPTY_PATTERN.leftRatio * 100}%`,
+    top: `${DRAFT_EMPTY_PATTERN.topRatio * 100}%`,
+    opacity: 0.04,
   },
   coverOverlay: {
     position: 'absolute',
@@ -286,6 +326,9 @@ const draftStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
+  publishButtonPublishing: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+  },
   publishButtonDisabled: {
     opacity: 0.6,
   },
@@ -293,6 +336,9 @@ const draftStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#000000',
+  },
+  publishTextPublishing: {
+    color: 'rgba(0,0,0,0.7)',
   },
 });
 

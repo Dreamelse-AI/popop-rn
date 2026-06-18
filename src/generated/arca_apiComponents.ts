@@ -1500,6 +1500,16 @@ export interface InviteInfoResp {
 	total_reward_tokens: number // 累计获得的邀请奖励免费币
 }
 
+export interface InviteRedeemReq {
+	invite_code: string // 邀请人的邀请码
+}
+
+export interface InviteRedeemResp {
+	success: boolean // 是否核销成功并发奖
+	reward_tokens: number // 本次发给当前用户（被邀请人）的免费币；未成功为 0
+	message: string // 结果说明（无效码 / 不能用自己的码 / 已使用过 / 活动未开启 / 成功）
+}
+
 export interface ItemReportEntity {
 	impression_id: string
 	entity_type: 'post' | 'character' | 'promo' // 实体类型
@@ -2945,7 +2955,6 @@ export interface VerifyCodeReq {
 	code: string // 用户输入的验证码
 	scene: 'login' | 'deregister' // 场景，注册登录/注销
 	temp_auth_token?: string // 三方登录临时认证token
-	invite_code?: string // 邀请码（仅首次注册有效，被邀请人填写，双向发放免费币奖励）
 }
 
 export interface VerifyCodeResp {

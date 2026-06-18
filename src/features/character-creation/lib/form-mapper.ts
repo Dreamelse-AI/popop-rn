@@ -164,7 +164,10 @@ export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCr
     voice_id: state.voiceId || undefined,
     profile: state.profile || undefined,
     disposition: state.disposition || undefined,
-    anonymous_tags: state.anonymousTags.length ? state.anonymousTags : undefined,
+    anonymous_tags: (() => {
+      const tags = state.anonymousTags.map((tag) => tag.trim()).filter(Boolean);
+      return tags.length ? tags : undefined;
+    })(),
     visibility: normalizeVisibility(state.visibility),
     images: mapImagesToApi(state.images),
     opening_prologue: (() => {
@@ -273,7 +276,10 @@ function resolveGenderValue(gender?: string): CharacterDraftFormState['gender'] 
 }
 
 /** 已发布角色详情 → 创作表单（用于编辑回显） */
-export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): CharacterCreateForm {
+export function mapCharacterDetailToCreateForm(
+  character: CharacterDetailInfo,
+  lookups?: PageConfigLookups,
+): CharacterCreateForm {
   const images: UserUploadImage[] = [];
   const seenUrls = new Set<string>();
 
@@ -311,10 +317,25 @@ export function mapCharacterDetailToCreateForm(character: CharacterDetailInfo): 
     }
   }
 
+  const tagKeys =
+    character.tags
+      ?.map((tag) => tag.tag_key?.trim() ?? '')
+      .filter(Boolean) ?? [];
+  const rawSpecies = character.species?.trim() ?? '';
+
   return {
     name: character.name?.trim() || character.aka?.trim() || undefined,
+    tags: tagKeys.length
+      ? lookups
+        ? normalizeStoredTagKeys(tagKeys, lookups)
+        : tagKeys
+      : undefined,
     gender: resolveGenderValue(character.gender) || undefined,
-    species: character.species?.trim() || undefined,
+    species: rawSpecies
+      ? lookups
+        ? normalizeStoredSpeciesKey(rawSpecies, lookups) || undefined
+        : rawSpecies || undefined
+      : undefined,
     profile: character.profile?.trim() || undefined,
     voice_id: character.voice?.voice_id,
     visibility: character.is_public === false ? 'private' : 'public',

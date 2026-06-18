@@ -22,7 +22,7 @@ export function FullscreenPage({
 
 type PageHeaderBarProps = {
   children: ReactNode
-  /** 父级已处理顶部安全区时设为 false，避免重复留白 */
+  /** 父级已处理顶部安全区时设为 false（如 Home tab 内 Me 二级页）；App 根级 overlay 保持默认 true */
   includeSafeAreaTop?: boolean
 }
 
