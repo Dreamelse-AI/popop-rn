@@ -43,6 +43,17 @@ function toPersonaView(item: UserPersonaItem): ChatPersonaView {
   }
 }
 
+function PersonaAddAvatar() {
+  return (
+    <View style={styles.addAvatar}>
+      <View style={styles.addAvatarPlus}>
+        <View style={styles.addAvatarPlusBarH} />
+        <View style={styles.addAvatarPlusBarV} />
+      </View>
+    </View>
+  )
+}
+
 function ProfileCard({
   persona,
   isCurrent,
@@ -173,7 +184,7 @@ export function ChatProfileSheet({
       >
         <SheetBody style={styles.body}>
           <Pressable onPress={openCreateSheet} style={styles.addCard}>
-            <PopIcon icon={userProfileAssets.add} size={76} />
+            <PersonaAddAvatar />
             <Text style={styles.addCardText}>{t('chatProfileSheet.addNew')}</Text>
           </Pressable>
 
@@ -235,6 +246,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#000000',
+  },
+  /** Figma 2566:23548 — 76 圆形底 + 20% 黑色「+」 */
+  addAvatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addAvatarPlus: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addAvatarPlusBarH: {
+    position: 'absolute',
+    width: 24,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  addAvatarPlusBarV: {
+    position: 'absolute',
+    width: 6,
+    height: 24,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   profileCard: {
     flexDirection: 'row',
