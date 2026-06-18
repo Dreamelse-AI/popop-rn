@@ -17,13 +17,11 @@ import { MessagesSceneBanner } from './messages-scene-banner'
 import { markReturnToCharacterTab } from './drawer-return-flag'
 
 type MessagesPageProps = {
-  onSearchPress?: () => void
   openDrawerOnMount?: boolean
   isActive?: boolean
 }
 
 export function MessagesPage({
-  onSearchPress,
   openDrawerOnMount = false,
   isActive = true,
 }: MessagesPageProps) {
@@ -112,10 +110,7 @@ export function MessagesPage({
   if (loading && !hasConversations) {
     return (
       <View style={styles.container}>
-        <MessagesHeader
-          onMenuPress={() => setDrawerOpen(true)}
-          onSearchPress={onSearchPress}
-        />
+        <MessagesHeader onMenuPress={() => setDrawerOpen(true)} />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t('messages.loading', '加载中…')}</Text>
         </View>
@@ -125,10 +120,7 @@ export function MessagesPage({
 
   return (
     <View style={styles.container}>
-      <MessagesHeader
-        onMenuPress={() => setDrawerOpen(true)}
-        onSearchPress={onSearchPress}
-      />
+      <MessagesHeader onMenuPress={() => setDrawerOpen(true)} />
 
       {error && !hasConversations ? (
         <View style={styles.errorContainer}>

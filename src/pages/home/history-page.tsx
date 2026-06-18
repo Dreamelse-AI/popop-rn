@@ -28,7 +28,7 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
 
   return (
     <FullscreenPage>
-      <PageHeaderBar>
+      <PageHeaderBar includeSafeAreaTop={false}>
         <BackButton onPress={onBack} />
         <View style={styles.tabRow}>
           <Pressable style={styles.tabButton} onPress={() => setTab('income')}>

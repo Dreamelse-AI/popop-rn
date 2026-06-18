@@ -199,7 +199,6 @@ export function HomePage() {
         {/* Character tab — always mounted, hidden via display */}
         <View style={[styles.tabPanel, styles.absoluteFill, bottomTab !== 'character' && styles.hidden]}>
           <MessagesPage
-            onSearchPress={() => setSearchOpen(true)}
             openDrawerOnMount={reopenDrawer}
             isActive={bottomTab === 'character'}
           />
