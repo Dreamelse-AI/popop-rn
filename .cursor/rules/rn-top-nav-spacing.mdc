@@ -1,0 +1,10 @@
+---
+description: RN top navigation spacing checks
+alwaysApply: true
+---
+
+# RN 顶部导航间距
+
+- 修改顶部 nav、页面壳层或 `PageHeaderBar` safe area 逻辑时，必须同步检查相关页面的顶部距离。
+- 嵌在已有顶部 chrome 下的子页面不要重复叠加 `insets.top`；必要时使用 `includeSafeAreaTop={false}`。
+- 全屏独立 screen 仍需保留安全区，避免内容贴到刘海/状态栏。
