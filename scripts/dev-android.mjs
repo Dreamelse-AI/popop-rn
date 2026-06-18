@@ -3,26 +3,40 @@
  * Android USB 真机开发流程（参考 rn-debug-demo/scripts/dev-android.mjs）
  *
  * 用法:
- *   node scripts/dev-android.mjs           # 构建（如需）+ 启动 Metro + 打开真机
+ *   node scripts/dev-android.mjs           # 安装 Dev Client（如需）+ 启动 Metro + 打开真机
  *   node scripts/dev-android.mjs --attach  # 仅启动 Metro（Dev Client 已安装时）
+ *   node scripts/dev-android.mjs --rebuild # 强制重新构建并安装 Dev Client
  */
-import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import {
+  buildExpoRunAndroidArgs,
+  expoRunAndroidEnv,
+  resolveExpoDeviceName,
+  setupMetroReverse,
+  withAndroidEnv,
+} from './lib/android-sdk.mjs'
+import { readAppIdentity } from './lib/app-identity.mjs'
 import { ANDROID_METRO_PORT, freeMetroPorts } from './lib/metro-ports.mjs'
 
 const appRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
-const androidDir = join(appRoot, 'android')
 const metroPort = ANDROID_METRO_PORT
+const { androidPackage } = readAppIdentity(appRoot)
 const attachOnly = process.argv.includes('--attach')
+const forceRebuild = process.argv.includes('--rebuild')
+const expoStartExtraArgs = process.argv
+  .slice(2)
+  .filter((arg) => !['--attach', '--rebuild'].includes(arg))
 
 function run(command, args, opts = {}) {
+  const { env: extraEnv, ...rest } = opts
   const result = spawnSync(command, args, {
     cwd: appRoot,
     stdio: 'inherit',
     shell: false,
-    ...opts,
+    env: withAndroidEnv(extraEnv),
+    ...rest,
   })
   if (result.status !== 0) {
     process.exit(result.status ?? 1)
@@ -37,7 +51,12 @@ function resolveAdb() {
   ].filter(Boolean)
 
   for (const adb of candidates) {
-    if (existsSync(adb)) return adb
+    try {
+      const result = spawnSync(adb, ['version'], { encoding: 'utf8' })
+      if (result.status === 0) return adb
+    } catch {
+      // try next candidate
+    }
   }
   return 'adb'
 }
@@ -77,41 +96,75 @@ function getPhysicalDeviceSerial(adb) {
   return devices[0].serial
 }
 
-function ensureNativeBuild() {
-  if (existsSync(androidDir)) return
-
-  console.log('[android] 首次 — 运行 expo run:android 构建...\n')
-  const adb = resolveAdb()
-  const serial = getPhysicalDeviceSerial(adb)
-  setupAdbReverse(adb, serial)
-  run('npx', ['expo', 'run:android', '--device', serial, '-p', metroPort, '--no-bundler'])
+function isDevClientInstalled(adb, serial, packageName) {
+  const result = spawnSync(adb, ['-s', serial, 'shell', 'pm', 'path', packageName], {
+    encoding: 'utf8',
+    env: withAndroidEnv({ ANDROID_SERIAL: serial }),
+  })
+  return result.status === 0 && result.stdout.includes('package:')
 }
 
 function setupAdbReverse(adb, serial) {
-  const result = spawnSync(adb, ['-s', serial, 'reverse', `tcp:${metroPort}`, `tcp:${metroPort}`], {
-    stdio: 'inherit',
-  })
-  if (result.status === 0) {
-    console.log(`[android] adb reverse tcp:${metroPort} 已设置`)
-  } else {
-    console.warn(`[android] adb reverse 失败，请手动执行:`)
-    console.warn(`          ${adb} -s ${serial} reverse tcp:${metroPort} tcp:${metroPort}`)
-  }
+  setupMetroReverse(adb, serial, metroPort)
+  console.log(`[android] adb reverse tcp:${metroPort} 已设置`)
 }
 
-function startMetro() {
+function ensureDevClientOnDevice(serial) {
+  const adb = resolveAdb()
+  const installed = isDevClientInstalled(adb, serial, androidPackage)
+
+  if (attachOnly && !installed) {
+    console.error(`[android] 真机未安装 Dev Client（${androidPackage}）。`)
+    console.error('        请先运行: pnpm android:device:build')
+    console.error('        或完整流程: pnpm android:device')
+    process.exit(1)
+  }
+
+  if (forceRebuild) {
+    console.log('[android] --rebuild：强制重新构建 Dev Client')
+  } else if (!installed) {
+    console.log(`[android] 真机未安装 Dev Client，开始构建...`)
+  } else {
+    console.log('[android] Dev Client 已安装，跳过构建')
+    return
+  }
+
+  setupAdbReverse(adb, serial)
+  const expoDevice = resolveExpoDeviceName(adb, serial)
+  console.log(`[android] Expo 设备名: ${expoDevice} (adb: ${serial})`)
+  run('npx', buildExpoRunAndroidArgs({
+    deviceName: expoDevice,
+    metroPort,
+    extraArgs: ['--no-bundler'],
+  }), {
+    env: expoRunAndroidEnv(serial, metroPort),
+  })
+}
+
+function startMetro(serial) {
   freeMetroPorts([metroPort])
   console.log(`\n[android] 启动 Metro (port ${metroPort})...\n`)
-  run('npx', ['expo', 'start', '--dev-client', '--android', '--port', metroPort])
+  run('npx', [
+    'expo',
+    'start',
+    '--dev-client',
+    '--android',
+    '--port',
+    metroPort,
+    ...expoStartExtraArgs,
+  ], {
+    env: { ANDROID_SERIAL: serial },
+  })
 }
 
 // --- main ---
 
-if (!attachOnly) {
-  ensureNativeBuild()
-}
-
 const adb = resolveAdb()
 const serial = getPhysicalDeviceSerial(adb)
+
+if (!attachOnly) {
+  ensureDevClientOnDevice(serial)
+}
+
 setupAdbReverse(adb, serial)
-startMetro()
+startMetro(serial)

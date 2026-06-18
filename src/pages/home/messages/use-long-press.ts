@@ -5,7 +5,7 @@ const DEFAULT_DELAY_MS = 500
 const MOVE_CANCEL_PX = 10
 
 type UseLongPressOptions = {
-  onLongPress: () => void
+  onLongPress: (anchor: { x: number; y: number }) => void
   delayMs?: number
 }
 
@@ -34,7 +34,10 @@ export function useLongPress({ onLongPress, delayMs = DEFAULT_DELAY_MS }: UseLon
 
       timerRef.current = setTimeout(() => {
         longPressTriggeredRef.current = true
-        onLongPressRef.current()
+        const anchor = pointerStartRef.current
+        if (anchor) {
+          onLongPressRef.current(anchor)
+        }
       }, delayMs)
     },
     [clear, delayMs],

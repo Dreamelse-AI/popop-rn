@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
+  FlatList,
   StyleSheet,
   ActivityIndicator,
+  Modal,
   useWindowDimensions,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
@@ -19,9 +20,9 @@ import {
 import {
   getAllBackgrounds,
   PRESET_BACKGROUNDS,
+  resolveImageAssetSource,
   type BackgroundItem,
 } from '@/features/chat/lib/chat-atmosphere-presets'
-import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
 import {
   appendCustomBackground,
   removeCustomBackground,
@@ -29,7 +30,7 @@ import {
 } from '@/features/chat/lib/chat-background-store'
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
 import AddCardIcon from '@/shared/assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-add.svg'
-import { FullscreenPage, PageHeaderBar } from '@/shared/ui/fullscreen-page'
+import { PageHeaderBar } from '@/shared/ui/fullscreen-page'
 import { PopIcon } from '@/shared/ui/pop-icon'
 import { PopImage } from '@/shared/ui/pop-image'
 import { Toast, useToast } from '@/shared/ui/toast'
@@ -45,6 +46,8 @@ type ChatBackgroundPageProps = {
   onBack: () => void
   onSelectBackground?: (id: string) => void
 }
+
+type GridCell = BackgroundItem | { id: '__add__'; type: 'add' }
 
 type BackgroundCardProps = {
   item: BackgroundItem
@@ -71,10 +74,12 @@ function BackgroundCard({
       >
         {item.type === 'color' ? (
           <View style={[styles.cardInner, { backgroundColor: item.color }]} />
-        ) : typeof item.image === 'number' ? (
-          <PopImage source={item.image} style={styles.cardInner} contentFit="cover" />
         ) : (
-          <PopImage uri={resolveTosAssetUrl(item.image)} style={styles.cardInner} contentFit="cover" />
+          <PopImage
+            source={resolveImageAssetSource(item.image)}
+            style={styles.cardInner}
+            contentFit="cover"
+          />
         )}
       </Pressable>
 
@@ -89,6 +94,17 @@ function BackgroundCard({
       ) : null}
     </View>
   )
+}
+
+function chunkGridCells(items: BackgroundItem[]): GridCell[][] {
+  const cells: GridCell[] = [...items, { id: '__add__', type: 'add' }]
+  const rows: GridCell[][] = []
+
+  for (let index = 0; index < cells.length; index += NUM_COLUMNS) {
+    rows.push(cells.slice(index, index + NUM_COLUMNS))
+  }
+
+  return rows
 }
 
 export function ChatBackgroundPage({
@@ -109,13 +125,13 @@ export function ChatBackgroundPage({
   const cardWidth =
     (contentWidth - GRID_PADDING_H * 2 - GRID_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS
 
+  const gridRows = useMemo(() => chunkGridCells(allBackgrounds), [allBackgrounds])
+
   useEffect(() => {
     if (!open) return
     setDraftSelectedId(selectedBackgroundId)
     setAllBackgrounds(getAllBackgrounds())
   }, [open, selectedBackgroundId])
-
-  if (!open) return null
 
   const handleSelect = (id: string) => {
     setDraftSelectedId(id)
@@ -165,60 +181,85 @@ export function ChatBackgroundPage({
   }
 
   return (
-    <FullscreenPage backgroundColor="#f6f6f6" zIndex={70}>
-      <PageHeaderBar>
-        <Pressable
-          onPress={onBack}
-          style={styles.backButton}
-          accessibilityLabel={t('chatBackgroundPage.back')}
-        >
-          <PopIcon icon={dialogPageStyleSettingsAssets.back} size={36} />
-        </Pressable>
-        <Text style={styles.title}>{t('chatBackgroundPage.title')}</Text>
-      </PageHeaderBar>
+    <Modal
+      visible={open}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onBack}
+    >
+      <View style={styles.page}>
+        <PageHeaderBar>
+          <Pressable
+            onPress={onBack}
+            style={styles.backButton}
+            accessibilityLabel={t('chatBackgroundPage.back')}
+          >
+            <PopIcon icon={dialogPageStyleSettingsAssets.back} size={36} />
+          </Pressable>
+          <Text style={styles.title}>{t('chatBackgroundPage.title')}</Text>
+        </PageHeaderBar>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.grid,
-          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {allBackgrounds.map(item => (
-          <BackgroundCard
-            key={item.id}
-            item={item}
-            selected={draftSelectedId === item.id}
-            cardWidth={cardWidth}
-            onSelect={() => handleSelect(item.id)}
-            onDelete={
-              item.type === 'custom' ? () => handleDeleteCustom(item.id) : undefined
-            }
-            deleteLabel={t('chatBackgroundPage.deleteBackground')}
-          />
-        ))}
-
-        <Pressable
-          onPress={() => void handlePickBackground()}
-          disabled={uploading}
-          style={[styles.addCard, { width: cardWidth, height: CARD_HEIGHT }]}
-          accessibilityLabel={t('chatBackgroundPage.addBackground')}
-        >
-          {uploading ? (
-            <ActivityIndicator size="small" color="rgba(0,0,0,0.3)" />
-          ) : (
-            <AddCardIcon width={cardWidth} height={CARD_HEIGHT} />
+        <FlatList
+          data={gridRows}
+          keyExtractor={(_, index) => `background-row-${index}`}
+          style={styles.list}
+          contentContainerStyle={{
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 16) + 16,
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item: row }) => (
+            <View style={[styles.row, { maxWidth: contentWidth }]}>
+              {row.map(cell =>
+                cell.type === 'add' ? (
+                  <Pressable
+                    key={cell.id}
+                    onPress={() => void handlePickBackground()}
+                    disabled={uploading}
+                    style={[styles.addCard, { width: cardWidth, height: CARD_HEIGHT }]}
+                    accessibilityLabel={t('chatBackgroundPage.addBackground')}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator size="small" color="rgba(0,0,0,0.3)" />
+                    ) : (
+                      <AddCardIcon width={cardWidth} height={CARD_HEIGHT} />
+                    )}
+                  </Pressable>
+                ) : (
+                  <BackgroundCard
+                    key={cell.id}
+                    item={cell}
+                    selected={draftSelectedId === cell.id}
+                    cardWidth={cardWidth}
+                    onSelect={() => handleSelect(cell.id)}
+                    onDelete={
+                      cell.type === 'custom' ? () => handleDeleteCustom(cell.id) : undefined
+                    }
+                    deleteLabel={t('chatBackgroundPage.deleteBackground')}
+                  />
+                ),
+              )}
+              {row.length < NUM_COLUMNS
+                ? Array.from({ length: NUM_COLUMNS - row.length }, (_, index) => (
+                    <View key={`spacer-${index}`} style={{ width: cardWidth }} />
+                  ))
+                : null}
+            </View>
           )}
-        </Pressable>
-      </ScrollView>
+        />
 
-      <Toast message={toast} />
-    </FullscreenPage>
+        <Toast message={toast} />
+      </View>
+    </Modal>
   )
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: '#f6f6f6',
+  },
   backButton: {
     position: 'absolute',
     left: 16,
@@ -235,17 +276,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Black Han Sans',
     color: '#000000',
   },
-  scrollView: {
+  list: {
     flex: 1,
   },
-  grid: {
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: GRID_GAP,
     paddingHorizontal: GRID_PADDING_H,
-    paddingTop: 12,
+    marginBottom: GRID_GAP,
     alignSelf: 'center',
-    maxWidth: 390,
     width: '100%',
   },
   cardWrap: {
@@ -280,5 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     opacity: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

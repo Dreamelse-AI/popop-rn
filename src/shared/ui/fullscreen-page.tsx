@@ -14,7 +14,7 @@ export function FullscreenPage({
   zIndex = 50,
 }: FullscreenPageProps) {
   return (
-    <View style={[styles.container, { backgroundColor, zIndex }]}>
+    <View style={[styles.container, { backgroundColor, zIndex, elevation: zIndex }]}>
       {children}
     </View>
   )

@@ -130,7 +130,14 @@ export function transcribeAudioFile(
         lang,
         interimResults: true,
         requiresOnDeviceRecognition: Platform.OS === 'ios',
-        audioSource: { uri },
+        audioSource:
+          Platform.OS === 'android'
+            ? {
+                uri,
+                audioChannels: 1,
+                sampleRate: 16000,
+              }
+            : { uri },
       })
     } catch {
       finish()

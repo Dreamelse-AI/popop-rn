@@ -194,14 +194,9 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     const result = await voiceRecorder.finishRecording();
     if (!result) return;
 
-    const transcript = result.transcript.trim();
-    if (transcript) {
-      outbound.sendText(transcript);
-      return;
-    }
-
     await outbound.sendVoice({
       uri: result.uri,
+      transcript: result.transcript,
       durationMs: result.durationMs,
     });
   }, [outbound, voiceRecorder]);

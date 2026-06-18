@@ -86,7 +86,7 @@ export function MePage({ isActive = true }: MePageProps) {
     if (ok) showGlobalToast(t('me.copySuccess'))
   }
 
-  const uidLongPress = useLongPress({ onLongPress: () => void handleCopyUid() })
+  const uidLongPress = useLongPress({ onLongPress: () => { void handleCopyUid() } })
 
   const handleLogout = () => {
     apiClient.setToken(null)

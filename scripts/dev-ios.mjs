@@ -30,6 +30,9 @@ const localAppPath = join(derivedDataPath, 'Build/Products/Debug-iphonesimulator
 
 const attachOnly = process.argv.includes('--attach')
 const forceRebuild = process.argv.includes('--rebuild')
+const expoStartExtraArgs = process.argv
+  .slice(2)
+  .filter((arg) => !['--attach', '--rebuild'].includes(arg))
 
 function run(command, args, opts = {}) {
   const result = spawnSync(command, args, {
@@ -122,9 +125,21 @@ function needsNativeRebuild() {
 
 function ensurePodsInstalled({ force = false } = {}) {
   const podfileLock = join(iosDir, 'Podfile.lock')
-  if (force || !existsSync(podfileLock)) {
-    console.log('[ios] pod install...\n')
+  const needsInstall = force || !existsSync(podfileLock) || !existsSync(workspace)
+  if (needsInstall) {
+    if (!existsSync(workspace) && existsSync(join(iosDir, 'Podfile'))) {
+      console.log('[ios] 未找到 Popop.xcworkspace，正在运行 pod install...\n')
+    } else {
+      console.log('[ios] pod install...\n')
+    }
     run('pod', ['install'], { cwd: iosDir })
+  }
+
+  if (!existsSync(workspace)) {
+    console.error('[ios] pod install 后仍缺少 Popop.xcworkspace。')
+    console.error('      请检查上方 pod 输出；常见原因是 Google Sign-In 依赖需要 modular headers。')
+    console.error('      可尝试: cd ios && pod install')
+    process.exit(1)
   }
 }
 
@@ -137,7 +152,7 @@ function findExistingAppBundle() {
 }
 
 function buildForSimulator(udid) {
-  if (!existsSync(workspace)) {
+  if (!existsSync(iosDir)) {
     console.error('[ios] 缺少 ios/ 目录，请先运行: npx expo prebuild')
     process.exit(1)
   }
@@ -208,7 +223,15 @@ function ensureDevClientOnSimulator(udid) {
 function startMetro() {
   freeMetroPorts([metroPort])
   console.log(`\n[ios] 启动 Metro (port ${metroPort})...\n`)
-  run('npx', ['expo', 'start', '--dev-client', '--ios', '--port', metroPort])
+  run('npx', [
+    'expo',
+    'start',
+    '--dev-client',
+    '--ios',
+    '--port',
+    metroPort,
+    ...expoStartExtraArgs,
+  ])
 }
 
 // --- main ---

@@ -6,6 +6,7 @@ import {
   Pressable,
   PanResponder,
   StyleSheet,
+  Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -59,7 +60,7 @@ export function ChatInputBar({
   const [text, setText] = useState('')
   const textInputRef = useRef<TextInput>(null)
   const pendingComposerOpenRef = useRef(false)
-  const keyboardInset = useKeyboardInset(inputFocused)
+  const keyboardInset = useKeyboardInset(keyboardExpanded || inputFocused)
 
   const setComposerExpanded = useCallback(
     (next: boolean) => {
@@ -156,7 +157,9 @@ export function ChatInputBar({
       ? Math.max(8, keyboardInset)
       : showEmojiPanel
         ? 4
-        : 24 + insets.bottom
+        : Platform.OS === 'android'
+          ? 12
+          : 24 + insets.bottom
 
   /** Figma 2566-36698 / 2670-22068 — 语音模式（含长按录音态） */
   if (!keyboardExpanded) {
@@ -345,7 +348,9 @@ function VoiceHoldZone({
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => !handlersRef.current.disabled,
+        onStartShouldSetPanResponderCapture: () => !handlersRef.current.disabled,
         onMoveShouldSetPanResponder: () => holdingRef.current,
+        onMoveShouldSetPanResponderCapture: () => holdingRef.current,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: (event) => {
           if (handlersRef.current.disabled) return

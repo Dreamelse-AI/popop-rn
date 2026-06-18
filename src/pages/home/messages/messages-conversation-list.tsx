@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native'
 
 import type { MessageConversation } from './types'
 import { MessagesConversationRow } from './messages-conversation-row'
-import { MessagesRowMenu } from './messages-row-menu'
+import { MessagesRowMenu, type MessagesRowMenuAnchor } from './messages-row-menu'
 
 type MessagesConversationListProps = {
   items: MessageConversation[]
@@ -12,27 +12,32 @@ type MessagesConversationListProps = {
   onSelect: (conversationId: string) => void
 }
 
+type MenuState = {
+  id: string
+  anchor: MessagesRowMenuAnchor
+}
+
 export function MessagesConversationList({
   items,
   onPin,
   onEndRelation,
   onSelect,
 }: MessagesConversationListProps) {
-  const [menuConversationId, setMenuConversationId] = useState<string | null>(null)
+  const [menuState, setMenuState] = useState<MenuState | null>(null)
 
   const handlePin = useCallback(() => {
-    if (!menuConversationId) return
-    const targetId = menuConversationId
-    setMenuConversationId(null)
+    if (!menuState) return
+    const targetId = menuState.id
+    setMenuState(null)
     void Promise.resolve(onPin(targetId))
-  }, [menuConversationId, onPin])
+  }, [menuState, onPin])
 
   const handleEndRelation = useCallback(() => {
-    if (!menuConversationId) return
-    const targetId = menuConversationId
-    setMenuConversationId(null)
+    if (!menuState) return
+    const targetId = menuState.id
+    setMenuState(null)
     void Promise.resolve(onEndRelation(targetId))
-  }, [menuConversationId, onEndRelation])
+  }, [menuState, onEndRelation])
 
   return (
     <View style={styles.container}>
@@ -41,14 +46,15 @@ export function MessagesConversationList({
           key={item.id}
           item={item}
           showDivider={index < items.length - 1}
-          onOpenMenu={() => setMenuConversationId(item.id)}
+          onOpenMenu={anchor => setMenuState({ id: item.id, anchor })}
           onPress={() => onSelect(item.id)}
         />
       ))}
 
       <MessagesRowMenu
-        open={menuConversationId !== null}
-        onClose={() => setMenuConversationId(null)}
+        open={menuState !== null}
+        anchor={menuState?.anchor ?? null}
+        onClose={() => setMenuState(null)}
         onPin={handlePin}
         onEndRelation={handleEndRelation}
       />

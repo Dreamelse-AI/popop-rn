@@ -502,7 +502,7 @@
     "pinned": "Pinned",
     "pinFailed": "Failed to pin. Please try again.",
     "unpinFailed": "Failed to unpin. Please try again.",
-    "endRelation": "End Relation"
+    "endRelation": "Delete character"
   },
   "chatCharacterVersionSync": {
     "title": "Character settings updated",

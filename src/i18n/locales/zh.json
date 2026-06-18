@@ -502,7 +502,7 @@
     "pinned": "已置顶",
     "pinFailed": "置顶失败，请稍后重试",
     "unpinFailed": "取消置顶失败，请稍后重试",
-    "endRelation": "结束关系"
+    "endRelation": "删除角色"
   },
   "chatCharacterVersionSync": {
     "title": "角色设定已更新",

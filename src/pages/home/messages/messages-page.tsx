@@ -46,16 +46,19 @@ export function MessagesPage({
   }, [hasToken, isActive, refresh])
 
   const pinnedCharacters = useMemo(
-    () =>
-      characterListItems
+    () => {
+      const previewById = new Map(conversations.map(item => [item.id, item.preview]))
+      return characterListItems
         .filter(item => item.pinned)
         .map(item => ({
           id: item.id,
           name: item.name,
           avatar: item.avatar,
           unread: item.unread,
-        })),
-    [characterListItems],
+          preview: previewById.get(item.id) ?? '',
+        }))
+    },
+    [characterListItems, conversations],
   )
 
   const pinnedCharacterIds = useMemo(
@@ -136,6 +139,7 @@ export function MessagesPage({
             items={pinnedCharacters}
             onSelect={handleSelectConversation}
             onUnpin={handleUnpin}
+            onEndRelation={handleEndRelation}
           />
           <MessagesConversationList
             items={listConversations}

@@ -12,6 +12,7 @@ import {
   expoRunAndroidEnv,
   resolveExpoDeviceName,
   setupMetroReverse,
+  withAndroidEnv,
 } from './lib/android-sdk.mjs'
 
 const METRO_PORT = ANDROID_METRO_PORT
@@ -91,9 +92,6 @@ console.log('运行: npx', args.join(' '))
 const result = spawnSync('npx', args, {
   stdio: 'inherit',
   shell: false,
-  env: {
-    ...process.env,
-    ...expoRunAndroidEnv(serial, METRO_PORT),
-  },
+  env: withAndroidEnv(expoRunAndroidEnv(serial, METRO_PORT)),
 })
 process.exit(result.status ?? 1)

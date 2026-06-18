@@ -502,7 +502,7 @@
     "pinned": "ピン留め済み",
     "pinFailed": "ピン留めに失敗しました。しばらくしてから再試行してください。",
     "unpinFailed": "ピン留め解除に失敗しました。しばらくしてから再試行してください。",
-    "endRelation": "関係終了"
+    "endRelation": "キャラクター削除"
   },
   "chatCharacterVersionSync": {
     "title": "キャラ設定が更新されました",

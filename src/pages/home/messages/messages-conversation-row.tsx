@@ -9,7 +9,7 @@ import { Image } from 'expo-image'
 type MessagesConversationRowProps = {
   item: MessageConversation
   showDivider?: boolean
-  onOpenMenu?: () => void
+  onOpenMenu?: (anchor: { x: number; y: number }) => void
   onPress?: () => void
 }
 
@@ -20,7 +20,7 @@ export function MessagesConversationRow({
   onPress,
 }: MessagesConversationRowProps) {
   const longPress = useLongPress({
-    onLongPress: () => onOpenMenu?.(),
+    onLongPress: anchor => onOpenMenu?.(anchor),
   })
 
   const handlePress = () => {

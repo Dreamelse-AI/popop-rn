@@ -469,6 +469,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    position: 'relative',
+    overflow: 'visible',
   },
   emojiBubble: {
     overflow: 'hidden',
@@ -489,6 +491,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    position: 'relative',
+    overflow: 'visible',
   },
   bubbleText: {
     fontSize: 16,

@@ -142,7 +142,7 @@ export function ChatPageStyleSheet({
   return (
     <>
       <BottomSheet
-        open={open}
+        open={open && !backgroundPageOpen}
         onClose={onClose}
         embedded={embedded}
         embeddedZIndex={60}

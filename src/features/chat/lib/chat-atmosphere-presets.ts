@@ -19,10 +19,12 @@ export type PresetBackground = {
   color: string
 }
 
+export type ImageAssetSource = string | number | { uri: string }
+
 export type ImageBackground = {
   id: string
   type: 'image'
-  image: string | number
+  image: ImageAssetSource
   bkgMainColor?: string
 }
 
@@ -37,7 +39,7 @@ export type BackgroundItem = PresetBackground | ImageBackground | CustomBackgrou
 
 export type CustomTheme = {
   id: string
-  image: string | number
+  image: ImageAssetSource
 }
 
 export type BubbleTailVariant = 'white' | 'yellow' | 'black' | 'blue'
@@ -117,8 +119,17 @@ export function getBubbleStyleTokens(bubbleStyleId: BubbleStyleId): BubbleStyleT
   return BUBBLE_STYLE_TOKENS[bubbleStyleId]
 }
 
+export function resolveImageAssetSource(image: ImageAssetSource): ImageProps['source'] {
+  if (typeof image === 'number') {
+    return image
+  }
+  if (typeof image === 'string') {
+    return { uri: resolveTosAssetUrl(image) }
+  }
+  return { uri: resolveTosAssetUrl(image.uri) }
+}
+
 export function getBackgroundPreview(backgroundId: string): {
-  previewImage?: string
   previewSource?: ImageProps['source']
   color?: string
 } {
@@ -128,17 +139,9 @@ export function getBackgroundPreview(backgroundId: string): {
     return { color: background?.type === 'color' ? background.color : '#fbf2d8' }
   }
 
-  if (typeof background.image === 'number') {
-    return {
-      color: background.bkgMainColor ?? '#fbf2d8',
-      previewSource: background.image,
-    }
-  }
-
   return {
     color: background.bkgMainColor ?? '#fbf2d8',
-    previewImage: background.image,
-    previewSource: { uri: resolveTosAssetUrl(background.image) },
+    previewSource: resolveImageAssetSource(background.image),
   }
 }
 
@@ -159,14 +162,9 @@ export function resolvePageBackground(config: ChatAtmosphereConfig): ResolvedPag
   }
 
   if (background?.type === 'image' || background?.type === 'custom') {
-    const imageSource: ImageProps['source'] =
-      typeof background.image === 'number'
-        ? background.image
-        : { uri: resolveTosAssetUrl(background.image) }
-
     return {
       baseColor: background.bkgMainColor ?? '#fbf2d8',
-      imageSource,
+      imageSource: resolveImageAssetSource(background.image),
     }
   }
 

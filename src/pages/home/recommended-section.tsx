@@ -8,7 +8,7 @@ import { FEED_RECOMMENDED_PREVIEW_LIMIT } from '../../features/feed/lib/recommen
 import type { HomeFeedCharacter } from '@/features/feed/feed-types'
 import { FeedCharacterCard } from '@/features/feed/ui/feed-character-card'
 
-import IconChevron from '@/shared/assets/feed/icon/back.svg'
+import IconChevronRight from '@/shared/assets/feed/icon/chevron-right.svg'
 
 type RecommendedSectionProps = {
   items: HomeFeedCharacter[]
@@ -33,7 +33,7 @@ export function RecommendedSection({ items, onCharacterClick }: RecommendedSecti
         <Pressable onPress={openRecommendedMore} style={styles.viewAllButton}>
           <Text style={styles.viewAllText}>{t('feed.viewAll')}</Text>
           <View style={styles.chevronWrapper}>
-            <IconChevron width={16} height={16} />
+            <IconChevronRight width={16} height={16} />
           </View>
         </Pressable>
       </View>
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   chevronWrapper: {
-    transform: [{ scaleY: -1 }, { rotate: '90deg' }],
+    transform: [{ rotate: '180deg' }],
   },
   scrollContent: {
     paddingLeft: 12,

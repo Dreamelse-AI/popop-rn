@@ -43,11 +43,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     softwareKeyboardLayoutMode: 'resize',
   },
   plugins: [
+    './plugins/with-google-modular-headers.js',
     'expo-dev-client',
     'expo-apple-authentication',
     '@react-native-google-signin/google-signin',
     'expo-iap',
-    'expo-speech-recognition',
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission: 'Used to record voice messages',
+        speechRecognitionPermission: 'Used to transcribe voice messages',
+      },
+    ],
     'expo-audio',
     [
       'expo-image-picker',
