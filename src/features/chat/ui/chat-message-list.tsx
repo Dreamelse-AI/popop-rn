@@ -1,5 +1,6 @@
-import { useCallback, type RefObject } from 'react'
+import { useCallback, useEffect, useState, type RefObject } from 'react'
 import { View, Text, Pressable, FlatList, StyleSheet, type ListRenderItemInfo } from 'react-native'
+import { Image, type ImageLoadEventData } from 'expo-image'
 
 import type { BubbleStyleTokens } from '../lib/chat-atmosphere-presets'
 import { getBubbleStyleTokens } from '../lib/chat-atmosphere-presets'
@@ -15,7 +16,42 @@ import IconVoiceSend from '@/shared/assets/dialog/dialog-message-voice-send.svg'
 import IconWaiting from '@/shared/assets/dialog/dialog-waiting.svg'
 import IconWarning from '@/shared/assets/dialog/dialog-warning.svg'
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
-import { Image } from 'expo-image'
+
+const CHAT_IMAGE_MAX_WIDTH = 240
+const CHAT_IMAGE_MAX_HEIGHT = 256
+
+function fitChatImageSize(width: number, height: number) {
+  const scale = Math.min(CHAT_IMAGE_MAX_WIDTH / width, CHAT_IMAGE_MAX_HEIGHT / height, 1)
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  }
+}
+
+function ChatBubbleImage({ url, onPress }: { url: string; onPress?: () => void }) {
+  const [size, setSize] = useState(() => fitChatImageSize(CHAT_IMAGE_MAX_WIDTH, CHAT_IMAGE_MAX_HEIGHT))
+
+  useEffect(() => {
+    setSize(fitChatImageSize(CHAT_IMAGE_MAX_WIDTH, CHAT_IMAGE_MAX_HEIGHT))
+  }, [url])
+
+  const handleLoad = useCallback((event: ImageLoadEventData) => {
+    const { width, height } = event.source
+    if (!width || !height) return
+    setSize(fitChatImageSize(width, height))
+  }, [])
+
+  return (
+    <Pressable onPress={onPress} accessibilityLabel="查看大图" accessibilityRole="imagebutton">
+      <Image
+        source={{ uri: resolveChatImageDisplayUrl(url) }}
+        style={[styles.messageImage, size]}
+        contentFit="contain"
+        onLoad={handleLoad}
+      />
+    </Pressable>
+  )
+}
 
 type ChatMessageListProps = {
   listRef?: RefObject<FlatList<ChatMessage> | null>
@@ -294,13 +330,7 @@ function CharacterImageBubble({
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
       <View style={[styles.receivedBubble, styles.imageBubble, { backgroundColor: received.bgColor }]}>
-        <Pressable onPress={onImagePress} accessibilityLabel="查看大图" accessibilityRole="imagebutton">
-          <Image
-            source={{ uri: resolveChatImageDisplayUrl(url) }}
-            style={styles.messageImage}
-            contentFit="cover"
-          />
-        </Pressable>
+        <ChatBubbleImage url={url} onPress={onImagePress} />
         <BubbleTail variant={received.tail} side="left" />
       </View>
     </View>
@@ -330,13 +360,7 @@ function UserImageBubble({
         </Pressable>
       )}
       <View style={[styles.sentBubble, styles.imageBubble, { backgroundColor: sent.bgColor }]}>
-        <Pressable onPress={onImagePress} accessibilityLabel="查看大图" accessibilityRole="imagebutton">
-          <Image
-            source={{ uri: resolveChatImageDisplayUrl(url) }}
-            style={styles.messageImage}
-            contentFit="cover"
-          />
-        </Pressable>
+        <ChatBubbleImage url={url} onPress={onImagePress} />
         <BubbleTail variant={sent.tail} side="right" />
       </View>
     </View>
@@ -476,8 +500,6 @@ const styles = StyleSheet.create({
     height: 128,
   },
   messageImage: {
-    width: 240,
-    height: 256,
     borderRadius: 16,
   },
   voiceContent: {

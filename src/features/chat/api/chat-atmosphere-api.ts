@@ -24,7 +24,9 @@ function toSavePayload(characterId: string, config: ChatAtmosphereConfig): SaveC
   };
 
   if (background?.type === 'image' || background?.type === 'custom') {
-    payload.custom_background_url = background.image;
+    if (typeof background.image === 'string') {
+      payload.custom_background_url = background.image;
+    }
     if (background.bkgMainColor) {
       payload.bkg_main_color = background.bkgMainColor;
     }

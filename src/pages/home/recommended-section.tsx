@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   chevronWrapper: {
-    transform: [{ rotate: '180deg' }],
+    transform: [{ scaleY: -1 }, { rotate: '90deg' }],
   },
   scrollContent: {
     paddingLeft: 12,

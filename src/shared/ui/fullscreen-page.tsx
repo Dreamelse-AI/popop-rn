@@ -5,14 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 type FullscreenPageProps = {
   children: ReactNode
   backgroundColor?: string
+  zIndex?: number
 }
 
 export function FullscreenPage({
   children,
   backgroundColor = '#f7f7f7',
+  zIndex = 50,
 }: FullscreenPageProps) {
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor, zIndex }]}>
       {children}
     </View>
   )
