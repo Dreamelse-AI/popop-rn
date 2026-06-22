@@ -6,7 +6,7 @@ import iconValidCircle from './valid-circle.svg';
 import iconClose from './icon-close.svg';
 import iconGlobe from './icon-globe.svg';
 import iconRequiredMark from './required-mark.svg';
-import avatarPlaceholder from './avatar-placeholder.svg';
+import { userAvatarPlaceholder as avatarPlaceholder } from '../user-avatar';
 
 export const authAssets = {
   iconChecked,

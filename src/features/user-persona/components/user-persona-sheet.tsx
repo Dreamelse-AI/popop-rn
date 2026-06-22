@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
-import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
@@ -65,10 +64,9 @@ export function UserPersonaSheet({
     }
   }
 
-  const avatarUrl =
-    resolvePersonaAvatarUrl(form.avatarResourceId) ||
-    resolvePersonaAvatarUrl(fallbackAvatar) ||
-    ''
+  const avatarUrl = form.avatarResourceId
+    ? resolvePersonaAvatarUrl(form.avatarResourceId)
+    : resolvePersonaAvatarUrl(fallbackAvatar)
 
   return (
     <BottomSheet
@@ -95,11 +93,7 @@ export function UserPersonaSheet({
             style={styles.avatarButton}
             accessibilityLabel={t('profile.avatarUpload')}
           >
-            {avatarUrl ? (
-              <PopImage uri={avatarUrl} style={styles.avatarImage} />
-            ) : (
-              <AvatarPlaceholder width={144} height={144} />
-            )}
+            <PopImage uri={avatarUrl} style={styles.avatarImage} />
             {avatarUploading && (
               <View style={styles.avatarUploading}>
                 <ActivityIndicator size="small" color="#ffffff" />

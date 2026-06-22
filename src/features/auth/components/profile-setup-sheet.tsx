@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Image } from 'expo-image'
 
 import IconRequiredMark from '@/shared/assets/auth/required-mark.svg'
-import AvatarPlaceholder from '@/shared/assets/auth/avatar-placeholder.svg'
+import { authAssets } from '@/shared/assets/auth'
+import { PopImage } from '@/shared/ui/pop-image'
 import type { ProfileGender } from '../auth-types'
 import { AuthBottomSheet } from './auth-bottom-sheet'
 import { SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
@@ -98,7 +99,7 @@ export function ProfileSetupSheet({
             {values.avatarPreviewUrl ? (
               <Image source={{ uri: values.avatarPreviewUrl }} style={styles.avatarImage} />
             ) : (
-              <AvatarPlaceholder width={144} height={144} />
+              <PopImage uri={authAssets.avatarPlaceholder} style={styles.avatarImage} />
             )}
           </Pressable>
           <Text style={styles.avatarLabel}>{t('profile.avatarUpload')}</Text>

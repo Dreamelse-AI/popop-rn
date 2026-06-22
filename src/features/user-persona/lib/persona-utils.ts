@@ -1,6 +1,9 @@
 import type { Media, UserPersonaItem } from '@/generated';
+import { userAvatarPlaceholder } from '@/shared/assets/user-avatar';
 
 import type { PersonaGender } from '../types';
+
+export { userAvatarPlaceholder };
 
 export const PERSONA_NAME_MAX = 10;
 export const PERSONA_PROFILE_MAX = 300;
@@ -13,7 +16,7 @@ export function toPersonaGender(value?: string): PersonaGender {
 
 export function resolvePersonaAvatarUrl(avatar?: string | Media): string {
   const url = typeof avatar === 'string' ? avatar : avatar?.url;
-  if (!url) return '';
+  if (!url) return userAvatarPlaceholder;
   if (
     url.startsWith('blob:') ||
     url.startsWith('file://') ||
@@ -26,7 +29,7 @@ export function resolvePersonaAvatarUrl(avatar?: string | Media): string {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  return '';
+  return userAvatarPlaceholder;
 }
 
 export function resolveActivePersona(
