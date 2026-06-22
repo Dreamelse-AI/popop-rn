@@ -2,23 +2,26 @@ import type { AccountRegion, AgreementKey, AuthProvider } from './auth-types';
 import { getLocales } from 'expo-localization';
 import { env } from '@/shared/env';
 
-/** 登录/注册页及未命中 IP、设备地区时的默认账户地区（对应 en） */
-export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'OTHER';
+/** region 无法从 IP / 设备解析时的最终回退（美国英语） */
+export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'US';
 
 export const ACCOUNT_REGION_STORAGE_KEY = 'popop-account-region';
-
-/** @deprecated 使用 DEFAULT_ACCOUNT_REGION */
-export const MOCK_ACCOUNT_REGION = DEFAULT_ACCOUNT_REGION;
 
 export const REGION_TO_LANGUAGE: Record<AccountRegion, string> = {
   KR: 'ko',
   JP: 'ja',
   TW: 'zh',
+  HK: 'zh',
+  CN: 'zh',
+  US: 'en',
+  GB: 'en',
   OTHER: 'en',
 };
 
+const ACCOUNT_REGIONS: AccountRegion[] = ['JP', 'KR', 'TW', 'HK', 'US', 'GB', 'CN', 'OTHER'];
+
 export function isAccountRegion(value: string): value is AccountRegion {
-  return value === 'TW' || value === 'JP' || value === 'KR' || value === 'OTHER';
+  return (ACCOUNT_REGIONS as string[]).includes(value);
 }
 
 export function getLanguageForRegion(region: AccountRegion): string {
@@ -27,46 +30,105 @@ export function getLanguageForRegion(region: AccountRegion): string {
 
 export function getRegionFromLanguage(language: string): AccountRegion {
   const normalized = language.trim().toLowerCase().split('-')[0];
-  const entry = Object.entries(REGION_TO_LANGUAGE).find(([, l]) => l === normalized);
-  return (entry?.[0] as AccountRegion) || DEFAULT_ACCOUNT_REGION;
+  if (normalized === 'ko') return 'KR';
+  if (normalized === 'ja') return 'JP';
+  if (normalized === 'zh') return 'TW';
+  if (normalized === 'en') return 'US';
+  return DEFAULT_ACCOUNT_REGION;
 }
 
-/** ISO 3166-1 alpha-2 国家/地区码 → 账户地区 */
+/** ISO 3166-1 alpha-2 → 账户地区 */
 export function mapCountryCodeToAccountRegion(iso: string): AccountRegion {
   const code = iso.trim().toUpperCase();
   if (code === 'JP') return 'JP';
   if (code === 'KR') return 'KR';
-  if (code === 'CN' || code === 'TW' || code === 'HK' || code === 'MO') return 'TW';
-  return 'OTHER';
+  if (code === 'TW') return 'TW';
+  if (code === 'HK' || code === 'MO') return 'HK';
+  if (code === 'CN') return 'CN';
+  if (code === 'US') return 'US';
+  if (code === 'GB' || code === 'UK') return 'GB';
+  return DEFAULT_ACCOUNT_REGION;
 }
 
-function readDeviceCountryCode(): string | null {
-  const locales = getLocales()
-  for (const locale of locales) {
-    if (locale.regionCode) return locale.regionCode
+/** 解析 MOCK_DEVICE_REGION（JP/KR/US/GB/UK/TW/HK/CN 及 KO/EN 别名） */
+export function parseMockAccountRegion(value: string): AccountRegion | null {
+  const code = value.trim().toUpperCase();
+  if (!code || code === 'OFF' || code === 'FALSE') return null;
+  if (code === 'KR' || code === 'KO') return 'KR';
+  if (code === 'JP') return 'JP';
+  if (code === 'TW') return 'TW';
+  if (code === 'HK') return 'HK';
+  if (code === 'CN') return 'CN';
+  if (code === 'US' || code === 'EN' || code === 'OTHER') return 'US';
+  if (code === 'GB' || code === 'UK') return 'GB';
+  return getRegionFromLanguage(value);
+}
+
+/** 开发环境 mock 地区；env 未配置时不覆盖，配置为空时默认 US */
+export function getMockAccountRegion(): AccountRegion | null {
+  const raw = env.mockDeviceRegion;
+  if (raw === undefined) return null;
+  const value = raw.trim() || 'us';
+  return parseMockAccountRegion(value);
+}
+
+function getDeviceLocaleTags(): string[] {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  const add = (tag: string | undefined) => {
+    if (!tag || seen.has(tag)) return;
+    seen.add(tag);
+    tags.push(tag);
+  };
+
+  for (const locale of getLocales()) {
+    add(locale.languageTag ?? undefined);
+    if (locale.languageCode) {
+      add(
+        locale.regionCode
+          ? `${locale.languageCode}-${locale.regionCode}`
+          : locale.languageCode,
+      );
+    }
   }
-  return null
+
+  return tags;
 }
 
-function parseMockDeviceRegion(value: string | undefined): AccountRegion | null {
-  const code = value?.trim().toUpperCase();
-  if (code === 'JP' || code === 'KR' || code === 'TW' || code === 'OTHER') {
-    return code;
+function readCountryCodeFromTag(tag: string): string | null {
+  try {
+    const locale = new Intl.Locale(tag);
+    if (locale.region) return locale.region;
+  } catch {
+    const region = tag.split('-')[1];
+    if (region) return region.toUpperCase();
   }
   return null;
 }
 
-/** 读取设备地区设置；无法解析时回退 OTHER（en）。开发环境可用 MOCK_DEVICE_REGION 覆盖 */
+/**
+ * 设备地区兜底：优先解析 locale 中的国家码，若无有效业务地区则按语言推断，最后回退 US（en）。
+ */
 export function getDeviceAccountRegion(): AccountRegion {
-  const mockRegion = parseMockDeviceRegion(env.mockDeviceRegion);
-  if (mockRegion) {
-    return mockRegion;
+  const tags = getDeviceLocaleTags();
+
+  for (const tag of tags) {
+    const code = readCountryCodeFromTag(tag);
+    if (code) {
+      const region = mapCountryCodeToAccountRegion(code);
+      if (region !== DEFAULT_ACCOUNT_REGION) {
+        return region;
+      }
+    }
   }
 
-  const countryCode = readDeviceCountryCode();
-  if (countryCode) {
-    return mapCountryCodeToAccountRegion(countryCode);
+  for (const tag of tags) {
+    const region = getRegionFromLanguage(tag);
+    if (region !== DEFAULT_ACCOUNT_REGION) {
+      return region;
+    }
   }
+
   return DEFAULT_ACCOUNT_REGION;
 }
 
@@ -102,27 +164,46 @@ export const SELECTABLE_REGION_OPTIONS: RegionOption[] = [
   { region: 'KR', code: 'KO', flag: '🇰🇷' },
   { region: 'JP', code: 'JP', flag: '🇯🇵' },
   { region: 'TW', code: 'CN', flag: '🇨🇳' },
-  { region: 'OTHER', code: 'EN', flag: '🇺🇸' },
+  { region: 'US', code: 'EN', flag: '🇺🇸' },
 ];
 
+const REGION_OPTION_FALLBACK: Partial<Record<AccountRegion, AccountRegion>> = {
+  HK: 'TW',
+  CN: 'TW',
+  GB: 'US',
+  OTHER: 'US',
+};
+
 export function getRegionOption(region: AccountRegion): RegionOption {
+  const lookup = REGION_OPTION_FALLBACK[region] ?? region;
   return (
-    SELECTABLE_REGION_OPTIONS.find(option => option.region === region)
-    ?? SELECTABLE_REGION_OPTIONS.find(option => option.region === 'OTHER')!
+    SELECTABLE_REGION_OPTIONS.find(option => option.region === lookup)
+    ?? SELECTABLE_REGION_OPTIONS.find(option => option.region === 'US')!
   );
 }
 
+const ENGLISH_LOGIN_METHODS: AuthProvider[] = ['apple', 'google', 'email'];
+const CHINESE_LOGIN_METHODS: AuthProvider[] = ['apple', 'google', 'email'];
+
 export const LOGIN_METHODS_BY_REGION: Record<AccountRegion, AuthProvider[]> = {
-  TW: ['apple', 'google', 'email'],
+  TW: CHINESE_LOGIN_METHODS,
+  HK: CHINESE_LOGIN_METHODS,
+  CN: CHINESE_LOGIN_METHODS,
   JP: ['apple', 'google', 'email', 'line'],
   KR: ['apple', 'google', 'email', 'kakao'],
-  OTHER: ['apple', 'google', 'email'],
+  US: ENGLISH_LOGIN_METHODS,
+  GB: ENGLISH_LOGIN_METHODS,
+  OTHER: ENGLISH_LOGIN_METHODS,
 };
 
 export const AGREEMENTS_BY_REGION: Record<AccountRegion, AgreementKey[]> = {
   TW: ['terms', 'privacy'],
+  HK: ['terms', 'privacy'],
+  CN: ['terms', 'privacy'],
   JP: ['terms', 'privacy'],
   KR: ['ageOver14', 'terms', 'privacy', 'personalInfoConsent'],
+  US: ['terms', 'privacy'],
+  GB: ['terms', 'privacy'],
   OTHER: ['terms', 'privacy'],
 };
 
@@ -142,30 +223,39 @@ const AGREEMENT_LABELS_KR: Record<AgreementKey, string> = {
 
 const AGREE_MODAL_TITLES: Record<AccountRegion, string> = {
   TW: 'Please agree to the account terms',
+  HK: 'Please agree to the account terms',
+  CN: 'Please agree to the account terms',
   JP: 'Please agree to the account terms',
   KR: '계정 이용약관에 동의해 주세요',
+  US: 'Please agree to the account terms',
+  GB: 'Please agree to the account terms',
   OTHER: 'Please agree to the account terms',
 };
 
 const MARKETING_CONSENT_LABELS: Record<AccountRegion, string> = {
   TW: 'Consent to receive event and benefit information',
+  HK: 'Consent to receive event and benefit information',
+  CN: 'Consent to receive event and benefit information',
   JP: 'Consent to receive event and benefit information',
   KR: '同意接收和使用活动及福利信息',
+  US: 'Consent to receive event and benefit information',
+  GB: 'Consent to receive event and benefit information',
   OTHER: 'Consent to receive event and benefit information',
 };
 
 const AGREE_MODAL_CONFIRM_LABELS: Record<AccountRegion, { email: string; provider: string }> = {
   TW: { email: 'Sign In', provider: 'Continue' },
+  HK: { email: 'Sign In', provider: 'Continue' },
+  CN: { email: 'Sign In', provider: 'Continue' },
   JP: { email: 'Sign In', provider: 'Continue' },
   KR: { email: '로그인', provider: '로그인' },
+  US: { email: 'Sign In', provider: 'Continue' },
+  GB: { email: 'Sign In', provider: 'Continue' },
   OTHER: { email: 'Sign In', provider: 'Continue' },
 };
 
 const REGIONS_WITH_MARKETING_CONSENT: AccountRegion[] = ['KR'];
 
-// AgreementKey 在 auth-types.ts 里是四种协议标识，比如：terms — 服务条款，privacy — 隐私政策
-// Record<AgreementKey, string> 表示「每个 key 都对应一个 string URL」
-// Partial<...> 表示不必每个 key 都有值——可以只配一部分
 export const AGREEMENT_LINKS: Partial<Record<AgreementKey, string>> = {
   terms: '/terms',
   privacy: '/privacy',
@@ -181,15 +271,15 @@ export const PROVIDER_LABELS: Record<AuthProvider, string> = {
 };
 
 export function getLoginMethodsByRegion(region: AccountRegion) {
-  return LOGIN_METHODS_BY_REGION[region] ?? LOGIN_METHODS_BY_REGION.OTHER;
+  return LOGIN_METHODS_BY_REGION[region] ?? LOGIN_METHODS_BY_REGION.US;
 }
 
 export function getAgreementsByRegion(region: AccountRegion) {
-  return AGREEMENTS_BY_REGION[region] ?? AGREEMENTS_BY_REGION.OTHER;
+  return AGREEMENTS_BY_REGION[region] ?? AGREEMENTS_BY_REGION.US;
 }
 
 export function getAgreeModalTitle(region: AccountRegion) {
-  return AGREE_MODAL_TITLES[region] ?? AGREE_MODAL_TITLES.OTHER;
+  return AGREE_MODAL_TITLES[region] ?? AGREE_MODAL_TITLES.US;
 }
 
 export function getAgreementItemLabel(key: AgreementKey, region: AccountRegion) {
@@ -200,7 +290,7 @@ export function getAgreementItemLabel(key: AgreementKey, region: AccountRegion) 
 }
 
 export function getMarketingConsentLabel(region: AccountRegion) {
-  return MARKETING_CONSENT_LABELS[region] ?? MARKETING_CONSENT_LABELS.OTHER;
+  return MARKETING_CONSENT_LABELS[region] ?? MARKETING_CONSENT_LABELS.US;
 }
 
 export function hasMarketingConsent(region: AccountRegion) {
@@ -208,7 +298,7 @@ export function hasMarketingConsent(region: AccountRegion) {
 }
 
 export function getAgreeModalConfirmText(region: AccountRegion, mode: 'email' | 'provider') {
-  const labels = AGREE_MODAL_CONFIRM_LABELS[region] ?? AGREE_MODAL_CONFIRM_LABELS.OTHER;
+  const labels = AGREE_MODAL_CONFIRM_LABELS[region] ?? AGREE_MODAL_CONFIRM_LABELS.US;
   return labels[mode];
 }
 
@@ -225,31 +315,27 @@ type ProfileSetupCopy = {
   submit: string;
 };
 
+const PROFILE_SETUP_COPY_EN: ProfileSetupCopy = {
+  title: 'My Chat Profile',
+  nameLabel: 'Name',
+  namePlaceholder: 'Enter character name',
+  genderLabel: 'Gender',
+  male: 'Male',
+  female: 'Female',
+  instructionsLabel: 'Custom Instructions',
+  instructionsPlaceholder: 'Enter your settings...',
+  hint: 'You can change this anytime in Character - Chat - Sidebar Settings.',
+  submit: 'Go to Chat',
+};
+
 const PROFILE_SETUP_COPY: Record<AccountRegion, ProfileSetupCopy> = {
-  TW: {
-    title: 'My Chat Profile',
-    nameLabel: 'Name',
-    namePlaceholder: 'Enter character name',
-    genderLabel: 'Gender',
-    male: 'Male',
-    female: 'Female',
-    instructionsLabel: 'Custom Instructions',
-    instructionsPlaceholder: 'Enter your settings...',
-    hint: 'You can change this anytime in Character - Chat - Sidebar Settings.',
-    submit: 'Go to Chat',
-  },
-  JP: {
-    title: 'My Chat Profile',
-    nameLabel: 'Name',
-    namePlaceholder: 'Enter character name',
-    genderLabel: 'Gender',
-    male: 'Male',
-    female: 'Female',
-    instructionsLabel: 'Custom Instructions',
-    instructionsPlaceholder: 'Enter your settings...',
-    hint: 'You can change this anytime in Character - Chat - Sidebar Settings.',
-    submit: 'Go to Chat',
-  },
+  TW: PROFILE_SETUP_COPY_EN,
+  HK: PROFILE_SETUP_COPY_EN,
+  CN: PROFILE_SETUP_COPY_EN,
+  JP: PROFILE_SETUP_COPY_EN,
+  US: PROFILE_SETUP_COPY_EN,
+  GB: PROFILE_SETUP_COPY_EN,
+  OTHER: PROFILE_SETUP_COPY_EN,
   KR: {
     title: '내 채팅 프로필',
     nameLabel: '이름',
@@ -262,20 +348,8 @@ const PROFILE_SETUP_COPY: Record<AccountRegion, ProfileSetupCopy> = {
     hint: '"캐릭터 - 채팅 - 사이드바 설정"에서 언제든지 변경할 수 있습니다.',
     submit: '채팅하러 가세요',
   },
-  OTHER: {
-    title: 'My Chat Profile',
-    nameLabel: 'Name',
-    namePlaceholder: 'Enter character name',
-    genderLabel: 'Gender',
-    male: 'Male',
-    female: 'Female',
-    instructionsLabel: 'Custom Instructions',
-    instructionsPlaceholder: 'Enter your settings...',
-    hint: 'You can change this anytime in Character - Chat - Sidebar Settings.',
-    submit: 'Go to Chat',
-  },
 };
 
 export function getProfileSetupCopy(region: AccountRegion) {
-  return PROFILE_SETUP_COPY[region] ?? PROFILE_SETUP_COPY.OTHER;
+  return PROFILE_SETUP_COPY[region] ?? PROFILE_SETUP_COPY.US;
 }

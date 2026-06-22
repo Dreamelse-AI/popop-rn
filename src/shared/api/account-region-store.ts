@@ -4,6 +4,7 @@ import {
   DEFAULT_ACCOUNT_REGION,
   getDeviceAccountRegion,
   getLanguageForRegion,
+  getMockAccountRegion,
   isAccountRegion,
   mapCountryCodeToAccountRegion,
 } from '@/features/auth/region-config'
@@ -83,6 +84,9 @@ function resolveRegionFromBootstrap(
   ipResult: string | null | 'empty',
   cached: AccountRegion | null,
 ): AccountRegion {
+  const mock = getMockAccountRegion()
+  if (mock) return mock
+
   if (typeof ipResult === 'string' && ipResult !== 'empty') {
     return mapCountryCodeToAccountRegion(ipResult)
   }
@@ -94,9 +98,9 @@ function resolveRegionFromBootstrap(
 
 /**
  * 应用启动时调用：请求 /app/ip_region，并同步 i18n 语言。
- * 1. 接口有 region → 映射并持久化
- * 2. 接口无 region → 设备地区（MOCK_DEVICE_REGION / OS regionCode）
- * 3. 请求失败 → 复用缓存，否则同上；设备无 region → OTHER（en）
+ * 1. MOCK_DEVICE_REGION 有值（默认 US）→ 直接使用
+ * 2. 接口有 region → 映射并持久化
+ * 3. 接口无 region / 失败 → 设备地区；设备无 region → US（en）
  */
 export function bootstrapAccountRegion(): Promise<AccountRegion> {
   if (regionReady) {

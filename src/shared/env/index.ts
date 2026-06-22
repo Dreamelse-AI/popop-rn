@@ -10,8 +10,8 @@ export const env = {
   /** 本地开发用登录 token，见 .env.example */
   devAuthToken: (extra.devAuthToken as string) ?? '',
   mockNewUser: extra.mockNewUser === true,
-  /** 覆盖设备地区兜底（AccountRegion：KR / JP / TW / OTHER），见 .env.example */
-  mockDeviceRegion: (extra.mockDeviceRegion as string) ?? '',
+  /** 覆盖 ip_region / 设备地区（JP | KR | US | GB/UK | TW | HK | CN；默认 US；off 关闭），见 .env.example */
+  mockDeviceRegion: extra.mockDeviceRegion as string | undefined,
   mockCharacterPostsFlag: (extra.mockCharacterPosts as string) ?? '',
   stripePublishableKey: (extra.stripePublishableKey as string) ?? '',
   characterCreationUseMock: extra.characterCreationUseMock === true,
