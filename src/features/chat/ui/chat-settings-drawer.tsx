@@ -238,7 +238,7 @@ export function ChatSettingsDrawer({
             showsVerticalScrollIndicator={false}
           >
             {/* Reward */}
-            <WalletBalanceCard onRecharge={() => openRecharge({ source: 'chat_with_character' })} />
+            <WalletBalanceCard compact onRecharge={() => openRecharge({ source: 'chat_with_character' })} />
 
             {/* Mode select */}
             <View style={styles.cardLg}>
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   },
   drawer: {
     width: DRAWER_WIDTH,
-    backgroundColor: '#3a3a3a',
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: -4, height: 0 },
     shadowOpacity: 0.12,

@@ -51,7 +51,11 @@ export function CharacterFixedNavHeader({
         accessibilityLabel="关闭"
         pointerEvents="auto"
       >
-        <IconClose width={36} height={36} />
+        <IconClose
+          width={36}
+          height={36}
+          color={iconTone === 'light' ? '#fff' : '#000'}
+        />
       </Pressable>
 
       <CharacterShareButton

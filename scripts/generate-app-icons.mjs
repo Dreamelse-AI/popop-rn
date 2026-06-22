@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import fs from 'fs'
 import path from 'path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -89,7 +90,17 @@ async function main() {
   await writeAdaptiveForeground(path.join(ASSETS_DIR, 'android-icon-monochrome.png'), 432)
   console.log('  ✓ assets/android-icon-monochrome.png')
 
-  console.log('\nDone.')
+  console.log('\nSyncing native ios/ and android/ via expo prebuild...')
+  const result = spawnSync('npx', ['expo', 'prebuild', '--no-install'], {
+    cwd: ROOT,
+    stdio: 'inherit',
+    shell: false,
+  })
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1)
+  }
+
+  console.log('\nDone. Rebuild the dev client to see the new icon: pnpm ios:sim:rebuild')
 }
 
 main().catch((err) => {

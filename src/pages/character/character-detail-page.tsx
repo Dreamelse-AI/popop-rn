@@ -78,7 +78,6 @@ export function CharacterDetailPage({
 
       <CharacterDetailFooter
         characterId={characterId}
-        actionLabel={t('character.detailPage.goChat')}
         onAction={onGoChat}
       />
     </View>

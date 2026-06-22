@@ -1,57 +1,52 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { View, Pressable, StyleSheet, Image } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import chatIcon from "@/shared/assets/character/main/chat-icon.png";
 
 export type CharacterDetailFooterProps = {
-  characterId: string
-  actionLabel?: string
-  onAction?: () => void
-  disabled?: boolean
-}
+  characterId: string;
+  onAction?: () => void;
+  disabled?: boolean;
+};
 
 export function CharacterDetailFooter({
   characterId,
-  actionLabel,
   onAction,
   disabled = false,
 }: CharacterDetailFooterProps) {
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(12, insets.bottom) }]}>
+    <View style={[styles.container, { bottom: Math.max(16, insets.bottom) }]}>
       <Pressable
         onPress={onAction}
         disabled={disabled || !onAction}
-        style={[styles.button, (disabled || !onAction) && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          (disabled || !onAction) && styles.buttonDisabled,
+        ]}
       >
-        <Text style={styles.buttonText}>{actionLabel ?? ''}</Text>
+        <Image source={chatIcon} style={styles.icon} />
       </Pressable>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 12,
+    position: "absolute",
+    right: 16,
     zIndex: 30,
   },
   button: {
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+  icon: {
+    width: 72,
+    height: 72,
   },
-})
+});

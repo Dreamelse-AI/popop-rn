@@ -45,9 +45,7 @@ type BackButtonProps = {
 export function BackButton({ onPress }: BackButtonProps) {
   return (
     <Pressable style={styles.backButton} onPress={onPress} accessibilityLabel="Back">
-      <View style={styles.backChevron}>
-        <Text style={styles.backChevronText}>‹</Text>
-      </View>
+      <Text style={styles.backChevronText}>‹</Text>
     </Pressable>
   )
 }
@@ -82,12 +80,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: -18,
   },
-  backChevron: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backChevronText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '300',
     color: '#000000',
     marginTop: -2,

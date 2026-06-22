@@ -11,6 +11,7 @@
  *   node scripts/dev-ios.mjs --rebuild  # 强制重新构建并安装 Dev Client
  */
 import { execSync, spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -96,9 +97,18 @@ function isValidAppBundle(appPath) {
   return getAppBundleId(appPath) === bundleId
 }
 
+function hashFile(filePath) {
+  try {
+    return createHash('sha256').update(readFileSync(filePath)).digest('hex').slice(0, 16)
+  } catch {
+    return 'missing'
+  }
+}
+
 function readNativeFingerprint() {
   const pkg = JSON.parse(readFileSync(join(appRoot, 'package.json'), 'utf8'))
-  return `${bundleId}|${pkg.dependencies?.expo ?? ''}|${pkg.dependencies?.['react-native'] ?? ''}|${pkg.dependencies?.['expo-dev-client'] ?? ''}`
+  const iconHash = hashFile(join(appRoot, 'assets/icon.png'))
+  return `${bundleId}|${pkg.dependencies?.expo ?? ''}|${pkg.dependencies?.['react-native'] ?? ''}|${pkg.dependencies?.['expo-dev-client'] ?? ''}|${iconHash}`
 }
 
 function readBuildStamp() {

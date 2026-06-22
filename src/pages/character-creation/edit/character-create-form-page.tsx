@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   backButtonText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '300',
     color: '#000000',
     marginTop: -2,

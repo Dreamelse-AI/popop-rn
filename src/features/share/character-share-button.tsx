@@ -32,7 +32,11 @@ export function CharacterShareButton({
         accessibilityLabel="分享"
         accessibilityRole="button"
       >
-        <IconShare width={22} height={20} />
+        <IconShare
+          width={22}
+          height={20}
+          color={iconTone === 'light' ? '#fff' : '#000'}
+        />
       </Pressable>
 
       <ShareSheet

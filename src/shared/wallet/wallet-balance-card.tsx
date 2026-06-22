@@ -79,22 +79,22 @@ export function WalletBalanceCard({ onRecharge, compact = false }: WalletBalance
   const totalTokens = useWalletStore(s => s.totalTokens)
   const grantProgress = useWalletGrantProgress()
 
-  const paidBalance = paidTokens ?? totalTokens ?? 0
+  const totalBalance = totalTokens ?? (paidTokens ?? 0) + (grantProgress.giftBalance ?? 0)
   const showGrantCountdown = grantProgress.canGrantMore && grantProgress.countdown
 
   return (
     <View style={[styles.card, compact && styles.cardCompact]}>
-      <View style={styles.balanceRow}>
+      <View style={[styles.balanceRow, compact && styles.balanceRowCompact]}>
         <View style={styles.balanceLeft}>
-          <Text style={styles.iceEmoji}>🧊</Text>
-          <Text style={styles.paidBalance}>{paidBalance}</Text>
-          <View style={styles.giftBadge}>
-            <Text style={styles.giftBadgeText}>+ {grantProgress.giftBalance}</Text>
-            <Text style={styles.giftBadgeEmoji}>🧊</Text>
+          <Text style={[styles.iceEmoji, compact && styles.iceEmojiCompact]}>🧊</Text>
+          <Text style={[styles.paidBalance, compact && styles.paidBalanceCompact]}>{totalBalance}</Text>
+          <View style={[styles.giftBadge, compact && styles.giftBadgeCompact]}>
+            <Text style={[styles.giftBadgeText, compact && styles.giftBadgeTextCompact]}>+ {grantProgress.giftBalance}</Text>
+            <Text style={[styles.giftBadgeEmoji, compact && styles.giftBadgeEmojiCompact]}>🧊</Text>
           </View>
         </View>
-        <Pressable style={styles.rechargeButton} onPress={onRecharge}>
-          <Text style={styles.rechargeText}>{t('me.recharge')}</Text>
+        <Pressable style={[styles.rechargeButton, compact && styles.rechargeButtonCompact]} onPress={onRecharge}>
+          <Text style={[styles.rechargeText, compact && styles.rechargeTextCompact]}>{t('me.recharge')}</Text>
         </Pressable>
       </View>
 
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   rechargeButton: {
     height: 36,
-    width: 72,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
@@ -229,5 +229,36 @@ const styles = StyleSheet.create({
   },
   progressMuted: {
     color: 'rgba(0,0,0,0.35)',
+  },
+  // compact variants (sidebar)
+  balanceRowCompact: {
+    minHeight: 52,
+    paddingVertical: 6,
+  },
+  iceEmojiCompact: {
+    fontSize: 22,
+  },
+  paidBalanceCompact: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  giftBadgeCompact: {
+    height: 18,
+    paddingHorizontal: 6,
+  },
+  giftBadgeTextCompact: {
+    fontSize: 10,
+  },
+  giftBadgeEmojiCompact: {
+    fontSize: 8,
+    lineHeight: 8,
+  },
+  rechargeTextCompact: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  rechargeButtonCompact: {
+    height: 28,
+    paddingHorizontal: 12,
   },
 })
