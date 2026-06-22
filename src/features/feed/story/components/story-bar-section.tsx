@@ -57,7 +57,7 @@ export const StoryBarSection = forwardRef<StoryBarSectionRef, StoryBarSectionPro
     if (friends.length === 0) return null
 
     if (!data || data.state === 'empty' || data.items.length === 0) {
-      return <StoryBarEmpty />
+      return null
     }
 
     return (

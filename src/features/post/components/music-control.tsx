@@ -1,88 +1,154 @@
-import { useCallback, useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native'
 import Svg, { Path, Line } from 'react-native-svg'
+import { useAudioPlayer } from 'expo-audio'
 
 import IconMusic from '@/shared/assets/feed/icon/音乐 1.svg'
 
 type MusicControlProps = {
   musicName: string
+  musicUrl?: string
+  expanded?: boolean
+  isDark?: boolean
+  onExpandChange?: (expanded: boolean) => void
 }
 
-function MuteIcon() {
+export type MusicControlHandle = {
+  pause: () => void
+  resume: () => void
+}
+
+function MuteIcon({ color = 'white' }: { color?: string }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M11 5L6 9H2v6h4l5 4V5z" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <Line x1={23} y1={9} x2={17} y2={15} stroke="white" strokeWidth={2} strokeLinecap="round" />
-      <Line x1={17} y1={9} x2={23} y2={15} stroke="white" strokeWidth={2} strokeLinecap="round" />
+      <Path d="M11 5L6 9H2v6h4l5 4V5z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <Line x1={23} y1={9} x2={17} y2={15} stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Line x1={17} y1={9} x2={23} y2={15} stroke={color} strokeWidth={2} strokeLinecap="round" />
     </Svg>
   )
 }
 
-function VolumeIcon() {
+function VolumeIcon({ color = 'white' }: { color?: string }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M11 5L6 9H2v6h4l5 4V5z" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M15.54 8.46a5 5 0 010 7.07" stroke="white" strokeWidth={2} strokeLinecap="round" />
-      <Path d="M19.07 4.93a10 10 0 010 14.14" stroke="white" strokeWidth={2} strokeLinecap="round" />
+      <Path d="M11 5L6 9H2v6h4l5 4V5z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M15.54 8.46a5 5 0 010 7.07" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M19.07 4.93a10 10 0 010 14.14" stroke={color} strokeWidth={2} strokeLinecap="round" />
     </Svg>
   )
 }
 
-export function MusicControl({ musicName }: MusicControlProps) {
-  const [expanded, setExpanded] = useState(false)
-  const [muted, setMuted] = useState(false)
+export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
+  function MusicControl({ musicName, musicUrl, expanded = false, isDark = true, onExpandChange }, ref) {
+    const iconColor = 'white'
+    const bgColor = 'rgba(48,48,48,0.9)'
+    const textColor = 'rgba(255,255,255,0.8)'
+    const [muted, setMuted] = useState(false)
+    const [pausedByViewer, setPausedByViewer] = useState(false)
+    const userMutedRef = useRef(false)
+    const spinValue = useRef(new Animated.Value(0)).current
+    const spinAnim = useRef<Animated.CompositeAnimation | null>(null)
 
-  const handleDiscClick = useCallback(() => {
-    setExpanded(true)
-  }, [])
+    const player = useAudioPlayer(musicUrl ? { uri: musicUrl } : null)
 
-  const handleMuteToggle = useCallback(() => {
-    setMuted(m => !m)
-  }, [])
+    useImperativeHandle(ref, () => ({
+      pause: () => {
+        player.pause()
+        setPausedByViewer(true)
+      },
+      resume: () => {
+        if (userMutedRef.current) return
+        if (pausedByViewer) {
+          player.play()
+          setPausedByViewer(false)
+        }
+      },
+    }), [player, pausedByViewer])
 
-  const handleCollapse = useCallback(() => {
-    setExpanded(false)
-  }, [])
+    useEffect(() => {
+      if (!musicUrl) return
+      player.loop = true
+      if (!userMutedRef.current) {
+        player.play()
+        setMuted(false)
+      } else {
+        setMuted(true)
+      }
+    }, [musicUrl, player])
 
-  if (!expanded) {
+    const isPlaying = !muted && !pausedByViewer
+
+    useEffect(() => {
+      if (isPlaying) {
+        const anim = Animated.loop(
+          Animated.timing(spinValue, {
+            toValue: 1,
+            duration: 3000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        )
+        spinAnim.current = anim
+        anim.start()
+      } else {
+        spinAnim.current?.stop()
+        spinAnim.current = null
+        spinValue.setValue(0)
+      }
+    }, [isPlaying, spinValue])
+
+    const spin = spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    })
+
+    const handleDiscClick = useCallback(() => {
+      onExpandChange?.(true)
+    }, [onExpandChange])
+
+    const handleMuteToggle = useCallback(() => {
+      if (muted) {
+        player.play()
+        setMuted(false)
+        userMutedRef.current = false
+      } else {
+        player.pause()
+        setMuted(true)
+        userMutedRef.current = true
+      }
+    }, [muted, player])
+
+    if (!expanded) {
+      return (
+        <Pressable onPress={handleDiscClick} style={[styles.discButton, { backgroundColor: bgColor }]} accessibilityLabel="Music">
+          <Animated.View style={{ transform: [{ rotate: isPlaying ? spin : '0deg' }] }}>
+            {muted ? <MuteIcon color={iconColor} /> : <IconMusic width={16} height={16} />}
+          </Animated.View>
+        </Pressable>
+      )
+    }
+
     return (
-      <Pressable
-        onPress={handleDiscClick}
-        style={styles.discButton}
-        accessibilityLabel="Music"
-      >
-        {muted ? (
-          <MuteIcon />
-        ) : (
-          <IconMusic width={16} height={16} />
-        )}
-      </Pressable>
-    )
-  }
-
-  return (
-    <Pressable onPress={handleCollapse} style={styles.pill}>
-      <View style={[styles.musicInfo, muted && styles.mutedOpacity]}>
-        <IconMusic width={16} height={16} />
-        <Text style={styles.musicName} numberOfLines={1}>{musicName}</Text>
+      <View style={[styles.pill, { backgroundColor: bgColor }]}>
+        <View style={[styles.musicInfo, muted && styles.mutedOpacity]}>
+          <Animated.View style={{ transform: [{ rotate: isPlaying ? spin : '0deg' }] }}>
+            <IconMusic width={16} height={16} />
+          </Animated.View>
+          <Text style={[styles.musicName, { color: textColor }]} numberOfLines={1}>{musicName}</Text>
+        </View>
+        <Pressable onPress={handleMuteToggle} style={styles.muteButton} accessibilityLabel={muted ? 'Unmute' : 'Mute'}>
+          {muted ? <MuteIcon color={iconColor} /> : <VolumeIcon color={iconColor} />}
+        </Pressable>
       </View>
-      <Pressable
-        onPress={handleMuteToggle}
-        style={styles.muteButton}
-        accessibilityLabel={muted ? 'Unmute' : 'Mute'}
-      >
-        {muted ? <MuteIcon /> : <VolumeIcon />}
-      </Pressable>
-    </Pressable>
-  )
-}
+    )
+  },
+)
 
 const styles = StyleSheet.create({
   discButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(48,48,48,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -92,7 +158,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderRadius: 100,
-    backgroundColor: 'rgba(48,48,48,0.9)',
     paddingHorizontal: 10,
     paddingVertical: 9,
   },
@@ -108,7 +173,6 @@ const styles = StyleSheet.create({
     maxWidth: 69,
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.8)',
   },
   muteButton: {
     width: 20,

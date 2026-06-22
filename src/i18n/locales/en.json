@@ -131,7 +131,11 @@
     "emptyFeed": "No characters yet"
   },
   "post": {
-    "commentSent": "Sent successfully"
+    "commentSent": "Message sent",
+    "commentFailed": "Failed to send",
+    "inputPlaceholder": "Say something...",
+    "expandText": "Read more",
+    "collapseText": "Show less"
   },
   "messages": {
     "randomMatch": "Random Match",
@@ -521,5 +525,18 @@
     "rollbacking": "Rewinding…",
     "rollbackConfirmTitle": "Rewind to this message?",
     "rollbackConfirmMessage": "This message and all messages after it will be deleted."
+  },
+  "search": {
+    "placeholder": "Search characters, stories...",
+    "search": "Search",
+    "tabStory": "Posts",
+    "tabChat": "Characters",
+    "searching": "Searching...",
+    "searchFailed": "Search failed, please try again later",
+    "noStories": "No related posts",
+    "noCharacters": "No related characters",
+    "addFriend": "Add Friend",
+    "adding": "Adding...",
+    "added": "Added"
   }
 }

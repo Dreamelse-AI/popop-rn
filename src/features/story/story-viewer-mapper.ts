@@ -101,5 +101,5 @@ export function mapStoryViewerToCharacter(
 export type StoryViewerSession = {
   characters: StoryCharacter[];
   initialCharacterIndex: number;
-  initialStoryIndex: number;
+  initialStoryIndex?: number;
 };

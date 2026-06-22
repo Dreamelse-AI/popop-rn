@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react'
-import { View, Text, Pressable, ScrollView, StyleSheet, Dimensions, Modal } from 'react-native'
-import { useTranslation } from 'react-i18next'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { View, Text, Pressable, ScrollView, StyleSheet, Dimensions, Modal, Animated, Keyboard } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
+import { useNavigation } from '@react-navigation/native'
 import Svg, { Path, G, ClipPath, Rect, Defs } from 'react-native-svg'
 
 import { MusicControl } from './music-control'
@@ -10,6 +11,7 @@ import { useSendComment } from '@/features/comment'
 import { StoryFooter } from '@/features/story/story-footer'
 import { ShareSheet, type ShareContent } from '@/features/share'
 import { useImageBrightness } from '@/shared/hooks/use-image-brightness'
+import { ViewerExpandableText } from '@/shared/components/viewer-expandable-text'
 import { Image } from 'expo-image'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -21,11 +23,13 @@ type FeedPostViewerProps = {
   content: string
   timeAgo: string
   musicName?: string
+  musicUrl?: string
   isLiked?: boolean
   postId?: string
   impressionId?: string
   characterId?: string
   onLikeChange?: (isLiked: boolean, likeCount: number) => void
+  onNavigateCharacter?: (characterId: string) => void
   onClose: () => void
 }
 
@@ -36,19 +40,35 @@ export function FeedPostViewer({
   content,
   timeAgo,
   musicName,
+  musicUrl,
   isLiked = false,
   postId,
   impressionId,
   characterId,
   onLikeChange,
+  onNavigateCharacter,
   onClose,
 }: FeedPostViewerProps) {
-  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const { t } = useTranslation()
+  const navigation = useNavigation()
+  const [modalVisible, setModalVisible] = useState(true)
+
+  useEffect(() => {
+    const unsubFocus = navigation.addListener('focus', () => {
+      setModalVisible(true)
+    })
+    return () => { unsubFocus() }
+  }, [navigation])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [shareOpen, setShareOpen] = useState(false)
-  const [commentToast, setCommentToast] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
+
+  const heartScale = useRef(new Animated.Value(0)).current
+  const heartOpacity = useRef(new Animated.Value(0)).current
+  const heartbreakLeftX = useRef(new Animated.Value(0)).current
+  const heartbreakRightX = useRef(new Animated.Value(0)).current
+  const heartbreakOpacity = useRef(new Animated.Value(0)).current
 
   const currentImage = images[currentIndex] || ''
   const hasImages = images.length > 0
@@ -58,17 +78,49 @@ export function FeedPostViewer({
   const textMutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
   const iconStroke = isDark ? '#ffffff' : '#000000'
 
+  const showHeartAnimation = useCallback(() => {
+    heartScale.setValue(0.3)
+    heartOpacity.setValue(1)
+    Animated.parallel([
+      Animated.spring(heartScale, { toValue: 1.2, useNativeDriver: true }),
+      Animated.timing(heartOpacity, { toValue: 0, duration: 800, delay: 300, useNativeDriver: true }),
+    ]).start()
+  }, [heartScale, heartOpacity])
+
+  const showHeartbreakAnimation = useCallback(() => {
+    heartbreakLeftX.setValue(0)
+    heartbreakRightX.setValue(0)
+    heartbreakOpacity.setValue(1)
+    Animated.parallel([
+      Animated.timing(heartbreakLeftX, { toValue: -20, duration: 500, useNativeDriver: true }),
+      Animated.timing(heartbreakRightX, { toValue: 20, duration: 500, useNativeDriver: true }),
+      Animated.timing(heartbreakOpacity, { toValue: 0, duration: 600, delay: 200, useNativeDriver: true }),
+    ]).start()
+  }, [heartbreakLeftX, heartbreakRightX, heartbreakOpacity])
+
   const handleLike = useCallback(
     async (liked: boolean) => {
       if (!postId) return
+
+      if (liked) {
+        showHeartAnimation()
+      } else {
+        showHeartbreakAnimation()
+      }
 
       const resp = liked
         ? await postApi.likePost(postId, impressionId)
         : await postApi.unlikePost(postId)
       onLikeChange?.(liked, resp.like_count)
     },
-    [postId, impressionId, onLikeChange],
+    [postId, impressionId, onLikeChange, showHeartAnimation, showHeartbreakAnimation],
   )
+
+  const handleNavigateCharacter = useCallback(() => {
+    if (!characterId) return
+    setModalVisible(false)
+    onNavigateCharacter?.(characterId)
+  }, [characterId, onNavigateCharacter])
 
   const shareContent: ShareContent = {
     kind: 'post',
@@ -80,12 +132,7 @@ export function FeedPostViewer({
 
   const commentTarget = characterId ? { kind: 'post' as const, characterId } : null
 
-  const handleCommentSent = useCallback(() => {
-    setCommentToast(true)
-    setTimeout(() => setCommentToast(false), 1800)
-  }, [])
-
-  const { sendComment } = useSendComment(commentTarget, handleCommentSent)
+  const { sendComment } = useSendComment(commentTarget)
 
   const handleScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x
@@ -94,8 +141,8 @@ export function FeedPostViewer({
   }, [])
 
   return (
-    <Modal visible animationType="fade" statusBarTranslucent>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+    <Modal visible={modalVisible} animationType="fade" statusBarTranslucent>
+      <View style={[styles.container, { paddingTop: insets.top }]} onTouchStart={() => Keyboard.dismiss()}>
         {/* Blurred background */}
         {hasImages && (
           <Image
@@ -130,7 +177,7 @@ export function FeedPostViewer({
         </View>
 
         {/* Character info */}
-        <View style={styles.characterRow}>
+        <Pressable style={styles.characterRow} onPress={handleNavigateCharacter}>
           <View style={styles.characterInfo}>
             <View style={styles.characterAvatarWrapper}>
               <Image source={{ uri: characterAvatar }} style={styles.characterAvatarImage} />
@@ -138,14 +185,18 @@ export function FeedPostViewer({
             <Text style={[styles.characterName, { color: textColor }]}>{characterName}</Text>
           </View>
           <Text style={[styles.timeAgo, { color: textMutedColor }]}>{timeAgo}</Text>
-        </View>
+        </Pressable>
 
         {/* Content text */}
         {content ? (
           <View style={styles.contentWrapper}>
-            <Text style={[styles.contentText, { color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)' }]} numberOfLines={2}>
-              {content}
-            </Text>
+            <ViewerExpandableText
+              style={[styles.contentText, { color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)' }]}
+              expandLabel={t('post.expandText')}
+              collapseLabel={t('post.collapseText')}
+              labelColor={textMutedColor}
+              text={content}
+            />
           </View>
         ) : null}
 
@@ -162,11 +213,13 @@ export function FeedPostViewer({
             >
               {images.map((img, idx) => (
                 <View key={idx} style={styles.carouselItem}>
-                  <Image
-                    source={{ uri: img }}
-                    style={styles.carouselImage}
-                    resizeMode="contain"
-                  />
+                  <View style={styles.carouselImageWrapper}>
+                    <Image
+                      source={{ uri: img }}
+                      style={styles.carouselImage}
+                      contentFit="cover"
+                    />
+                  </View>
                 </View>
               ))}
             </ScrollView>
@@ -192,7 +245,7 @@ export function FeedPostViewer({
         {/* Music control */}
         {musicName && (
           <View style={styles.musicRow}>
-            <MusicControl musicName={musicName} />
+            <MusicControl musicName={musicName} musicUrl={musicUrl} isDark={isDark} />
           </View>
         )}
 
@@ -202,21 +255,35 @@ export function FeedPostViewer({
           initialLiked={isLiked}
           isDark={isDark}
           onLike={handleLike}
-          onReply={text => {
-            void sendComment(text)
-          }}
+          onReply={text => sendComment(text)}
         />
+
+        {/* Heart animation overlay */}
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.animationOverlay, { opacity: heartOpacity, transform: [{ scale: heartScale }] }]}
+        >
+          <Svg width={80} height={80} viewBox="0 0 24 24" fill={textColor}>
+            <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </Svg>
+        </Animated.View>
+
+        {/* Heartbreak animation overlay */}
+        <Animated.View pointerEvents="none" style={[styles.animationOverlay, { opacity: heartbreakOpacity, flexDirection: 'row' }]}>
+          <Animated.View style={{ transform: [{ translateX: heartbreakLeftX }, { rotate: '-15deg' }] }}>
+            <Svg width={40} height={70} viewBox="0 0 12 22" fill={textColor}>
+              <Path d="M12 19.35l-1.45-1.32C5.4 13.36 2 10.28 2 6.5 2 3.42 4.42 1 7.5 1c1.74 0 3.41.81 4.5 2.09V19.35z" />
+            </Svg>
+          </Animated.View>
+          <Animated.View style={{ transform: [{ translateX: heartbreakRightX }, { rotate: '15deg' }] }}>
+            <Svg width={40} height={70} viewBox="12 0 12 22" fill={textColor}>
+              <Path d="M12 19.35V3.09C13.09 1.81 14.76 1 16.5 1 19.58 1 22 3.42 22 6.5c0 3.78-3.4 6.86-8.55 11.54L12 19.35z" />
+            </Svg>
+          </Animated.View>
+        </Animated.View>
       </View>
 
       <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} content={shareContent} />
-
-      {commentToast && (
-        <View style={styles.commentToastWrapper}>
-          <View style={styles.commentToast}>
-            <Text style={styles.commentToastText}>{t('post.commentSent')}</Text>
-          </View>
-        </View>
-      )}
     </Modal>
   )
 }
@@ -300,11 +367,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
-  carouselImage: {
+  carouselImageWrapper: {
     width: SCREEN_WIDTH - 24,
-    height: '100%',
+    flex: 1,
     maxHeight: 480,
     borderRadius: 30,
+    overflow: 'hidden',
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
   },
   textCard: {
     width: SCREEN_WIDTH - 24,
@@ -344,21 +416,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 12,
   },
-  commentToastWrapper: {
+  animationOverlay: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 112,
+    bottom: 0,
     alignItems: 'center',
-  },
-  commentToast: {
-    borderRadius: 9999,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  commentToastText: {
-    fontSize: 14,
-    color: '#ffffff',
+    justifyContent: 'center',
   },
 })

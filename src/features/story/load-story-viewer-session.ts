@@ -35,7 +35,8 @@ export async function loadStoryViewerSession(
   if (initialCharacterIndex < 0) return null
 
   const clickedResult = viewerResults.find(r => r?.character.id === clickedCharacterId)
-  const initialStoryIndex = Math.max(0, clickedResult?.startIndex ?? 0)
+  const serverStartIndex = clickedResult?.startIndex ?? 0
+  const initialStoryIndex = serverStartIndex > 0 ? serverStartIndex : undefined
 
   return { characters, initialCharacterIndex, initialStoryIndex }
 }
