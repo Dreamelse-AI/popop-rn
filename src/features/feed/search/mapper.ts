@@ -11,31 +11,33 @@ import type {
 } from './types';
 
 export function mapFeedPopopSearch(resp: FeedPopopSearchResp): FeedSearchResult {
-  const stories: SearchStoryItem[] = [];
-  const chats: SearchChatItem[] = [];
+  const stories: SearchStoryItem[] = []
+  const chats: SearchChatItem[] = []
 
   for (const entity of resp.entities) {
     if (entity.entity_type === 'post' && entity.rec_post_entity) {
-      const post = entity.rec_post_entity;
+      const post = entity.rec_post_entity
       stories.push({
         id: post.post_id,
+        impressionId: entity.impression_id,
         coverUrl: post.images?.[0]?.url ?? '',
         authorName: post.author_name ?? '',
         title: post.title ?? '',
         body: post.body ?? '',
-      });
+      })
     } else if (entity.entity_type === 'character' && entity.rec_character_entity) {
-      const character = entity.rec_character_entity;
+      const character = entity.rec_character_entity
       chats.push({
         id: character.character_id,
+        impressionId: entity.impression_id,
         avatar: character.appearance_media?.url ?? '',
         name: character.name ?? '',
         description: character.desc ?? '',
-      });
+      })
     }
   }
 
-  return { stories, chats };
+  return { stories, chats }
 }
 
 /** popop_search 响应 → 初始态发现网格（按各实体取封面图，过滤无图项） */
@@ -43,16 +45,20 @@ export function mapDiscoverGrid(resp: FeedPopopSearchResp): DiscoverGridItem[] {
   return resp.entities
     .map((entity, index): DiscoverGridItem | null => {
       if (entity.entity_type === 'post' && entity.rec_post_entity) {
-        const url = entity.rec_post_entity.images?.[0]?.url ?? '';
-        return url ? { id: `post-${entity.rec_post_entity.post_id}-${index}`, coverUrl: url } : null;
+        const post = entity.rec_post_entity
+        const url = post.images?.[0]?.url || post.author_portrait?.url || ''
+        return url
+          ? { id: `post-${post.post_id}-${index}`, coverUrl: url, entityType: 'post', entityId: post.post_id, impressionId: entity.impression_id ?? '' }
+          : null
       }
       if (entity.entity_type === 'character' && entity.rec_character_entity) {
-        const url = entity.rec_character_entity.appearance_media?.url ?? '';
+        const char = entity.rec_character_entity
+        const url = char.appearance_media?.url ?? ''
         return url
-          ? { id: `char-${entity.rec_character_entity.character_id}-${index}`, coverUrl: url }
-          : null;
+          ? { id: `char-${char.character_id}-${index}`, coverUrl: url, entityType: 'character', entityId: char.character_id, impressionId: entity.impression_id ?? '' }
+          : null
       }
-      return null;
+      return null
     })
-    .filter((item): item is DiscoverGridItem => item !== null);
+    .filter((item): item is DiscoverGridItem => item !== null)
 }

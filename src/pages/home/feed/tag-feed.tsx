@@ -97,7 +97,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
   const [storyLoading, setStoryLoading] = useState(false)
   const [storyCharacters, setStoryCharacters] = useState<StoryCharacter[]>([])
   const [storyInitIndex, setStoryInitIndex] = useState(0)
-  const [storyInitStoryIndex, setStoryInitStoryIndex] = useState(0)
+  const [storyInitStoryIndex, setStoryInitStoryIndex] = useState<number | undefined>(0)
   const [storySessionKey, setStorySessionKey] = useState(0)
 
   const [activePostId, setActivePostId] = useState<string | null>(null)
@@ -323,7 +323,9 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
           onClose={handleStoryClose}
           onRead={handleStoryRead}
           onCharacterFullyRead={handleCharacterFullyRead}
-          onImageClick={handleStoryImageClick}
+          onNavigateCharacter={(characterId) => {
+            navigation.navigate('CharacterDetail', { characterId, source: 'feed' })
+          }}
         />
       )}
 
@@ -345,6 +347,9 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
                 { isLiked, likeCount },
               )
             }
+          }}
+          onNavigateCharacter={(characterId) => {
+            navigation.navigate('CharacterDetail', { characterId, source: 'feed' })
           }}
           onClose={handlePostDetailClose}
         />

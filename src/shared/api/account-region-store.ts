@@ -110,6 +110,12 @@ export function bootstrapAccountRegion(): Promise<AccountRegion> {
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
       const cached = readStoredAccountRegion()
+      if (cached) {
+        resolvedRegion = cached
+        syncLanguageToRegion(cached)
+        regionReady = true
+        return cached
+      }
       const ipResult = await fetchIPRegionIso()
       const region = resolveRegionFromBootstrap(ipResult, cached)
 

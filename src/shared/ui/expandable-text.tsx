@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -6,60 +6,91 @@ import {
   StyleSheet,
   type TextStyle,
   type StyleProp,
+  type NativeSyntheticEvent,
+  type TextLayoutEventData,
 } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 
 type ExpandableTextProps = {
   children: string
   style?: StyleProp<TextStyle>
-  expandLabel: string
-  fadeFromColor?: string
+  numberOfLines?: number
+  expandLabel?: string
+  collapseLabel?: string
+  labelColor?: string
+  onExpandChange?: (expanded: boolean) => void
 }
 
 export function ExpandableText({
   children,
   style,
-  expandLabel,
-  fadeFromColor = '#f7f7f7',
+  numberOfLines = 2,
+  expandLabel = '...Read more',
+  collapseLabel,
+  labelColor = 'rgba(0,0,0,0.5)',
+  onExpandChange,
 }: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false)
-  const [fullLineCount, setFullLineCount] = useState(0)
+  const [needsTruncation, setNeedsTruncation] = useState(false)
+  const measured = useRef(false)
 
   useEffect(() => {
     setExpanded(false)
-    setFullLineCount(0)
+    setNeedsTruncation(false)
+    measured.current = false
   }, [children])
 
-  const clamped = !expanded && fullLineCount > 2
+  const handleTextLayout = useCallback(
+    (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+      if (measured.current) return
+      const { lines } = e.nativeEvent
+      if (lines.length > numberOfLines) {
+        setNeedsTruncation(true)
+      }
+      measured.current = true
+    },
+    [numberOfLines],
+  )
+
+  const handleExpand = useCallback(() => {
+    setExpanded(true)
+    onExpandChange?.(true)
+  }, [onExpandChange])
+
+  const handleCollapse = useCallback(() => {
+    setExpanded(false)
+    onExpandChange?.(false)
+  }, [onExpandChange])
+
+  if (expanded) {
+    return (
+      <View>
+        <Text style={style}>
+          {children}
+          {collapseLabel ? (
+            <Text style={{ color: labelColor }} onPress={handleCollapse}>
+              {'  '}{collapseLabel}
+            </Text>
+          ) : null}
+        </Text>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
-      <Text
-        style={[style, styles.measureText]}
-        onTextLayout={event => setFullLineCount(event.nativeEvent.lines.length)}
-      >
+      <Text style={[style, styles.measureText]} onTextLayout={handleTextLayout}>
         {children}
       </Text>
-      <Text style={style} numberOfLines={expanded ? undefined : 2}>
+      <Text style={style} numberOfLines={numberOfLines}>
         {children}
       </Text>
-      {clamped ? (
-        <Pressable
-          style={styles.expandButton}
-          onPress={() => setExpanded(true)}
-          accessibilityRole="button"
-        >
-          <LinearGradient
-            colors={[fadeFromColor, 'transparent']}
-            start={{ x: 1, y: 0 }}
-            end={{ x: 0, y: 0 }}
-            style={styles.fade}
-          />
-          <Text style={[styles.expandLabel, { backgroundColor: fadeFromColor }]}>
+      {needsTruncation && (
+        <Pressable style={styles.expandButton} onPress={handleExpand}>
+          <Text style={[styles.expandLabel, { color: labelColor }]}>
             {expandLabel}
           </Text>
         </Pressable>
-      ) : null}
+      )}
     </View>
   )
 }
@@ -79,17 +110,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  fade: {
-    width: 32,
-    height: 20,
+    paddingLeft: 4,
   },
   expandLabel: {
-    paddingLeft: 2,
     fontSize: 14,
     lineHeight: 20,
-    color: 'rgba(0,0,0,0.5)',
   },
 })

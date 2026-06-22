@@ -11,7 +11,7 @@ export type SendCommentTarget =
   | null
 
 type UseSendCommentResult = {
-  sendComment: (content: string) => boolean
+  sendComment: (content: string) => Promise<boolean>
 }
 
 export function useSendComment(
@@ -19,32 +19,30 @@ export function useSendComment(
   onSent?: () => void,
 ): UseSendCommentResult {
   const sendComment = useCallback(
-    (content: string): boolean => {
+    async (content: string): Promise<boolean> => {
       const text = content.trim()
       if (!text || !target) return false
 
-      if (target.kind === 'story') {
-        void storyApi.replyToStory(target.storyId, text).catch(err => {
-          console.error('[useSendComment] story comment failed:', err)
-        })
+      try {
+        if (target.kind === 'story') {
+          await storyApi.replyToStory(target.storyId, text)
+          onSent?.()
+          return true
+        }
+
+        if (target.kind === 'post') {
+          await sendPostComment(target.characterId, text)
+          onSent?.()
+          return true
+        }
+
+        await sendCommentToChat(target.characterId, text)
         onSent?.()
         return true
+      } catch (err) {
+        console.error('[useSendComment] comment failed:', err)
+        return false
       }
-
-      if (target.kind === 'post') {
-        void sendPostComment(target.characterId, text)
-          .then(() => {
-            onSent?.()
-          })
-          .catch(err => {
-            console.error('[useSendComment] post comment failed:', err)
-          })
-        return true
-      }
-
-      sendCommentToChat(target.characterId, text)
-      onSent?.()
-      return true
     },
     [target, onSent],
   )

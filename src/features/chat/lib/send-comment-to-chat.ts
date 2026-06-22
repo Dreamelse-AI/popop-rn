@@ -38,9 +38,9 @@ function playRepliesSequentially(characterId: string, outputs: PhoneMessageOutpu
   step()
 }
 
-export function sendCommentToChat(characterId: string, text: string) {
+export function sendCommentToChat(characterId: string, text: string): Promise<void> {
   const trimmed = text.trim()
-  if (!characterId || !trimmed) return
+  if (!characterId || !trimmed) return Promise.resolve()
 
   const seed = canSeedStore(characterId)
   let optimisticId: string | null = null
@@ -71,7 +71,7 @@ export function sendCommentToChat(characterId: string, text: string) {
     store.clearPendingByLocalIds([optimisticId])
   }
 
-  void chatWithCharacter({
+  return chatWithCharacter({
     character_id: characterId,
     chat_scene: 1,
     messages: [{ msg_type: 'text', text: { text: trimmed } }],
@@ -101,5 +101,6 @@ export function sendCommentToChat(characterId: string, text: string) {
         store.setTyping(false)
         store.setOutboundPhase('idle')
       }
+      throw e
     })
 }

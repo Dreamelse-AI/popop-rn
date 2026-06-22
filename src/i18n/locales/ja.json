@@ -136,7 +136,11 @@
     "emptyFeed": "おすすめキャラクターがありません"
   },
   "post": {
-    "commentSent": "送信しました"
+    "commentSent": "メッセージ送信済み",
+    "commentFailed": "送信失敗",
+    "inputPlaceholder": "何か言ってみて...",
+    "expandText": "もっと見る",
+    "collapseText": "閉じる"
   },
   "messages": {
     "randomMatch": "ランダムマッチ",
@@ -526,5 +530,18 @@
     "rollbacking": "巻き戻し中…",
     "rollbackConfirmTitle": "このメッセージまで巻き戻しますか？",
     "rollbackConfirmMessage": "このメッセージ以降は削除され、元に戻せません。"
+  },
+  "search": {
+    "placeholder": "キャラクター、ストーリーを検索...",
+    "search": "検索",
+    "tabStory": "投稿",
+    "tabChat": "キャラクター",
+    "searching": "検索中...",
+    "searchFailed": "検索に失敗しました。後でもう一度お試しください",
+    "noStories": "関連する投稿がありません",
+    "noCharacters": "関連するキャラクターがいません",
+    "addFriend": "友達追加",
+    "adding": "追加中...",
+    "added": "追加済み"
   }
 }

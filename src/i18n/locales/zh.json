@@ -136,7 +136,11 @@
     "emptyFeed": "暂无推荐角色"
   },
   "post": {
-    "commentSent": "发送成功"
+    "commentSent": "消息已发送",
+    "commentFailed": "发送失败",
+    "inputPlaceholder": "说点什么...",
+    "expandText": "展开全文",
+    "collapseText": "收起"
   },
   "messages": {
     "randomMatch": "随机匹配",
@@ -526,5 +530,18 @@
     "rollbacking": "回溯中…",
     "rollbackConfirmTitle": "确定回溯到这条消息吗？",
     "rollbackConfirmMessage": "此消息及之后的消息将被删除，且无法恢复。"
+  },
+  "search": {
+    "placeholder": "搜索角色、故事...",
+    "search": "搜索",
+    "tabStory": "动态",
+    "tabChat": "角色",
+    "searching": "搜索中...",
+    "searchFailed": "搜索失败，请稍后重试",
+    "noStories": "暂无相关动态",
+    "noCharacters": "暂无相关角色",
+    "addFriend": "添加好友",
+    "adding": "添加中...",
+    "added": "已添加"
   }
 }

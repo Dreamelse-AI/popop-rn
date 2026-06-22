@@ -1,34 +1,33 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
 
 type StoryFooterProps = {
   initialLiked?: boolean
   onLike: (isLiked: boolean) => void | Promise<void>
-  onReply?: (content: string) => void
+  onReply?: (content: string) => Promise<boolean | void> | boolean | void
   isDark?: boolean
   onInputFocus?: () => void
   onInputBlur?: () => void
+  onSent?: () => void
   showReplyInput?: boolean
 }
 
-type SentMessage = {
-  id: number
-  text: string
-}
-
-export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = true, onInputFocus, onInputBlur, showReplyInput = true }: StoryFooterProps) {
+export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = true, onInputFocus, onInputBlur, onSent, showReplyInput = true }: StoryFooterProps) {
+  const { t } = useTranslation()
   const [replyText, setReplyText] = useState('')
   const [liked, setLiked] = useState(initialLiked)
   const [isFocused, setIsFocused] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [showFailed, setShowFailed] = useState(false)
 
   useEffect(() => {
     setLiked(initialLiked)
   }, [initialLiked])
 
-  const [sentMessages, setSentMessages] = useState<SentMessage[]>([])
   const inputRef = useRef<TextInput>(null)
-  const msgIdRef = useRef(0)
 
   const strokeColor = isDark ? '#ffffff' : '#000000'
   const borderColor = isDark ? 'rgba(255,255,255,1)' : 'rgba(0,0,0,1)'
@@ -45,17 +44,30 @@ export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = tr
     onInputBlur?.()
   }, [onInputBlur])
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const text = replyText.trim()
-    if (!text) return
-    onReply?.(text)
-
-    const id = ++msgIdRef.current
-    setSentMessages(prev => [...prev, { id, text }])
-
+    if (!text || sending) return
+    setSending(true)
     setReplyText('')
     inputRef.current?.blur()
-  }, [replyText, onReply])
+    onSent?.()
+
+    try {
+      const result = await Promise.resolve(onReply?.(text))
+      if (result === false) {
+        setShowFailed(true)
+        setTimeout(() => setShowFailed(false), 2000)
+      } else {
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 2000)
+      }
+    } catch {
+      setShowFailed(true)
+      setTimeout(() => setShowFailed(false), 2000)
+    } finally {
+      setSending(false)
+    }
+  }, [replyText, onReply, sending, onSent])
 
   const handleLike = useCallback(() => {
     const next = !liked
@@ -86,7 +98,7 @@ export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = tr
               onFocus={handleFocus}
               onBlur={handleBlur}
               onSubmitEditing={handleSubmit}
-              placeholder="뭔가 말해 보세요..."
+              placeholder={t('post.inputPlaceholder')}
               placeholderTextColor={placeholderColor}
               style={[styles.input, { color: textColor }]}
               returnKeyType="send"
@@ -110,10 +122,10 @@ export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = tr
             style={[styles.likeButton, !showReplyInput && { marginLeft: 'auto' }]}
             accessibilityLabel="Like"
           >
-            <Svg width={28} height={26} viewBox="0 0 22 20" fill={liked ? '#FF2D55' : 'none'}>
+            <Svg width={28} height={26} viewBox="0 0 22 20" fill={liked ? strokeColor : 'none'}>
               <Path
                 d="M11 18s-7-4.35-9-8C0 6.5 2 3 5.5 3 7.36 3 9 4 11 6c2-2 3.64-3 5.5-3C20 3 22 6.5 20 10c-2 3.65-9 8-9 8z"
-                stroke={liked ? '#FF2D55' : strokeColor}
+                stroke={strokeColor}
                 strokeWidth={1.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -123,13 +135,22 @@ export function StoryFooter({ initialLiked = false, onLike, onReply, isDark = tr
         )}
       </View>
 
-      {sentMessages.length > 0 && (
-        <View style={styles.sentOverlay}>
-          {sentMessages.map(msg => (
-            <View key={msg.id} style={styles.sentBubble}>
-              <Text style={styles.sentText} numberOfLines={1}>{msg.text}</Text>
+      {showSuccess && (
+        <View style={styles.toastOverlay} pointerEvents="none">
+          <View style={styles.toastBubble}>
+            <Text style={styles.toastText}>{t('post.commentSent')}</Text>
+          </View>
+        </View>
+      )}
+
+      {showFailed && (
+        <View style={styles.toastOverlay} pointerEvents="none">
+          <View style={styles.toastBubbleWithIcon}>
+            <View style={styles.failIcon}>
+              <Text style={styles.failIconText}>!</Text>
             </View>
-          ))}
+            <Text style={styles.toastText}>{t('post.commentFailed')}</Text>
+          </View>
         </View>
       )}
     </>
@@ -172,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sentOverlay: {
+  toastOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -180,19 +201,38 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    pointerEvents: 'none',
   },
-  sentBubble: {
+  toastBubble: {
     borderRadius: 9999,
     backgroundColor: 'rgba(48,48,48,0.9)',
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  sentText: {
-    maxWidth: 260,
+  toastBubbleWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(48,48,48,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  failIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  failIconText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  toastText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#ffffff',
   },
 })
