@@ -1,6 +1,6 @@
 import type { AccountRegion } from '@/features/auth/auth-types'
+import { getLanguageForRegion } from '@/features/auth/region-config'
 import { getAccountRegion } from '@/shared/api/account-region-store'
-import i18n from '@/i18n'
 
 export type ApiLanguage = 'en' | 'ja' | 'ko' | 'zh-Hans' | 'zh-Hant'
 export type ApiRegion = 'JP' | 'KR' | 'CN'
@@ -37,10 +37,11 @@ export function toApiLanguage(language: string): ApiLanguage {
   return 'en'
 }
 
+/** X-Language / X-Region 均由 AccountRegion 派生，保证二者一致 */
 export function buildLocaleHeaders(
-  language = i18n.language,
   accountRegion = getAccountRegion(),
 ): Record<'X-Language' | 'X-Region', ApiLanguage | ApiRegion> {
+  const language = getLanguageForRegion(accountRegion)
   return {
     'X-Language': toApiLanguage(language),
     'X-Region': toApiRegion(accountRegion),

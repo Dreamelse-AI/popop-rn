@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native'
-import { useTranslation } from 'react-i18next'
 import type { AccountRegion } from '../auth-types'
-import { getRegionOption, REGION_TO_LANGUAGE, SELECTABLE_REGION_OPTIONS } from '../region-config'
+import { getRegionOption, SELECTABLE_REGION_OPTIONS } from '../region-config'
 import { setAccountRegion } from '@/shared/api/account-region-store'
 
 import IconGlobe from '@/shared/assets/auth/icon-globe.svg'
@@ -15,13 +14,11 @@ type RegionSelectorProps = {
 }
 
 export function RegionSelector({ region, onRegionChange }: RegionSelectorProps) {
-  const { i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const selected = getRegionOption(region)
 
   function handleSelect(nextRegion: AccountRegion) {
     onRegionChange(nextRegion)
-    i18n.changeLanguage(REGION_TO_LANGUAGE[nextRegion])
     setAccountRegion(nextRegion)
     setOpen(false)
   }

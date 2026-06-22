@@ -26,6 +26,7 @@
     "android:device:attach": "node scripts/dev-android.mjs --attach",
     "android:device:build": "node scripts/run-android-device.mjs",
     "android:device:rebuild": "node scripts/dev-android.mjs --rebuild",
+    "android:release": "node scripts/build-android-release.mjs",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint src/",
@@ -38,6 +39,7 @@
     "sync:i18n-from-fe": "node scripts/sync-i18n-from-fe.mjs",
     "eas": "eas",
     "compress:assets": "node scripts/compress-assets.mjs",
+    "generate:app-icons": "node scripts/generate-app-icons.mjs",
     "cdn:sync": "node scripts/cdn/sync.mjs",
     "prepare": "husky"
   },

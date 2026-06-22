@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -18,13 +17,13 @@ import type { AuthProvider } from '@/features/auth/auth-types'
 
 export function LoginPage() {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Login'>>()
   const loginHook = useLogin(navigation)
 
   const {
     state,
     termsList,
+    termsError,
     handleEmailLogin,
     loginWithProvider,
     setAgreed,
@@ -79,14 +78,20 @@ export function LoginPage() {
             </View>
 
             <View style={styles.agreeRow}>
-              <AgreeCheckbox checked={state.agreed} termsList={termsList} tone="light" onChange={setAgreed} />
+              {termsError ? (
+                <Text style={styles.termsErrorText}>{termsError}</Text>
+              ) : (
+                <AgreeCheckbox checked={state.agreed} termsList={termsList} tone="light" onChange={setAgreed} />
+              )}
             </View>
           </>
         }
         overlay={
           state.toast ? (
-            <View style={[styles.toast, { top: Math.max(48, insets.top + 24) }]}>
-              <Text style={styles.toastText}>{state.toast}</Text>
+            <View style={styles.toastOverlay} pointerEvents="box-none">
+              <View style={styles.toast}>
+                <Text style={styles.toastText}>{state.toast}</Text>
+              </View>
             </View>
           ) : null
         }
@@ -138,14 +143,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  termsErrorText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  toastOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 70,
+  },
   toast: {
-    position: 'absolute',
-    alignSelf: 'center',
     borderRadius: 999,
     backgroundColor: 'rgba(0,0,0,0.85)',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    zIndex: 70,
+    maxWidth: '80%',
   },
   toastText: {
     fontSize: 12,

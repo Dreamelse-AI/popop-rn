@@ -1,6 +1,5 @@
-import i18n from '@/i18n'
 import { getAccountRegion } from '@/shared/api/account-region-store'
-import { toApiLanguage, toApiRegion } from '@/shared/api/locale-headers'
+import { buildLocaleHeaders } from '@/shared/api/locale-headers'
 
 export type LandingPageLocaleQueryOptions = {
   /** 顶导占位高度（px），告知落地页顶部留白 */
@@ -16,8 +15,9 @@ export function appendLandingPageLocaleQuery(
 
   try {
     const parsed = new URL(url)
-    parsed.searchParams.set('region', toApiRegion(getAccountRegion()))
-    parsed.searchParams.set('language', toApiLanguage(i18n.language))
+    const localeHeaders = buildLocaleHeaders(getAccountRegion())
+    parsed.searchParams.set('region', localeHeaders['X-Region'])
+    parsed.searchParams.set('language', localeHeaders['X-Language'])
     if (options.navHeight != null && options.navHeight > 0) {
       parsed.searchParams.set('navHeight', String(Math.round(options.navHeight)))
     }

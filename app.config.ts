@@ -37,12 +37,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: '#ffffff',
+      foregroundImage: './assets/android-icon-foreground.png',
+      backgroundImage: './assets/android-icon-background.png',
+      monochromeImage: './assets/android-icon-monochrome.png',
     },
     package: 'com.imagine.popop',
     softwareKeyboardLayoutMode: 'resize',
   },
   plugins: [
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash-icon.png',
+        resizeMode: 'contain',
+        backgroundColor: '#fbf2d8',
+      },
+    ],
+    './plugins/with-android-network-security-config.js',
     './plugins/with-google-modular-headers.js',
     'expo-dev-client',
     'expo-apple-authentication',
@@ -85,6 +96,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           compileSdkVersion: 36,
           targetSdkVersion: 36,
           kotlinVersion: '2.2.0',
+          buildArchs: ['arm64-v8a'],
         },
       },
     ],

@@ -196,7 +196,7 @@ export function RechargeSheet({
 }: RechargeSheetProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const termsList = useAppTerms(getAccountRegion())
+  const { termsList } = useAppTerms(getAccountRegion())
   const totalTokens = useWalletStore(s => s.totalTokens)
   const freeTokens = useWalletStore(s => s.freeTokens)
 

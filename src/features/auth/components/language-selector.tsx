@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { getLanguageOption, SELECTABLE_LANGUAGE_OPTIONS } from '../region-config'
+import { getLanguageOption, getRegionFromLanguage, SELECTABLE_LANGUAGE_OPTIONS } from '../region-config'
+import { setAccountRegion } from '@/shared/api/account-region-store'
 
 import IconGlobe from '@/shared/assets/auth/icon-globe.svg'
 import IconChevronRight from '@/shared/assets/auth/chevron-right.svg'
@@ -13,7 +14,7 @@ export function LanguageSelector() {
   const selected = getLanguageOption(i18n.language)
 
   function handleSelect(language: string) {
-    void i18n.changeLanguage(language)
+    setAccountRegion(getRegionFromLanguage(language))
     setOpen(false)
   }
 

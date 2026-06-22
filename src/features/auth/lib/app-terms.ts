@@ -4,7 +4,6 @@ import { buildLocaleHeaders } from '@/shared/api/locale-headers';
 import { buildRequestSignHeaders } from '@/shared/api/request-sign';
 
 import type { AccountRegion } from '../auth-types';
-import { REGION_TO_LANGUAGE } from '../region-config';
 
 const TERMS_PATH = '/app/terms';
 
@@ -30,7 +29,7 @@ async function requestTermsForRegion(region: AccountRegion): Promise<TermsInfo[]
   const bodyString = '';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...buildLocaleHeaders(REGION_TO_LANGUAGE[region], region),
+    ...buildLocaleHeaders(region),
     ...(await buildRequestSignHeaders(method, TERMS_PATH, bodyString)),
   };
 

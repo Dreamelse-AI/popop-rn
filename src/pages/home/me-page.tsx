@@ -16,6 +16,8 @@ import { UserPersonaSheet } from '@/features/user-persona/components/user-person
 import { AboutPage } from './about-page'
 import { InvitePage } from './invite-page'
 import { useLongPress } from './messages/use-long-press'
+import { getRegionFromLanguage } from '@/features/auth/region-config'
+import { setAccountRegion } from '@/shared/api/account-region-store'
 import i18n, { LANGUAGE_OPTIONS } from '@/i18n'
 
 import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
@@ -226,7 +228,7 @@ export function MePage({ isActive = true }: MePageProps) {
               key={option.code}
               style={styles.langOption}
               onPress={() => {
-                i18n.changeLanguage(option.code)
+                setAccountRegion(getRegionFromLanguage(option.code))
                 setShowLangPicker(false)
               }}
             >

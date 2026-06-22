@@ -2,8 +2,10 @@ import type { AccountRegion, AgreementKey, AuthProvider } from './auth-types';
 import { getLocales } from 'expo-localization';
 import { env } from '@/shared/env';
 
-/** 登录/注册页及未命中 IP、缓存时的默认账户地区 */
-export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'KR';
+/** 登录/注册页及未命中 IP、设备地区时的默认账户地区（对应 en） */
+export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'OTHER';
+
+export const ACCOUNT_REGION_STORAGE_KEY = 'popop-account-region';
 
 /** @deprecated 使用 DEFAULT_ACCOUNT_REGION */
 export const MOCK_ACCOUNT_REGION = DEFAULT_ACCOUNT_REGION;
@@ -15,9 +17,18 @@ export const REGION_TO_LANGUAGE: Record<AccountRegion, string> = {
   OTHER: 'en',
 };
 
+export function isAccountRegion(value: string): value is AccountRegion {
+  return value === 'TW' || value === 'JP' || value === 'KR' || value === 'OTHER';
+}
+
+export function getLanguageForRegion(region: AccountRegion): string {
+  return REGION_TO_LANGUAGE[region];
+}
+
 export function getRegionFromLanguage(language: string): AccountRegion {
-  const entry = Object.entries(REGION_TO_LANGUAGE).find(([, l]) => l === language);
-  return (entry?.[0] as AccountRegion) || 'OTHER';
+  const normalized = language.trim().toLowerCase().split('-')[0];
+  const entry = Object.entries(REGION_TO_LANGUAGE).find(([, l]) => l === normalized);
+  return (entry?.[0] as AccountRegion) || DEFAULT_ACCOUNT_REGION;
 }
 
 /** ISO 3166-1 alpha-2 国家/地区码 → 账户地区 */
@@ -45,7 +56,7 @@ function parseMockDeviceRegion(value: string | undefined): AccountRegion | null 
   return null;
 }
 
-/** 读取设备地区设置，无法解析时回退到 i18n 语言；开发环境可用 MOCK_DEVICE_REGION 覆盖 */
+/** 读取设备地区设置；无法解析时回退 OTHER（en）。开发环境可用 MOCK_DEVICE_REGION 覆盖 */
 export function getDeviceAccountRegion(): AccountRegion {
   const mockRegion = parseMockDeviceRegion(env.mockDeviceRegion);
   if (mockRegion) {
@@ -56,9 +67,7 @@ export function getDeviceAccountRegion(): AccountRegion {
   if (countryCode) {
     return mapCountryCodeToAccountRegion(countryCode);
   }
-  const locales = getLocales()
-  const lang = locales[0]?.languageCode ?? 'en'
-  return getRegionFromLanguage(lang);
+  return DEFAULT_ACCOUNT_REGION;
 }
 
 /** 登录页语言选择器选项（Figma：KO / JP / EN / CN） */

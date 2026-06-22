@@ -1,6 +1,10 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import { getLocales } from 'expo-localization'
+import {
+  ACCOUNT_REGION_STORAGE_KEY,
+  getLanguageForRegion,
+  isAccountRegion,
+} from '@/features/auth/region-config'
 import { storage } from '@/shared/storage'
 
 import ko from './locales/ko.json'
@@ -23,21 +27,15 @@ function isSupportedLanguage(lang: string): lang is SupportedLanguage {
   return (SUPPORTED_LANGUAGES as readonly string[]).includes(lang)
 }
 
-function detectDeviceLanguage(): SupportedLanguage {
-  const deviceLang = getLocales()[0]?.languageCode ?? ''
-  const prefix = deviceLang.toLowerCase()
-  if (isSupportedLanguage(prefix)) {
-    return prefix
+function getInitialLanguage(): SupportedLanguage {
+  const savedRegion = storage.get(ACCOUNT_REGION_STORAGE_KEY)
+  if (savedRegion && isAccountRegion(savedRegion)) {
+    const language = getLanguageForRegion(savedRegion)
+    if (isSupportedLanguage(language)) {
+      return language
+    }
   }
   return 'en'
-}
-
-function getInitialLanguage(): SupportedLanguage {
-  const saved = storage.get(LANGUAGE_STORAGE_KEY)
-  if (saved && isSupportedLanguage(saved)) {
-    return saved
-  }
-  return detectDeviceLanguage()
 }
 
 i18n.use(initReactI18next).init({

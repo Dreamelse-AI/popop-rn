@@ -13,7 +13,7 @@ import { useAppleLogin } from './use-apple-login'
 import { startOAuthCodeLogin } from './oauth-code-login'
 import type { AccountRegion, AuthProvider, AuthResponse, ProfileGender } from '../auth-types'
 import { canSubmitTerms, getRequiredTerms } from '../lib/app-terms'
-import { PROVIDER_LABELS, REGION_TO_LANGUAGE, getLoginMethodsByRegion } from '../region-config'
+import { PROVIDER_LABELS, getLoginMethodsByRegion } from '../region-config'
 import { getAccountRegion, setAccountRegion } from '@/shared/api/account-region-store'
 import { sessionStore } from '@/shared/session-store'
 import { useAuthStore } from '../auth-store'
@@ -88,11 +88,16 @@ export function useLogin(navigation: UseLoginNavigation) {
     step: 'email',
   }))
 
-  const termsList = useAppTerms(state.region)
+  const { termsList, error: termsError } = useAppTerms(state.region)
 
   const update = useCallback((patch: Partial<LoginState>) => {
     setState(prev => ({ ...prev, ...patch }))
   }, [])
+
+  useEffect(() => {
+    if (!termsError) return
+    update({ toast: termsError })
+  }, [termsError, update])
 
   const enterGuestMode = useAuthStore(s => s.enterGuestMode)
 
@@ -125,7 +130,6 @@ export function useLogin(navigation: UseLoginNavigation) {
             error: null,
           }
         })
-        i18n.changeLanguage(REGION_TO_LANGUAGE[region])
       })
       .catch(() => {
         if (!alive) return
@@ -207,12 +211,12 @@ export function useLogin(navigation: UseLoginNavigation) {
   }, [bumpProfileSetupSession, resetProfileSetup, update])
 
   const requireAgreementBeforeAction = useCallback((onConfirm: () => void, mode: 'email' | 'provider' = 'provider') => {
-    if (state.agreed) {
+    if (state.agreed || termsError) {
       onConfirm()
       return
     }
     openAgreeModal(onConfirm, mode)
-  }, [state.agreed, openAgreeModal])
+  }, [state.agreed, termsError, openAgreeModal])
 
   const toggleAgreement = useCallback((termsId: string) => {
     setState(prev => ({
@@ -522,6 +526,7 @@ export function useLogin(navigation: UseLoginNavigation) {
   return {
     state: { ...state, providers },
     termsList,
+    termsError,
     countdown,
     setEmail,
     setCode,
