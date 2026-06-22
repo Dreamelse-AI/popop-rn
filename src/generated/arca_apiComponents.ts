@@ -893,6 +893,7 @@ export interface GenLandingPageReq {
 
 export interface GenLandingPageResp {
 	url: string // AIGC 生成的 landing page URL
+	wallet_status?: WalletStatusInfo // 扣费成功后的低余额软提醒；钱包未挂载/查询失败时省略
 }
 
 export interface GenLandingPreviewReq {
@@ -1498,6 +1499,7 @@ export interface InviteInfoResp {
 	invite_code: string // 我的邀请码（首次调用懒生成、可复用）
 	invited_count: number // 已成功邀请的人数
 	total_reward_tokens: number // 累计获得的邀请奖励免费币
+	invite_reward: number // 每成功邀请一人可得的免费币（= 配置 inviter_reward）
 }
 
 export interface InviteRedeemReq {
@@ -2208,6 +2210,7 @@ export interface RandomMatchCharacterResp {
 	chat_session_id: string
 	anonymous_tags: Array<string> // 对方角色匿名标签（唯一露出）
 	greeting_messages?: Array<PhoneMessageOutput> // 匹配成功后角色主动打招呼消息（aigc anon_chats type=greeting；失败时为空，不阻断匹配）
+	wallet_status?: WalletStatusInfo // 扣费成功后的低余额软提醒；钱包未挂载/查询失败时省略
 }
 
 export interface ReactionAddReq {
@@ -2561,6 +2564,7 @@ export interface SendMessageToAnonymousCharacterResp {
 	current_messages: Array<PhoneMessageOutput> // 用户发送的消息列表（带 cursor id）
 	character_messages: Array<PhoneMessageOutput> // 角色回复的消息列表（可能有多条，每条都带 cursor id）
 	friend_request_pending: boolean // 角色是否发起好友请求
+	wallet_status?: WalletStatusInfo // 扣费成功后的低余额软提醒；钱包未挂载/查询失败时省略
 }
 
 export interface SendPushSyncReq {
@@ -2580,6 +2584,7 @@ export interface SetChatPreferenceReq {
 	character_id: string
 	model_id?: string
 	temperature: number // 温度（0-2 小数）；0 为合法值，缺省 -1 表示不修改
+	user_prompt?: string
 	background_url?: string
 	clear_background?: boolean
 	bubble_key?: string

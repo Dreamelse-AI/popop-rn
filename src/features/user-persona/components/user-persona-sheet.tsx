@@ -9,7 +9,7 @@ import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-pri
 import { showGlobalToast } from '@/shared/wallet'
 
 import { useUserPersona } from '../hooks/use-user-persona'
-import { resolvePersonaAvatarUrl } from '../lib/persona-utils'
+import { PERSONA_NAME_MAX, resolvePersonaAvatarUrl } from '../lib/persona-utils'
 
 type UserPersonaSheetProps = {
   open: boolean
@@ -114,10 +114,14 @@ export function UserPersonaSheet({
           <View style={styles.labelRow}>
             <Text style={styles.label}>{t('persona.name')}</Text>
             <Text style={styles.requiredMark}>*</Text>
+            <Text style={styles.nameCounter}>
+              {form.name.length}/{PERSONA_NAME_MAX}
+            </Text>
           </View>
           <TextInput
             value={form.name}
             onChangeText={text => setForm(prev => ({ ...prev, name: text }))}
+            maxLength={PERSONA_NAME_MAX}
             placeholder={t('persona.namePlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.2)"
             style={[styles.nameInput, nameInvalid && styles.inputError]}
@@ -229,6 +233,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#ff5a5a',
+  },
+  nameCounter: {
+    marginLeft: 'auto',
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(0,0,0,0.3)',
   },
   nameInput: {
     height: 60,
