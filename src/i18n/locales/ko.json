@@ -6,6 +6,11 @@
     "agreePrefix": "동의합니다: ",
     "iAgreePrefix": "동의합니다 "
   },
+  "newUserReward": {
+    "title": "신규 사용자 전용",
+    "description": "{{coins}} 코인이 계정에 추가되었습니다",
+    "claim": "받기"
+  },
   "email": {
     "title": "이메일로 로그인",
     "accountLabel": "📧 이메일 계정",

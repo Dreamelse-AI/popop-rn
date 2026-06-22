@@ -4,11 +4,12 @@ import { getUserInfo } from '@/generated';
 import type { UserPersonaItem } from '@/generated';
 
 import { apiClient } from '@/shared/api/api-client';
+import { userAvatarPlaceholder } from '@/shared/assets/user-avatar';
 import { userPersonaApi } from '../api';
 
 import { resolveActivePersona, resolvePersonaAvatarUrl } from './persona-utils';
 
-const AVATAR_PLACEHOLDER = '';
+const AVATAR_PLACEHOLDER = userAvatarPlaceholder;
 
 type MeProfileState = {
   displayName: string;

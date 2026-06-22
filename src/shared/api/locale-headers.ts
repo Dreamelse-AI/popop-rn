@@ -3,13 +3,18 @@ import { getLanguageForRegion } from '@/features/auth/region-config'
 import { getAccountRegion } from '@/shared/api/account-region-store'
 
 export type ApiLanguage = 'en' | 'ja' | 'ko' | 'zh-Hans' | 'zh-Hant'
-export type ApiRegion = 'JP' | 'KR' | 'CN'
+/** X-Region：ISO 3166-1 alpha-2 大写 */
+export type ApiRegion = 'JP' | 'KR' | 'TW' | 'HK' | 'US' | 'GB' | 'CN'
 
 const ACCOUNT_REGION_TO_API_REGION: Record<AccountRegion, ApiRegion> = {
   JP: 'JP',
   KR: 'KR',
-  TW: 'CN',
-  OTHER: 'JP',
+  TW: 'TW',
+  HK: 'HK',
+  US: 'US',
+  GB: 'GB',
+  CN: 'CN',
+  OTHER: 'US',
 }
 
 export function toApiRegion(accountRegion: AccountRegion): ApiRegion {
@@ -22,7 +27,7 @@ export function toApiLanguage(language: string): ApiLanguage {
   if (normalized === 'en' || normalized.startsWith('en-')) return 'en'
   if (normalized === 'ja' || normalized.startsWith('ja-')) return 'ja'
   if (normalized === 'ko' || normalized.startsWith('ko-')) return 'ko'
-  if (normalized === 'zh-hant' || normalized.startsWith('zh-hant') || normalized === 'zh-tw') {
+  if (normalized === 'zh-hant' || normalized.startsWith('zh-hant') || normalized === 'zh-tw' || normalized === 'zh-hk') {
     return 'zh-Hant'
   }
   if (

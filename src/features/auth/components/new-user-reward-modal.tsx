@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { CenterDialog } from '@/shared/ui/center-dialog'
+import { useTranslation } from 'react-i18next'
 
 type NewUserRewardModalProps = {
   open: boolean
@@ -8,6 +9,8 @@ type NewUserRewardModalProps = {
 }
 
 export function NewUserRewardModal({ open, coins, onClaim }: NewUserRewardModalProps) {
+  const { t } = useTranslation()
+
   return (
     <CenterDialog open={open} onClose={onClaim}>
       <View style={styles.container}>
@@ -15,13 +18,13 @@ export function NewUserRewardModal({ open, coins, onClaim }: NewUserRewardModalP
           <View style={styles.contentSection}>
             <Text style={styles.emoji}>🧊</Text>
             <Text style={styles.coinsText}>{coins}</Text>
-            <Text style={styles.title}>New User Exclusive</Text>
-            <Text style={styles.description}>{coins} Coins added to your account</Text>
+            <Text style={styles.title}>{t('newUserReward.title')}</Text>
+            <Text style={styles.description}>{t('newUserReward.description', { coins })}</Text>
           </View>
 
           <View style={styles.buttonSection}>
             <Pressable onPress={onClaim} style={styles.claimButton}>
-              <Text style={styles.claimText}>Claim</Text>
+              <Text style={styles.claimText}>{t('newUserReward.claim')}</Text>
             </Pressable>
           </View>
         </View>

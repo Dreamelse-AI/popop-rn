@@ -1,6 +1,7 @@
 import type { LoginResp } from '@/generated/arca_apiComponents';
 
-export type AccountRegion = 'TW' | 'JP' | 'KR' | 'OTHER';
+/** 账户地区；与 X-Region ISO 3166-1 对齐（OTHER 仅作兼容，API 走 US） */
+export type AccountRegion = 'JP' | 'KR' | 'TW' | 'HK' | 'US' | 'GB' | 'CN' | 'OTHER';
 
 export type AuthProvider = 'google' | 'apple' | 'email' | 'line' | 'kakao';
 

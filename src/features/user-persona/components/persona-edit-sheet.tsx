@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
-import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
@@ -90,11 +89,7 @@ export function PersonaEditSheet({
         <View style={styles.form}>
           {/* Avatar */}
           <View style={styles.avatarSection}>
-            {avatarUrl ? (
-              <PopImage uri={avatarUrl} style={styles.avatarImage} />
-            ) : (
-              <AvatarPlaceholder width={144} height={144} />
-            )}
+            <PopImage uri={avatarUrl} style={styles.avatarImage} />
           </View>
 
           {/* Name */}

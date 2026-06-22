@@ -6,6 +6,11 @@
     "agreePrefix": "我同意: ",
     "iAgreePrefix": "我同意 "
   },
+  "newUserReward": {
+    "title": "新用户专享",
+    "description": "{{coins}} 个金币已到账",
+    "claim": "领取"
+  },
   "email": {
     "title": "使用邮箱登录",
     "accountLabel": "📧 邮箱账号",

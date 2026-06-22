@@ -23,7 +23,6 @@ import i18n, { LANGUAGE_OPTIONS } from '@/i18n'
 import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
 import IconLogout from '@/shared/assets/me/icon-logout.svg'
 import IconAbout from '@/shared/assets/me/icon-about.svg'
-import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
 
 type MeNav = NativeStackNavigationProp<RootStackParamList, 'Home'>
@@ -133,11 +132,7 @@ export function MePage({ isActive = true }: MePageProps) {
 
         <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
           <View style={styles.avatarWrapper}>
-            {remoteAvatarUrl ? (
-              <PopImage uri={remoteAvatarUrl} style={styles.avatarImage} />
-            ) : (
-              <AvatarPlaceholder width={120} height={120} />
-            )}
+            <PopImage uri={avatarUrl} style={styles.avatarImage} />
           </View>
           <Text style={styles.displayName}>
             {displayName || (profileLoading ? t('persona.loading') : '...')}

@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
-import AvatarPlaceholder from '@/shared/assets/me/avatar-placeholder.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { showGlobalToast } from '@/shared/wallet'
 
 import { useUserPersona } from '../hooks/use-user-persona'
-import { resolvePersonaAvatarUrl } from '../lib/persona-utils'
+import { PERSONA_NAME_MAX, resolvePersonaAvatarUrl } from '../lib/persona-utils'
 
 type UserPersonaSheetProps = {
   open: boolean
@@ -65,10 +64,9 @@ export function UserPersonaSheet({
     }
   }
 
-  const avatarUrl =
-    resolvePersonaAvatarUrl(form.avatarResourceId) ||
-    resolvePersonaAvatarUrl(fallbackAvatar) ||
-    ''
+  const avatarUrl = form.avatarResourceId
+    ? resolvePersonaAvatarUrl(form.avatarResourceId)
+    : resolvePersonaAvatarUrl(fallbackAvatar)
 
   return (
     <BottomSheet
@@ -95,11 +93,7 @@ export function UserPersonaSheet({
             style={styles.avatarButton}
             accessibilityLabel={t('profile.avatarUpload')}
           >
-            {avatarUrl ? (
-              <PopImage uri={avatarUrl} style={styles.avatarImage} />
-            ) : (
-              <AvatarPlaceholder width={144} height={144} />
-            )}
+            <PopImage uri={avatarUrl} style={styles.avatarImage} />
             {avatarUploading && (
               <View style={styles.avatarUploading}>
                 <ActivityIndicator size="small" color="#ffffff" />
@@ -114,10 +108,14 @@ export function UserPersonaSheet({
           <View style={styles.labelRow}>
             <Text style={styles.label}>{t('persona.name')}</Text>
             <Text style={styles.requiredMark}>*</Text>
+            <Text style={styles.nameCounter}>
+              {form.name.length}/{PERSONA_NAME_MAX}
+            </Text>
           </View>
           <TextInput
             value={form.name}
             onChangeText={text => setForm(prev => ({ ...prev, name: text }))}
+            maxLength={PERSONA_NAME_MAX}
             placeholder={t('persona.namePlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.2)"
             style={[styles.nameInput, nameInvalid && styles.inputError]}
@@ -229,6 +227,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#ff5a5a',
+  },
+  nameCounter: {
+    marginLeft: 'auto',
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(0,0,0,0.3)',
   },
   nameInput: {
     height: 60,

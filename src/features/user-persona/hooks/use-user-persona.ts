@@ -63,9 +63,15 @@ export function useUserPersona(
   const [avatarUploading, setAvatarUploading] = useState(false)
   const loadKeyRef = useRef<string | null>(null)
   const avatarUriRef = useRef<string | null>(null)
+  const persistedFormRef = useRef<UserPersonaForm>(EMPTY_FORM)
 
   const setForm = useCallback((updater: (prev: UserPersonaForm) => UserPersonaForm) => {
     setFormState(updater)
+  }, [])
+
+  const commitForm = useCallback((next: UserPersonaForm) => {
+    persistedFormRef.current = next
+    setFormState(next)
   }, [])
 
   const pickAvatar = useCallback(async () => {
@@ -86,6 +92,7 @@ export function useUserPersona(
   useEffect(() => {
     if (enabled) return
     avatarUriRef.current = null
+    setFormState(persistedFormRef.current)
   }, [enabled])
 
   useEffect(() => {
@@ -100,7 +107,7 @@ export function useUserPersona(
     loadKeyRef.current = loadKey
 
     if (personaId === null) {
-      setFormState(EMPTY_FORM)
+      commitForm(EMPTY_FORM)
       setLoading(false)
       setError(false)
       return
@@ -117,8 +124,8 @@ export function useUserPersona(
           personaId === undefined
             ? (items.find(item => item.is_default) ?? items[0])
             : items.find(item => item.persona_id === personaId)
-        if (picked) setFormState(toForm(picked))
-        else if (personaId !== undefined) setFormState(EMPTY_FORM)
+        if (picked) commitForm(toForm(picked))
+        else if (personaId !== undefined) commitForm(EMPTY_FORM)
       })
       .catch(e => {
         console.error('[useUserPersona] load failed:', e)
@@ -150,7 +157,7 @@ export function useUserPersona(
           profile: form.profile,
           avatar_url: avatarUrl,
         })
-        setFormState(toForm(resp.persona))
+        commitForm(toForm(resp.persona))
         syncMeProfileFromPersona(resp.persona)
         avatarUriRef.current = null
         return { ok: true, personaId: resp.persona.persona_id }
@@ -163,7 +170,7 @@ export function useUserPersona(
         avatar_url: avatarUrl,
         is_default: isDefaultOnCreate,
       })
-      setFormState(toForm(resp.persona))
+      commitForm(toForm(resp.persona))
       syncMeProfileFromPersona(resp.persona)
       avatarUriRef.current = null
       return { ok: true, personaId: resp.persona.persona_id }
