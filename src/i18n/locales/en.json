@@ -6,6 +6,11 @@
     "agreePrefix": "I agree to ",
     "iAgreePrefix": "I agree to "
   },
+  "newUserReward": {
+    "title": "New User Exclusive",
+    "description": "{{coins}} Coins added to your account",
+    "claim": "Claim"
+  },
   "email": {
     "title": "Sign in with Email",
     "accountLabel": "📧 Email Account",

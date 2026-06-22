@@ -6,6 +6,11 @@
     "agreePrefix": "同意します: ",
     "iAgreePrefix": "同意します "
   },
+  "newUserReward": {
+    "title": "新規ユーザー限定",
+    "description": "{{coins}} コインがアカウントに追加されました",
+    "claim": "受け取る"
+  },
   "email": {
     "title": "メールでサインイン",
     "accountLabel": "📧 メールアカウント",
