@@ -105,7 +105,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: '7c4a5581-8a44-4d7f-b66b-9bd954d9b38a',
     },
-    apiBaseUrl: process.env.API_BASE_URL ?? 'https://i18n-api.imaginewithu.com',
+    apiBaseUrl: process.env.API_BASE_URL ?? 'https://api.popop.dev',
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',
     devAuthToken: process.env.DEV_AUTH_TOKEN ?? '',
