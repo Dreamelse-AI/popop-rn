@@ -4,18 +4,141 @@ export * from "./arca_apiComponents"
 
 /**
  * @description 
- * @param params
  */
-export function landingDataCharacter(params: components.GetCharacterLandingDataReqParams) {
-	return arcaWebapi.get<components.GetCharacterLandingDataResp>(`/landing_data/character`, params)
+export function inviteInfo() {
+	return arcaWebapi.get<components.InviteInfoResp>(`/invite/info`)
 }
 
 /**
  * @description 
- * @param params
+ * @param req
  */
-export function landingDataPost(params: components.GetPostLandingDataReqParams) {
-	return arcaWebapi.get<components.GetPostLandingDataResp>(`/landing_data/post`, params)
+export function inviteRedeem(req: components.InviteRedeemReq) {
+	return arcaWebapi.post<components.InviteRedeemResp>(`/invite/redeem`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function addFriendFromAnonymousChat(req: components.AnonymousAddFriendReq) {
+	return arcaWebapi.post<components.AnonymousAddFriendResp>(`/anonymous_chat/add_friend`, req)
+}
+
+/**
+ * @description 
+ */
+export function getMyAnonymousTags() {
+	return arcaWebapi.post<components.MyAnonymousTagsResp>(`/anonymous_chat/my_tags/get`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function setMyAnonymousTags(req: components.SetMyAnonymousTagsReq) {
+	return arcaWebapi.post<components.MyAnonymousTagsResp>(`/anonymous_chat/my_tags/set`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function randomMatchCharacter(req: components.RandomMatchCharacterReq) {
+	return arcaWebapi.post<components.RandomMatchCharacterResp>(`/anonymous_chat/random_match`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function sendMessageToAnonymousCharacter(req: components.SendMessageToAnonymousCharacterReq) {
+	return arcaWebapi.post<components.SendMessageToAnonymousCharacterResp>(`/anonymous_chat/send_message`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function agreeTerms(req: components.AgreeTermsReq) {
+	return arcaWebapi.post<components.AgreeTermsResp>(`/app/agree_terms`, req)
+}
+
+/**
+ * @description 
+ */
+export function getAppConfig() {
+	return arcaWebapi.post<components.AppConfigResp>(`/app/config`)
+}
+
+/**
+ * @description 
+ */
+export function getIPRegion() {
+	return arcaWebapi.get<components.GetIPRegionResp>(`/app/ip_region`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function reportAppState(req: components.ReportAppStateReq) {
+	return arcaWebapi.post<components.ReportAppStateResp>(`/app/report_app_state`, req)
+}
+
+/**
+ * @description 
+ */
+export function getTerms() {
+	return arcaWebapi.get<components.AppTermsResp>(`/app/terms`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function internalToolMockReportAppState(req: components.InternalToolMockReportAppStateReq) {
+	return arcaWebapi.post<components.ReportAppStateResp>(`/internal/tool/mock_report_app_state`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function reportAppLog(req: components.ReportAppLogReq) {
+	return arcaWebapi.post<components.ReportAppLogResp>(`/report/app_log`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function getTaskStatus(req: components.GetTaskStatusReq) {
+	return arcaWebapi.post<components.GetTaskStatusResp>(`/task/get_status`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function retryAsyncTask(req: components.RetryAsyncTaskReq) {
+	return arcaWebapi.post<components.RetryAsyncTaskResp>(`/task/retry`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function auditImage(req: components.AuditImageReq) {
+	return arcaWebapi.post<components.AuditImageResp>(`/audit/image`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function auditText(req: components.AuditTextReq) {
+	return arcaWebapi.post<components.AuditTextResp>(`/audit/text`, req)
 }
 
 /**
@@ -73,156 +196,8 @@ export function verifyCode(req: components.VerifyCodeReq) {
  * @description 
  * @param req
  */
-export function createStylePrompt(req: components.CreateStylePromptReq) {
-	return arcaWebapi.post<components.CreateStylePromptResp>(`/internal/ops/style_prompt/create`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function deleteStylePrompt(req: components.DeleteStylePromptReq) {
-	return arcaWebapi.post<components.DeleteStylePromptResp>(`/internal/ops/style_prompt/delete`, req)
-}
-
-/**
- * @description 
- */
-export function listStylePrompt() {
-	return arcaWebapi.post<components.ListStylePromptResp>(`/internal/ops/style_prompt/list`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function updateStylePrompt(req: components.UpdateStylePromptReq) {
-	return arcaWebapi.post<components.UpdateStylePromptResp>(`/internal/ops/style_prompt/update`, req)
-}
-
-/**
- * @description 
- * @param req
- */
 export function internalToolGenJwtToken(req: components.InternalToolGenJwtTokenReq) {
 	return arcaWebapi.post<components.InternalToolGenJwtTokenResp>(`/internal/tool/gen_jwt_token`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function internalToolMockReportAppState(req: components.InternalToolMockReportAppStateReq) {
-	return arcaWebapi.post<components.ReportAppStateResp>(`/internal/tool/mock_report_app_state`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function scheduledPrint(req: components.ScheduledPrintReq) {
-	return arcaWebapi.post<components.ScheduledPrintResp>(`/api/test/scheduled_print`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function agreeTerms(req: components.AgreeTermsReq) {
-	return arcaWebapi.post<components.AgreeTermsResp>(`/app/agree_terms`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function auditImage(req: components.AuditImageReq) {
-	return arcaWebapi.post<components.AuditImageResp>(`/audit/image`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function auditText(req: components.AuditTextReq) {
-	return arcaWebapi.post<components.AuditTextResp>(`/audit/text`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getImageMainColor(req: components.GetImageMainColorReq) {
-	return arcaWebapi.post<components.GetImageMainColorResp>(`/file/image_main_color`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function processImage(req: components.ProcessImageReq) {
-	return arcaWebapi.post<components.AsyncTaskSubmitResp>(`/file/process_image`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getTosUploadCredential(req: components.GetTosUploadCredentialReq) {
-	return arcaWebapi.post<components.GetTosUploadCredentialResp>(`/file/tos_credential`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getTaskStatus(req: components.GetTaskStatusReq) {
-	return arcaWebapi.post<components.GetTaskStatusResp>(`/task/get_status`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function retryAsyncTask(req: components.RetryAsyncTaskReq) {
-	return arcaWebapi.post<components.RetryAsyncTaskResp>(`/task/retry`, req)
-}
-
-/**
- * @description 
- */
-export function getAppConfig() {
-	return arcaWebapi.post<components.AppConfigResp>(`/app/config`)
-}
-
-/**
- * @description 
- */
-export function getIPRegion() {
-	return arcaWebapi.get<components.GetIPRegionResp>(`/app/ip_region`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function reportAppState(req: components.ReportAppStateReq) {
-	return arcaWebapi.post<components.ReportAppStateResp>(`/app/report_app_state`, req)
-}
-
-/**
- * @description 
- */
-export function getTerms() {
-	return arcaWebapi.get<components.AppTermsResp>(`/app/terms`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function reportAppLog(req: components.ReportAppLogReq) {
-	return arcaWebapi.post<components.ReportAppLogResp>(`/report/app_log`, req)
 }
 
 /**
@@ -379,7 +354,7 @@ export function listUserCharacters(req: components.ListUserCharactersReq) {
  * @description 
  * @param req
  */
-export function list_character_phone_chat_history(req: components.ListCharacterPhoneChatHistoryReq) {
+export function listPhoneChatHistory(req: components.ListCharacterPhoneChatHistoryReq) {
 	return arcaWebapi.post<components.ListCharacterPhoneChatHistoryResp>(`/character/list_phone_chat_history`, req)
 }
 
@@ -488,10 +463,81 @@ export function updateScheduleViewedStatus(req: components.UpdateScheduleViewedS
 
 /**
  * @description 
+ * @param params
+ */
+export function getChatPreference(params: components.GetChatPreferenceReqParams) {
+	return arcaWebapi.get<components.GetChatPreferenceResp>(`/character_save/chat_preference`, params)
+}
+
+/**
+ * @description 
  * @param req
  */
-export function favouriteScript(req: components.FavouriteScriptReq) {
-	return arcaWebapi.post<components.FavouriteScriptResp>(`/feed/favourite_script`, req)
+export function setChatPreference(req: components.SetChatPreferenceReq) {
+	return arcaWebapi.post<components.SetChatPreferenceResp>(`/character_save/chat_preference/set`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function createComment(req: components.CreateCommentReq) {
+	return arcaWebapi.post<components.CreateCommentResp>(`/comment/create`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function deleteComment(req: components.DeleteCommentReq) {
+	return arcaWebapi.post<components.DeleteCommentResp>(`/comment/delete`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function listCommentsByPost(req: components.ListCommentsByPostReq) {
+	return arcaWebapi.post<components.ListCommentsByPostResp>(`/comment/list_by_post`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function listRepliesByComment(req: components.ListRepliesByCommentReq) {
+	return arcaWebapi.post<components.ListRepliesByCommentResp>(`/comment/list_replies`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function deleteUserEmoji(req: components.DeleteUserEmojiReq) {
+	return arcaWebapi.post<components.DeleteUserEmojiResp>(`/emoji/delete`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function markEmojiUsed(req: components.MarkEmojiUsedReq) {
+	return arcaWebapi.post<components.MarkEmojiUsedResp>(`/emoji/mark_used`, req)
+}
+
+/**
+ * @description 
+ */
+export function listEmojiPanel() {
+	return arcaWebapi.post<components.ListEmojiPanelResp>(`/emoji/panel`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function uploadUserEmoji(req: components.UploadUserEmojiReq) {
+	return arcaWebapi.post<components.UploadUserEmojiResp>(`/emoji/upload`, req)
 }
 
 /**
@@ -499,21 +545,6 @@ export function favouriteScript(req: components.FavouriteScriptReq) {
  */
 export function getSearchHint() {
 	return arcaWebapi.post<components.GetSearchHintResp>(`/feed/get_search_hint`)
-}
-
-/**
- * @description 
- */
-export function listPlayWithCharacters() {
-	return arcaWebapi.post<components.ListPlayWithCharactersResp>(`/feed/list_play_with_characters`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function unfavouriteScript(req: components.UnfavouriteScriptReq) {
-	return arcaWebapi.post<components.UnfavouriteScriptResp>(`/feed/unfavourite_script`, req)
 }
 
 /**
@@ -574,36 +605,6 @@ export function getFeedTags() {
 /**
  * @description 
  */
-export function deregister() {
-	return arcaWebapi.delete<components.DeregisterResp>(`/user/account`)
-}
-
-/**
- * @description 
- */
-export function getUserHomePageStat() {
-	return arcaWebapi.post<components.GetUserHomePageStatResp>(`/user/get_home_page_stat`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function getUserInfo(req: components.GetUserInfoReq) {
-	return arcaWebapi.post<components.GetUserInfoResp>(`/user/get_user_info`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function updateUserInfo(req: components.UpdateUserInfoReq) {
-	return arcaWebapi.post<components.UpdateUserInfoResp>(`/user/update_user_info`, req)
-}
-
-/**
- * @description 
- */
 export function guestGetFeedTags() {
 	return arcaWebapi.get<components.GetFeedTagsResp>(`/guest/feed_tags`)
 }
@@ -612,85 +613,56 @@ export function guestGetFeedTags() {
  * @description 
  * @param req
  */
-export function listViewerCharacters(req: components.ListViewerCharactersReq) {
-	return arcaWebapi.post<components.ListViewerCharactersResp>(`/viewer/characters`, req)
+export function getImageMainColor(req: components.GetImageMainColorReq) {
+	return arcaWebapi.post<components.GetImageMainColorResp>(`/file/image_main_color`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function listViewerMaterials(req: components.ListViewerMaterialsReq) {
-	return arcaWebapi.post<components.ListViewerMaterialsResp>(`/viewer/materials`, req)
-}
-
-/**
- * @description 
- */
-export function listViewerSubjects() {
-	return arcaWebapi.post<components.ListViewerSubjectsResp>(`/viewer/subjects`)
+export function processImage(req: components.ProcessImageReq) {
+	return arcaWebapi.post<components.AsyncTaskSubmitResp>(`/file/process_image`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function internalGetAppRTOverview(req: components.GetAppRTOverviewReq) {
-	return arcaWebapi.post<components.AppRTOverviewResp>(`/internal/app_rt/overview`, req)
+export function getTosUploadCredential(req: components.GetTosUploadCredentialReq) {
+	return arcaWebapi.post<components.GetTosUploadCredentialResp>(`/file/tos_credential`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function internalGetAppRTRankings(req: components.GetAppRTRankingsReq) {
-	return arcaWebapi.post<components.GetAppRTRankingsResp>(`/internal/app_rt/rankings`, req)
+export function addFriend(req: components.AddFriendReq) {
+	return arcaWebapi.post<components.AddFriendResp>(`/friendship/add`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function sendPushSync(req: components.SendPushSyncReq) {
-	return arcaWebapi.post<components.SendPushSyncResp>(`/app/send_push_sync`, req)
-}
-
-/**
- * @description 
- */
-export function getPushSettings() {
-	return arcaWebapi.post<components.GetPushSettingsResp>(`/app/get_push_settings`)
+export function listFriendship(req: components.ListFriendshipReq) {
+	return arcaWebapi.post<components.ListFriendshipResp>(`/friendship/list`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function registerPushToken(req: components.RegisterPushTokenReq) {
-	return arcaWebapi.post<components.RegisterPushTokenResp>(`/app/register_push_token`, req)
+export function removeFriend(req: components.RemoveFriendReq) {
+	return arcaWebapi.post<components.RemoveFriendResp>(`/friendship/remove`, req)
 }
 
 /**
  * @description 
  * @param req
  */
-export function reportPushClick(req: components.ReportPushClickReq) {
-	return arcaWebapi.post<components.ReportPushClickResp>(`/app/report_push_click`, req)
-}
-
-/**
- * @description 
- */
-export function unregisterPushToken() {
-	return arcaWebapi.post<components.UnregisterPushTokenResp>(`/app/unregister_push_token`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function updatePushSettings(req: components.UpdatePushSettingsReq) {
-	return arcaWebapi.post<components.UpdatePushSettingsResp>(`/app/update_push_settings`, req)
+export function updateFriendSaveVersion(req: components.UpdateFriendSaveVersionReq) {
+	return arcaWebapi.post<components.UpdateFriendSaveVersionResp>(`/friendship/update_save_version`, req)
 }
 
 /**
@@ -723,6 +695,69 @@ export function internalImportRoleExportsStart(req: components.ImportRoleExports
  */
 export function internalImportRoleExportsStatus(req: components.ImportRoleExportsStatusReq) {
 	return arcaWebapi.post<components.ImportRoleExportsStatusResp>(`/internal/import/role_exports/status`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function internalGetAppRTOverview(req: components.GetAppRTOverviewReq) {
+	return arcaWebapi.post<components.AppRTOverviewResp>(`/internal/app_rt/overview`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function internalGetAppRTRankings(req: components.GetAppRTRankingsReq) {
+	return arcaWebapi.post<components.GetAppRTRankingsResp>(`/internal/app_rt/rankings`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function createStylePrompt(req: components.CreateStylePromptReq) {
+	return arcaWebapi.post<components.CreateStylePromptResp>(`/internal/ops/style_prompt/create`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function deleteStylePrompt(req: components.DeleteStylePromptReq) {
+	return arcaWebapi.post<components.DeleteStylePromptResp>(`/internal/ops/style_prompt/delete`, req)
+}
+
+/**
+ * @description 
+ */
+export function listStylePrompt() {
+	return arcaWebapi.post<components.ListStylePromptResp>(`/internal/ops/style_prompt/list`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function updateStylePrompt(req: components.UpdateStylePromptReq) {
+	return arcaWebapi.post<components.UpdateStylePromptResp>(`/internal/ops/style_prompt/update`, req)
+}
+
+/**
+ * @description 
+ * @param params
+ */
+export function landingDataCharacter(params: components.GetCharacterLandingDataReqParams) {
+	return arcaWebapi.get<components.GetCharacterLandingDataResp>(`/landing_data/character`, params)
+}
+
+/**
+ * @description 
+ * @param params
+ */
+export function landingDataPost(params: components.GetPostLandingDataReqParams) {
+	return arcaWebapi.get<components.GetPostLandingDataResp>(`/landing_data/post`, params)
 }
 
 /**
@@ -770,200 +805,6 @@ export function rechargeRefunds(params: components.RechargeRefundsReqParams) {
  */
 export function rechargeVerify(req: components.RechargeVerifyReq) {
 	return arcaWebapi.post<components.RechargeVerifyResp>(`/pay/recharge/verify`, req)
-}
-
-/**
- * @description 
- */
-export function walletFreeQuotas() {
-	return arcaWebapi.get<components.FreeQuotasResp>(`/wallet/free_quotas`)
-}
-
-/**
- * @description 
- */
-export function walletInfo() {
-	return arcaWebapi.get<components.WalletInfoResp>(`/wallet/info`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function walletTransactions(req: components.WalletTransactionsReq) {
-	return arcaWebapi.post<components.WalletTransactionsResp>(`/wallet/transactions`, req)
-}
-
-/**
- * @description 
- */
-export function inviteInfo() {
-	return arcaWebapi.get<components.InviteInfoResp>(`/invite/info`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function inviteRedeem(req: components.InviteRedeemReq) {
-	return arcaWebapi.post<components.InviteRedeemResp>(`/invite/redeem`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function deleteUserEmoji(req: components.DeleteUserEmojiReq) {
-	return arcaWebapi.post<components.DeleteUserEmojiResp>(`/emoji/delete`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function markEmojiUsed(req: components.MarkEmojiUsedReq) {
-	return arcaWebapi.post<components.MarkEmojiUsedResp>(`/emoji/mark_used`, req)
-}
-
-/**
- * @description 
- */
-export function listEmojiPanel() {
-	return arcaWebapi.post<components.ListEmojiPanelResp>(`/emoji/panel`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function uploadUserEmoji(req: components.UploadUserEmojiReq) {
-	return arcaWebapi.post<components.UploadUserEmojiResp>(`/emoji/upload`, req)
-}
-
-/**
- * @description 
- */
-export function getMusicList() {
-	return arcaWebapi.get<components.ListMusicResp>(`/resource/music_list`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function addFriendFromAnonymousChat(req: components.AnonymousAddFriendReq) {
-	return arcaWebapi.post<components.AnonymousAddFriendResp>(`/anonymous_chat/add_friend`, req)
-}
-
-/**
- * @description 
- */
-export function getMyAnonymousTags() {
-	return arcaWebapi.post<components.MyAnonymousTagsResp>(`/anonymous_chat/my_tags/get`)
-}
-
-/**
- * @description 
- * @param req
- */
-export function setMyAnonymousTags(req: components.SetMyAnonymousTagsReq) {
-	return arcaWebapi.post<components.MyAnonymousTagsResp>(`/anonymous_chat/my_tags/set`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function randomMatchCharacter(req: components.RandomMatchCharacterReq) {
-	return arcaWebapi.post<components.RandomMatchCharacterResp>(`/anonymous_chat/random_match`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function sendMessageToAnonymousCharacter(req: components.SendMessageToAnonymousCharacterReq) {
-	return arcaWebapi.post<components.SendMessageToAnonymousCharacterResp>(`/anonymous_chat/send_message`, req)
-}
-
-/**
- * @description 
- * @param params
- */
-export function getChatPreference(params: components.GetChatPreferenceReqParams) {
-	return arcaWebapi.get<components.GetChatPreferenceResp>(`/character_save/chat_preference`, params)
-}
-
-/**
- * @description 
- * @param req
- */
-export function setChatPreference(req: components.SetChatPreferenceReq) {
-	return arcaWebapi.post<components.SetChatPreferenceResp>(`/character_save/chat_preference/set`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function createComment(req: components.CreateCommentReq) {
-	return arcaWebapi.post<components.CreateCommentResp>(`/comment/create`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function deleteComment(req: components.DeleteCommentReq) {
-	return arcaWebapi.post<components.DeleteCommentResp>(`/comment/delete`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listCommentsByPost(req: components.ListCommentsByPostReq) {
-	return arcaWebapi.post<components.ListCommentsByPostResp>(`/comment/list_by_post`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listRepliesByComment(req: components.ListRepliesByCommentReq) {
-	return arcaWebapi.post<components.ListRepliesByCommentResp>(`/comment/list_replies`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function addFriend(req: components.AddFriendReq) {
-	return arcaWebapi.post<components.AddFriendResp>(`/friendship/add`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function listFriendship(req: components.ListFriendshipReq) {
-	return arcaWebapi.post<components.ListFriendshipResp>(`/friendship/list`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function removeFriend(req: components.RemoveFriendReq) {
-	return arcaWebapi.post<components.RemoveFriendResp>(`/friendship/remove`, req)
-}
-
-/**
- * @description 
- * @param req
- */
-export function updateFriendSaveVersion(req: components.UpdateFriendSaveVersionReq) {
-	return arcaWebapi.post<components.UpdateFriendSaveVersionResp>(`/friendship/update_save_version`, req)
 }
 
 /**
@@ -1032,6 +873,52 @@ export function updatePostVisibility(req: components.UpdatePostVisibilityReq) {
 
 /**
  * @description 
+ */
+export function getPushSettings() {
+	return arcaWebapi.post<components.GetPushSettingsResp>(`/app/get_push_settings`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function registerPushToken(req: components.RegisterPushTokenReq) {
+	return arcaWebapi.post<components.RegisterPushTokenResp>(`/app/register_push_token`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function reportPushClick(req: components.ReportPushClickReq) {
+	return arcaWebapi.post<components.ReportPushClickResp>(`/app/report_push_click`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function sendPushSync(req: components.SendPushSyncReq) {
+	return arcaWebapi.post<components.SendPushSyncResp>(`/app/send_push_sync`, req)
+}
+
+/**
+ * @description 
+ */
+export function unregisterPushToken() {
+	return arcaWebapi.post<components.UnregisterPushTokenResp>(`/app/unregister_push_token`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function updatePushSettings(req: components.UpdatePushSettingsReq) {
+	return arcaWebapi.post<components.UpdatePushSettingsResp>(`/app/update_push_settings`, req)
+}
+
+/**
+ * @description 
  * @param req
  */
 export function addReaction(req: components.ReactionAddReq) {
@@ -1052,6 +939,13 @@ export function getReactionForTarget(req: components.GetReactionForTargetReq) {
  */
 export function removeReaction(req: components.ReactionRemoveReq) {
 	return arcaWebapi.post<components.ReactionRemoveResp>(`/reaction/remove`, req)
+}
+
+/**
+ * @description 
+ */
+export function getMusicList() {
+	return arcaWebapi.get<components.ListMusicResp>(`/resource/music_list`)
 }
 
 /**
@@ -1105,6 +999,44 @@ export function storyViewer(params: components.StoryViewerReqParams) {
  * @description 
  * @param req
  */
+export function scheduledPrint(req: components.ScheduledPrintReq) {
+	return arcaWebapi.post<components.ScheduledPrintResp>(`/api/test/scheduled_print`, req)
+}
+
+/**
+ * @description 
+ */
+export function deregister() {
+	return arcaWebapi.delete<components.DeregisterResp>(`/user/account`)
+}
+
+/**
+ * @description 
+ */
+export function getUserHomePageStat() {
+	return arcaWebapi.post<components.GetUserHomePageStatResp>(`/user/get_home_page_stat`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function getUserInfo(req: components.GetUserInfoReq) {
+	return arcaWebapi.post<components.GetUserInfoResp>(`/user/get_user_info`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function updateUserInfo(req: components.UpdateUserInfoReq) {
+	return arcaWebapi.post<components.UpdateUserInfoResp>(`/user/update_user_info`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function applyUserPersona(req: components.ApplyUserPersonaReq) {
 	return arcaWebapi.post<components.ApplyUserPersonaResp>(`/character_save/apply_persona`, req)
 }
@@ -1127,9 +1059,10 @@ export function deleteUserPersona(req: components.DeleteUserPersonaReq) {
 
 /**
  * @description 
+ * @param req
  */
-export function listUserPersonas() {
-	return arcaWebapi.post<components.ListUserPersonasResp>(`/user_persona/list`)
+export function listUserPersonas(req: components.ListUserPersonasReq) {
+	return arcaWebapi.post<components.ListUserPersonasResp>(`/user_persona/list`, req)
 }
 
 /**
@@ -1138,4 +1071,56 @@ export function listUserPersonas() {
  */
 export function updateUserPersona(req: components.UpdateUserPersonaReq) {
 	return arcaWebapi.post<components.UpdateUserPersonaResp>(`/user_persona/update`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function listViewerCharacters(req: components.ListViewerCharactersReq) {
+	return arcaWebapi.post<components.ListViewerCharactersResp>(`/viewer/characters`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function listViewerMaterials(req: components.ListViewerMaterialsReq) {
+	return arcaWebapi.post<components.ListViewerMaterialsResp>(`/viewer/materials`, req)
+}
+
+/**
+ * @description 
+ */
+export function listViewerSubjects() {
+	return arcaWebapi.post<components.ListViewerSubjectsResp>(`/viewer/subjects`)
+}
+
+/**
+ * @description 
+ */
+export function walletChargePoints() {
+	return arcaWebapi.get<components.ChargePointsResp>(`/wallet/charge_points`)
+}
+
+/**
+ * @description 
+ */
+export function walletFreeQuotas() {
+	return arcaWebapi.get<components.FreeQuotasResp>(`/wallet/free_quotas`)
+}
+
+/**
+ * @description 
+ */
+export function walletInfo() {
+	return arcaWebapi.get<components.WalletInfoResp>(`/wallet/info`)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function walletTransactions(req: components.WalletTransactionsReq) {
+	return arcaWebapi.post<components.WalletTransactionsResp>(`/wallet/transactions`, req)
 }

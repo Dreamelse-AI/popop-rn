@@ -30,29 +30,6 @@ export interface AgreedTermsItem {
 	terms_version?: string // 同意的条款版本（透传 get_terms 返回值）；为空时服务端取该条款当前配置版本
 }
 
-export interface AlipayAppPayReq {
-	biz_content: AppPayBizContent
-}
-
-export interface AlipayAppPayResp {
-	order_string: string
-}
-
-export interface AlipayQueryReq {
-	out_trade_no?: string
-	trade_no?: string
-}
-
-export interface AlipayQueryResp {
-	trade_status: string
-	trade_no: string
-	out_trade_no: string
-	message?: string
-	sub_msg?: string
-	success: boolean
-	raw?: string
-}
-
 export interface AnonymousAddFriendReq {
 	chat_session_id: string
 }
@@ -266,6 +243,7 @@ export interface CharacterCreateForm {
 
 export interface CharacterDetailInfo {
 	character_id: string // 角色全局ID
+	character_save_id?: string // 当前用户的角色存档ID
 	source_character_id: string // 父角色ID（被删除角色重新创建时用这个ID去copy）
 	create_source?: string // 创建来源
 	create_source_id?: string // 创建来源ID
@@ -439,6 +417,17 @@ export interface CharacterVoice {
 	voice_tags?: Array<GeneralTagInfo> // 音色tag数组
 }
 
+export interface ChargePointItem {
+	scene: string // 功能扣费场景枚举，如 chat_with_character / gen_appearance / gen_landing_page
+	scene_name: string // 场景可读名（已按请求语言本地化）；未知场景为空
+	price: number // 每次扣费消耗的代币数（当前用户区域 account_region 生效单价）
+	free_count: number // 每日免费次数配额（0 = 无免费次数）
+}
+
+export interface ChargePointsResp {
+	charge_points: Array<ChargePointItem> // 当前区域所有启用的功能扣费场景，按 scene 升序
+}
+
 export interface ChatMessage {
 	message_type: string // 消息类型：character/user
 	text?: string // 文本内容
@@ -585,7 +574,6 @@ export interface CreateUserPersonaReq {
 	gender?: string
 	profile?: string
 	avatar_url?: string
-	is_default?: boolean // true 时会把该用户其他 default 取消（同事务保证 partial unique）
 }
 
 export interface CreateUserPersonaResp {
@@ -1632,13 +1620,6 @@ export interface ListEmojiPanelResp {
 	packs: Array<EmojiPack> // 平台表情包列表（每个 pack 内联其 emojis）
 }
 
-export interface ListEmojisReq {
-}
-
-export interface ListEmojisResp {
-	emojis: Array<EmojiItem> // 表情包列表
-}
-
 export interface ListFavouriteScriptsReq {
 	cursor?: string // 游标，可选，首次请求不传或传空
 	limit?: number // 每页数量，可选，默认20
@@ -1770,6 +1751,7 @@ export interface ListUserCharactersResp {
 }
 
 export interface ListUserPersonasReq {
+	character_save_id?: string // 当前角色会话ID，用于判断 is_current
 }
 
 export interface ListUserPersonasResp {
@@ -2911,7 +2893,6 @@ export interface UpdateUserPersonaReq {
 	gender?: string
 	profile?: string
 	avatar_url?: string
-	is_default?: boolean
 }
 
 export interface UpdateUserPersonaResp {
@@ -2942,7 +2923,7 @@ export interface UserPersonaItem {
 	gender?: string // male / female / other
 	profile?: string
 	avatar?: Media
-	is_default: boolean
+	is_current: boolean // 当前角色正在使用的人设
 	created_at_ms: number
 	updated_at_ms: number
 }
