@@ -73,17 +73,15 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     left: 16,
-    top: '50%',
+    top: 0,
+    bottom: 0,
     width: 36,
-    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -18,
   },
   backChevronText: {
-    fontSize: 32,
+    fontSize: 38,
     fontWeight: '300',
     color: '#000000',
-    marginTop: -2,
   },
 })

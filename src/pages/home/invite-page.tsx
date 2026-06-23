@@ -179,7 +179,9 @@ export function InvitePage({ onBack }: InvitePageProps) {
 
       {toast && (
         <View style={styles.toastContainer}>
-          <Text style={styles.toastText}>{toast}</Text>
+          <View style={styles.toastInner}>
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
         </View>
       )}
 
@@ -677,10 +679,13 @@ const styles = StyleSheet.create({
   toastContainer: {
     position: 'absolute',
     top: '40%',
-    left: '50%',
+    left: 0,
+    right: 0,
     zIndex: 80,
+    alignItems: 'center',
+  },
+  toastInner: {
     maxWidth: 320,
-    transform: [{ translateX: -160 }],
     backgroundColor: 'rgba(26,26,26,0.9)',
     borderRadius: 12,
     paddingHorizontal: 20,
