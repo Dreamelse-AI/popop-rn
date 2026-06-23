@@ -775,6 +775,13 @@ export function rechargeVerify(req: components.RechargeVerifyReq) {
 /**
  * @description 
  */
+export function walletChargePoints() {
+	return arcaWebapi.get<components.ChargePointsResp>(`/wallet/charge_points`)
+}
+
+/**
+ * @description 
+ */
 export function walletFreeQuotas() {
 	return arcaWebapi.get<components.FreeQuotasResp>(`/wallet/free_quotas`)
 }

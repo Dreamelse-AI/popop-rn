@@ -183,7 +183,12 @@
     "adjustFilters": "フィルターを調整",
     "myTags": "#匿名",
     "editTitle": "匿名キャラクター紹介",
-    "addTagPlaceholder": "タグを追加"
+    "addTagPlaceholder": "タグを追加",
+    "voiceListening": "聞き取り中…",
+    "voiceProcessing": "音声を認識中…",
+    "voiceRequesting": "マイクの許可をリクエスト中…",
+    "voiceNoSpeech": "音声を認識できませんでした。もう一度お試しください",
+    "voicePermissionDenied": "マイクにアクセスできません"
   },
   "history": {
     "back": "戻る",

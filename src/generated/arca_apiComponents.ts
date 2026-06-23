@@ -439,6 +439,17 @@ export interface CharacterVoice {
 	voice_tags?: Array<GeneralTagInfo> // 音色tag数组
 }
 
+export interface ChargePointItem {
+	scene: string // 功能扣费场景枚举，如 chat_with_character / gen_appearance / gen_landing_page
+	scene_name: string // 场景可读名（已按请求语言本地化）；未知场景为空
+	price: number // 每次扣费消耗的代币数（当前用户区域 account_region 生效单价）
+	free_count: number // 每日免费次数配额（0 = 无免费次数）
+}
+
+export interface ChargePointsResp {
+	charge_points: Array<ChargePointItem> // 当前区域所有启用的功能扣费场景，按 scene 升序
+}
+
 export interface ChatMessage {
 	message_type: string // 消息类型：character/user
 	text?: string // 文本内容

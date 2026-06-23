@@ -1,6 +1,7 @@
 /** 登录成功后的统一副作用处理：写入 token / 登录态，并在新用户时标记待展示奖励弹窗 */
 import { apiClient } from '@/shared/api/api-client';
 import { refreshWallet } from '@/shared/wallet/wallet-store';
+import { refreshChargePoints } from '@/shared/wallet/charge-points-store';
 
 import { useAuthStore } from './auth-store';
 // import type 仅导入类型，编译后会被擦除，不会引入实际的代码
@@ -56,4 +57,5 @@ export function applyAuthResponse(res: AuthResponse) {
   }
 
   void refreshWallet();
+  void refreshChargePoints();
 }

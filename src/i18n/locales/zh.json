@@ -183,7 +183,12 @@
     "adjustFilters": "调整筛选条件",
     "myTags": "#匿名",
     "editTitle": "匿名角色介绍",
-    "addTagPlaceholder": "添加标签"
+    "addTagPlaceholder": "添加标签",
+    "voiceListening": "正在聆听…",
+    "voiceProcessing": "正在识别语音…",
+    "voiceRequesting": "正在请求麦克风权限…",
+    "voiceNoSpeech": "未识别到语音，请重试",
+    "voicePermissionDenied": "无法访问麦克风"
   },
   "history": {
     "back": "返回",
