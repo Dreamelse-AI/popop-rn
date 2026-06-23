@@ -2,5 +2,6 @@ verifyDepsBeforeRun: false
 allowBuilds:
   dtrace-provider: false
 patchedDependencies:
+  '@react-native-google-signin/google-signin@16.1.2': patches/@react-native-google-signin__google-signin@16.1.2.patch
   '@react-native/gradle-plugin@0.85.3': patches/@react-native__gradle-plugin@0.85.3.patch
   react-native@0.85.3: patches/react-native@0.85.3.patch

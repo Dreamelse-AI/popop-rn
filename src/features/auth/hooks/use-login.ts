@@ -8,7 +8,7 @@ import { PersonaAvatarAuditError, uploadPersonaAvatar } from '@/features/user-pe
 import { applyAuthResponse, applyAuthTokenOnly, clearPendingAuthToken } from '../apply-auth-response'
 import { authApi } from '../auth-api'
 import { useCountdown } from './use-countdown'
-import { useGoogleLogin } from './use-google-login'
+import { useGoogleLogin, LOGIN_CANCELLED } from './use-google-login'
 import { useAppleLogin } from './use-apple-login'
 import { startOAuthCodeLogin } from './oauth-code-login'
 import type { AccountRegion, AuthProvider, AuthResponse, ProfileGender } from '../auth-types'
@@ -508,6 +508,10 @@ export function useLogin(navigation: UseLoginNavigation) {
       update({ loading: false })
       await handleNewUserFlow(res)
     } catch (e: unknown) {
+      if (e instanceof Error && e.message === LOGIN_CANCELLED) {
+        update({ loading: false })
+        return
+      }
       const msg = e instanceof Error ? e.message : `${PROVIDER_LABELS[provider]} Login Failed, Please try again later`
       update({ loading: false, error: msg })
     }
