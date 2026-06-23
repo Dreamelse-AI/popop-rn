@@ -1,0 +1,49 @@
+diff --git a/ios/RNGoogleSignin.mm b/ios/RNGoogleSignin.mm
+index c56cac831b952a946f853dc2b912b72055675d13..aef08f9c10558b556ab2d85a307af6692bb6a996 100644
+--- a/ios/RNGoogleSignin.mm
++++ b/ios/RNGoogleSignin.mm
+@@ -130,12 +130,13 @@ + (BOOL)requiresMainQueueSetup
+       }
+ 
+       NSString* hint = options[@"loginHint"];
++      NSString* nonce = options[@"nonce"];
+       NSArray* scopes = self.scopes;
+ 
+ #if DEBUG
+     @try {
+ #endif
+-      [GIDSignIn.sharedInstance signInWithPresentingViewController:presentingViewController hint:hint additionalScopes:scopes completion:^(GIDSignInResult * _Nullable signInResult, NSError * _Nullable error) {
++      [GIDSignIn.sharedInstance signInWithPresentingViewController:presentingViewController hint:hint additionalScopes:scopes nonce:nonce completion:^(GIDSignInResult * _Nullable signInResult, NSError * _Nullable error) {
+         [self handleCompletion:signInResult withError:error withResolver:resolve withRejector:reject fromCallsite:@"signIn"];
+       }];
+ #if DEBUG
+diff --git a/lib/typescript/src/types.d.ts b/lib/typescript/src/types.d.ts
+index 693048c148cbaee4eed2c144474f02da42f94f08..8391abfe9877ad387d0525467056d081415eb349 100644
+--- a/lib/typescript/src/types.d.ts
++++ b/lib/typescript/src/types.d.ts
+@@ -7,6 +7,10 @@ export type SignInParams = {
+      * [See docs here](https://developers.google.com/identity/sign-in/ios/reference/Classes/GIDSignIn#-signinwithpresentingviewcontroller:hint:completion:)
+      */
+     loginHint?: string;
++    /**
++     * iOS only. A custom nonce to be embedded in the returned ID token (GoogleSignIn 9.0+).
++     */
++    nonce?: string;
+ };
+ /**
+  * @group Original Google sign in
+diff --git a/src/types.ts b/src/types.ts
+index 3fe73eaa33432ccc671cf14e3b4dd6b2121f82cf..7f4ae3eb0d547c938faf95ec08fae7417631b81c 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -7,6 +7,10 @@ export type SignInParams = {
+    * [See docs here](https://developers.google.com/identity/sign-in/ios/reference/Classes/GIDSignIn#-signinwithpresentingviewcontroller:hint:completion:)
+    */
+   loginHint?: string;
++  /**
++   * iOS only. A custom nonce to be embedded in the returned ID token (GoogleSignIn 9.0+).
++   */
++  nonce?: string;
+ };
+ 
+ /**
