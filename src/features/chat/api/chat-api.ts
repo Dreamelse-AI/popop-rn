@@ -29,7 +29,7 @@ export function chatWithCharacter(req: ChatWithCharacterReq): Promise<ChatWithCh
 export function listCharacterPhoneChatHistory(
   req: ListCharacterPhoneChatHistoryReq,
 ): Promise<ListCharacterPhoneChatHistoryResp> {
-  return real.list_character_phone_chat_history(req);
+  return real.listPhoneChatHistory(req);
 }
 
 export function listEmojiPanel(): Promise<ListEmojiPanelResp> {

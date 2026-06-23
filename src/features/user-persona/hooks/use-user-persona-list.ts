@@ -88,11 +88,10 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
         gender: input.gender,
         profile: input.profile,
         avatar_url: input.avatarResourceId,
-        is_default: input.isDefault ?? false,
       })
       setItems(prev => {
-        const next = resp.persona.is_default
-          ? prev.map(item => ({ ...item, is_default: false }))
+        const next = resp.persona.is_current
+          ? prev.map(item => ({ ...item, is_current: false }))
           : prev
         return [...next, resp.persona]
       })

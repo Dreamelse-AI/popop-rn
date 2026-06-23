@@ -40,5 +40,5 @@ export function resolveActivePersona(
     const applied = items.find(item => item.persona_id === appliedPersonaId);
     if (applied) return applied;
   }
-  return items.find(item => item.is_default) ?? items[0] ?? null;
+  return items.find(item => item.is_current) ?? items[0] ?? null;
 }

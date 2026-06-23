@@ -127,7 +127,7 @@ export function ChatProfileSheet({
 
     const appliedPersonaId = getAppliedPersonaId(characterId)
     const applied = items.find(item => item.persona_id === appliedPersonaId)
-    const fallback = items.find(item => item.is_default) ?? items[0] ?? null
+    const fallback = items.find(item => item.is_current) ?? items[0] ?? null
     setDraftPersonaId((applied ?? fallback)?.persona_id ?? null)
   }, [open, characterId, items])
 
