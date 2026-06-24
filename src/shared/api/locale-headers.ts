@@ -1,24 +1,16 @@
 import type { AccountRegion } from '@/features/auth/auth-types'
 import { getLanguageForRegion } from '@/features/auth/region-config'
 import { getAccountRegion } from '@/shared/api/account-region-store'
+import { readStoredUiLanguage } from '@/i18n/ui-language-store'
 
 export type ApiLanguage = 'en' | 'ja' | 'ko' | 'zh-Hans' | 'zh-Hant'
-/** X-Region：ISO 3166-1 alpha-2 大写 */
-export type ApiRegion = 'JP' | 'KR' | 'TW' | 'HK' | 'US' | 'GB' | 'CN'
-
-const ACCOUNT_REGION_TO_API_REGION: Record<AccountRegion, ApiRegion> = {
-  JP: 'JP',
-  KR: 'KR',
-  TW: 'TW',
-  HK: 'HK',
-  US: 'US',
-  GB: 'GB',
-  CN: 'CN',
-  OTHER: 'US',
-}
+/** X-Region：ISO 3166-1 alpha-2 大写，透传原始值；OTHER 为兼容别名，映射到 US */
+export type ApiRegion = string
 
 export function toApiRegion(accountRegion: AccountRegion): ApiRegion {
-  return ACCOUNT_REGION_TO_API_REGION[accountRegion]
+  // OTHER 是内部兼容别名，API 侧不认识，透传为 US
+  if (accountRegion === 'OTHER') return 'US'
+  return accountRegion.toUpperCase()
 }
 
 export function toApiLanguage(language: string): ApiLanguage {
@@ -42,11 +34,15 @@ export function toApiLanguage(language: string): ApiLanguage {
   return 'en'
 }
 
-/** X-Language / X-Region 均由 AccountRegion 派生，保证二者一致 */
+/**
+ * X-Language 优先使用用户手动选择的 UI 语言，否则由 AccountRegion 派生。
+ * X-Region 始终由 AccountRegion 派生。
+ */
 export function buildLocaleHeaders(
   accountRegion = getAccountRegion(),
 ): Record<'X-Language' | 'X-Region', ApiLanguage | ApiRegion> {
-  const language = getLanguageForRegion(accountRegion)
+  const storedUiLanguage = readStoredUiLanguage()
+  const language = storedUiLanguage ?? getLanguageForRegion(accountRegion)
   return {
     'X-Language': toApiLanguage(language),
     'X-Region': toApiRegion(accountRegion),

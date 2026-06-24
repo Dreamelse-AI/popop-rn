@@ -68,7 +68,7 @@ export function useLogin(navigation: UseLoginNavigation) {
   }, [])
 
   const [state, setState] = useState<LoginState>(() => ({
-    region: getAccountRegion(),
+    region: null as unknown as AccountRegion,
     email: '',
     code: '',
     agreed: false,

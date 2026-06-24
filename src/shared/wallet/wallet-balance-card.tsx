@@ -19,6 +19,16 @@ type WalletGrantProgress = {
   progressFilled: boolean
 }
 
+function formatBalance(balance: number): string {
+  if (balance >= 1_000_000_000)
+    return `${(balance / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`
+  if (balance >= 1_000_000)
+    return `${(balance / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  if (balance >= 1_000)
+    return `${(balance / 1_000).toFixed(0)}K`
+  return balance.toLocaleString()
+}
+
 function formatCountdown(remainSec: number): string {
   const h = Math.floor(remainSec / 3600)
   const m = Math.floor((remainSec % 3600) / 60)
@@ -87,7 +97,7 @@ export function WalletBalanceCard({ onRecharge, compact = false }: WalletBalance
       <View style={[styles.balanceRow, compact && styles.balanceRowCompact]}>
         <View style={styles.balanceLeft}>
           <Text style={[styles.iceEmoji, compact && styles.iceEmojiCompact]}>🧊</Text>
-          <Text style={[styles.paidBalance, compact && styles.paidBalanceCompact]}>{totalBalance}</Text>
+          <Text style={[styles.paidBalance, compact && styles.paidBalanceCompact]}>{formatBalance(totalBalance)}</Text>
           <View style={[styles.giftBadge, compact && styles.giftBadgeCompact]}>
             <Text style={[styles.giftBadgeText, compact && styles.giftBadgeTextCompact]}>+ {grantProgress.giftBalance}</Text>
             <Text style={[styles.giftBadgeEmoji, compact && styles.giftBadgeEmojiCompact]}>🧊</Text>

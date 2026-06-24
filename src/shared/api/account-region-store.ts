@@ -1,11 +1,9 @@
 import type { AccountRegion } from '@/features/auth/auth-types'
 import {
-  ACCOUNT_REGION_STORAGE_KEY,
   DEFAULT_ACCOUNT_REGION,
   getDeviceAccountRegion,
   getLanguageForRegion,
   getMockAccountRegion,
-  isAccountRegion,
   mapCountryCodeToAccountRegion,
 } from '@/features/auth/region-config'
 import { API_BASE, IP_REGION_PATH } from '@/shared/api/api-base'
@@ -13,26 +11,22 @@ import { buildLocaleHeaders } from '@/shared/api/locale-headers'
 import { buildRequestSignHeaders } from '@/shared/api/request-sign'
 import i18n from '@/i18n'
 import { storage } from '@/shared/storage'
+import { readStoredUiLanguage } from '@/i18n/ui-language-store'
 
-export { ACCOUNT_REGION_STORAGE_KEY }
+const ACCOUNT_REGION_STORAGE_KEY = 'popop-account-region'
 
 let regionReady = false
 let bootstrapPromise: Promise<AccountRegion> | null = null
 let resolvedRegion: AccountRegion | null = null
 
-function readStoredAccountRegion(): AccountRegion | null {
-  const saved = storage.get(ACCOUNT_REGION_STORAGE_KEY)
-  if (saved && isAccountRegion(saved)) {
-    return saved
-  }
-  return null
-}
-
-function persistAccountRegion(region: AccountRegion): void {
-  storage.set(ACCOUNT_REGION_STORAGE_KEY, region)
+function clearLegacyAccountRegionStorage(): void {
+  storage.remove(ACCOUNT_REGION_STORAGE_KEY)
 }
 
 function syncLanguageToRegion(region: AccountRegion): void {
+  // 用户已手动选择过语言，不覆盖
+  if (readStoredUiLanguage()) return
+
   const language = getLanguageForRegion(region)
   if (i18n.language !== language) {
     void i18n.changeLanguage(language)
@@ -44,12 +38,12 @@ export function isAccountRegionReady(): boolean {
 }
 
 export function getAccountRegion(): AccountRegion {
-  return resolvedRegion ?? readStoredAccountRegion() ?? DEFAULT_ACCOUNT_REGION
+  return resolvedRegion ?? DEFAULT_ACCOUNT_REGION
 }
 
+/** 当前会话内更新 region，并同步绑定 language（不写入存储） */
 export function setAccountRegion(region: AccountRegion): void {
   resolvedRegion = region
-  persistAccountRegion(region)
   syncLanguageToRegion(region)
 }
 
@@ -80,27 +74,21 @@ async function fetchIPRegionIso(): Promise<string | null | 'empty'> {
   }
 }
 
-function resolveRegionFromBootstrap(
-  ipResult: string | null | 'empty',
-  cached: AccountRegion | null,
-): AccountRegion {
+function resolveRegionFromBootstrap(ipResult: string | null | 'empty'): AccountRegion {
   const mock = getMockAccountRegion()
   if (mock) return mock
 
   if (typeof ipResult === 'string' && ipResult !== 'empty') {
     return mapCountryCodeToAccountRegion(ipResult)
   }
-  if (ipResult === 'empty') {
-    return getDeviceAccountRegion()
-  }
-  return cached ?? getDeviceAccountRegion()
+  return getDeviceAccountRegion()
 }
 
 /**
- * 应用启动时调用：请求 /app/ip_region，并同步 i18n 语言。
+ * 应用启动：请求 /app/ip_region，并同步 i18n 语言。
  * 1. MOCK_DEVICE_REGION 有值（默认 US）→ 直接使用
- * 2. 接口有 region → 映射并持久化
- * 3. 接口无 region / 失败 → 设备地区；设备无 region → US（en）
+ * 2. 接口有 region → 原始 ISO 码透传（已知国家映射，未知直接透传）
+ * 3. 接口无 region / 失败 → 设备地区 → US（en）
  */
 export function bootstrapAccountRegion(): Promise<AccountRegion> {
   if (regionReady) {
@@ -109,20 +97,12 @@ export function bootstrapAccountRegion(): Promise<AccountRegion> {
 
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
-      const cached = readStoredAccountRegion()
-      if (cached) {
-        resolvedRegion = cached
-        syncLanguageToRegion(cached)
-        regionReady = true
-        return cached
-      }
+      clearLegacyAccountRegionStorage()
+
       const ipResult = await fetchIPRegionIso()
-      const region = resolveRegionFromBootstrap(ipResult, cached)
+      const region = resolveRegionFromBootstrap(ipResult)
 
       resolvedRegion = region
-      if (typeof ipResult === 'string' && ipResult !== 'empty') {
-        persistAccountRegion(region)
-      }
       syncLanguageToRegion(region)
       regionReady = true
       return region

@@ -1,4 +1,4 @@
-import type { AccountRegion, AgreementKey, AuthProvider } from './auth-types';
+import type { AccountRegion, AgreementKey, AuthProvider, KnownAccountRegion } from './auth-types';
 import { getLocales } from 'expo-localization';
 import { env } from '@/shared/env';
 
@@ -7,7 +7,17 @@ export const DEFAULT_ACCOUNT_REGION: AccountRegion = 'US';
 
 export const ACCOUNT_REGION_STORAGE_KEY = 'popop-account-region';
 
-export const REGION_TO_LANGUAGE: Record<AccountRegion, string> = {
+const KNOWN_REGIONS: KnownAccountRegion[] = ['JP', 'KR', 'TW', 'HK', 'US', 'GB', 'CN', 'OTHER'];
+
+export function isKnownAccountRegion(value: string): value is KnownAccountRegion {
+  return (KNOWN_REGIONS as string[]).includes(value);
+}
+
+export function isAccountRegion(value: string): value is AccountRegion {
+  return isKnownAccountRegion(value);
+}
+
+export const REGION_TO_LANGUAGE: Record<KnownAccountRegion, string> = {
   KR: 'ko',
   JP: 'ja',
   TW: 'zh',
@@ -18,14 +28,8 @@ export const REGION_TO_LANGUAGE: Record<AccountRegion, string> = {
   OTHER: 'en',
 };
 
-const ACCOUNT_REGIONS: AccountRegion[] = ['JP', 'KR', 'TW', 'HK', 'US', 'GB', 'CN', 'OTHER'];
-
-export function isAccountRegion(value: string): value is AccountRegion {
-  return (ACCOUNT_REGIONS as string[]).includes(value);
-}
-
 export function getLanguageForRegion(region: AccountRegion): string {
-  return REGION_TO_LANGUAGE[region];
+  return REGION_TO_LANGUAGE[region as KnownAccountRegion] ?? 'en';
 }
 
 export function getRegionFromLanguage(language: string): AccountRegion {
@@ -37,7 +41,10 @@ export function getRegionFromLanguage(language: string): AccountRegion {
   return DEFAULT_ACCOUNT_REGION;
 }
 
-/** ISO 3166-1 alpha-2 → 账户地区 */
+/**
+ * ISO 3166-1 alpha-2 → 账户地区。
+ * 已知国家码直接返回对应 KnownAccountRegion；未知国家码返回原始大写 ISO 码透传。
+ */
 export function mapCountryCodeToAccountRegion(iso: string): AccountRegion {
   const code = iso.trim().toUpperCase();
   if (code === 'JP') return 'JP';
@@ -47,20 +54,22 @@ export function mapCountryCodeToAccountRegion(iso: string): AccountRegion {
   if (code === 'CN') return 'CN';
   if (code === 'US') return 'US';
   if (code === 'GB' || code === 'UK') return 'GB';
-  return DEFAULT_ACCOUNT_REGION;
+  return code;
 }
 
-/** 解析 MOCK_DEVICE_REGION（JP/KR/US/GB/UK/TW/HK/CN 及 KO/EN 别名） */
+/**
+ * 解析 MOCK_DEVICE_REGION。
+ * 支持：JP/KR/US/GB/UK/TW/HK/CN/OTHER 及别名 KO/EN，
+ * 以及任意 ISO 国家码（如 SG、AU）→ 透传原始大写值。
+ */
 export function parseMockAccountRegion(value: string): AccountRegion | null {
   const code = value.trim().toUpperCase();
   if (!code || code === 'OFF' || code === 'FALSE') return null;
-  if (code === 'KR' || code === 'KO') return 'KR';
-  if (code === 'JP') return 'JP';
-  if (code === 'TW') return 'TW';
-  if (code === 'HK') return 'HK';
-  if (code === 'CN') return 'CN';
-  if (code === 'US' || code === 'EN' || code === 'OTHER') return 'US';
-  if (code === 'GB' || code === 'UK') return 'GB';
+  if (code === 'KO') return 'KR';
+  if (code === 'EN') return 'US';
+  if (code === 'UK') return 'GB';
+  if (code === 'MO') return 'HK';
+  if (/^[A-Z]{2,3}$/.test(code)) return code;
   return getRegionFromLanguage(value);
 }
 
@@ -167,7 +176,7 @@ export const SELECTABLE_REGION_OPTIONS: RegionOption[] = [
   { region: 'US', code: 'EN', flag: '🇺🇸' },
 ];
 
-const REGION_OPTION_FALLBACK: Partial<Record<AccountRegion, AccountRegion>> = {
+const REGION_OPTION_FALLBACK: Partial<Record<KnownAccountRegion, KnownAccountRegion>> = {
   HK: 'TW',
   CN: 'TW',
   GB: 'US',
@@ -175,7 +184,7 @@ const REGION_OPTION_FALLBACK: Partial<Record<AccountRegion, AccountRegion>> = {
 };
 
 export function getRegionOption(region: AccountRegion): RegionOption {
-  const lookup = REGION_OPTION_FALLBACK[region] ?? region;
+  const lookup = REGION_OPTION_FALLBACK[region as KnownAccountRegion] ?? region;
   return (
     SELECTABLE_REGION_OPTIONS.find(option => option.region === lookup)
     ?? SELECTABLE_REGION_OPTIONS.find(option => option.region === 'US')!
@@ -185,7 +194,7 @@ export function getRegionOption(region: AccountRegion): RegionOption {
 const ENGLISH_LOGIN_METHODS: AuthProvider[] = ['apple', 'google', 'email'];
 const CHINESE_LOGIN_METHODS: AuthProvider[] = ['apple', 'google', 'email'];
 
-export const LOGIN_METHODS_BY_REGION: Record<AccountRegion, AuthProvider[]> = {
+const LOGIN_METHODS_BY_KNOWN_REGION: Record<KnownAccountRegion, AuthProvider[]> = {
   TW: CHINESE_LOGIN_METHODS,
   HK: CHINESE_LOGIN_METHODS,
   CN: CHINESE_LOGIN_METHODS,
@@ -196,7 +205,9 @@ export const LOGIN_METHODS_BY_REGION: Record<AccountRegion, AuthProvider[]> = {
   OTHER: ENGLISH_LOGIN_METHODS,
 };
 
-export const AGREEMENTS_BY_REGION: Record<AccountRegion, AgreementKey[]> = {
+export const LOGIN_METHODS_BY_REGION = LOGIN_METHODS_BY_KNOWN_REGION;
+
+const AGREEMENTS_BY_KNOWN_REGION: Record<KnownAccountRegion, AgreementKey[]> = {
   TW: ['terms', 'privacy'],
   HK: ['terms', 'privacy'],
   CN: ['terms', 'privacy'],
@@ -206,6 +217,8 @@ export const AGREEMENTS_BY_REGION: Record<AccountRegion, AgreementKey[]> = {
   GB: ['terms', 'privacy'],
   OTHER: ['terms', 'privacy'],
 };
+
+export const AGREEMENTS_BY_REGION = AGREEMENTS_BY_KNOWN_REGION;
 
 export const AGREEMENT_LABELS: Record<AgreementKey, string> = {
   terms: 'Terms of Service',
@@ -221,7 +234,7 @@ const AGREEMENT_LABELS_KR: Record<AgreementKey, string> = {
   ageOver14: '您必须年满14周岁。',
 };
 
-const AGREE_MODAL_TITLES: Record<AccountRegion, string> = {
+const AGREE_MODAL_TITLES: Record<KnownAccountRegion, string> = {
   TW: 'Please agree to the account terms',
   HK: 'Please agree to the account terms',
   CN: 'Please agree to the account terms',
@@ -232,7 +245,7 @@ const AGREE_MODAL_TITLES: Record<AccountRegion, string> = {
   OTHER: 'Please agree to the account terms',
 };
 
-const MARKETING_CONSENT_LABELS: Record<AccountRegion, string> = {
+const MARKETING_CONSENT_LABELS: Record<KnownAccountRegion, string> = {
   TW: 'Consent to receive event and benefit information',
   HK: 'Consent to receive event and benefit information',
   CN: 'Consent to receive event and benefit information',
@@ -243,7 +256,7 @@ const MARKETING_CONSENT_LABELS: Record<AccountRegion, string> = {
   OTHER: 'Consent to receive event and benefit information',
 };
 
-const AGREE_MODAL_CONFIRM_LABELS: Record<AccountRegion, { email: string; provider: string }> = {
+const AGREE_MODAL_CONFIRM_LABELS: Record<KnownAccountRegion, { email: string; provider: string }> = {
   TW: { email: 'Sign In', provider: 'Continue' },
   HK: { email: 'Sign In', provider: 'Continue' },
   CN: { email: 'Sign In', provider: 'Continue' },
@@ -254,7 +267,7 @@ const AGREE_MODAL_CONFIRM_LABELS: Record<AccountRegion, { email: string; provide
   OTHER: { email: 'Sign In', provider: 'Continue' },
 };
 
-const REGIONS_WITH_MARKETING_CONSENT: AccountRegion[] = ['KR'];
+const REGIONS_WITH_MARKETING_CONSENT: KnownAccountRegion[] = ['KR'];
 
 export const AGREEMENT_LINKS: Partial<Record<AgreementKey, string>> = {
   terms: '/terms',
@@ -271,15 +284,15 @@ export const PROVIDER_LABELS: Record<AuthProvider, string> = {
 };
 
 export function getLoginMethodsByRegion(region: AccountRegion) {
-  return LOGIN_METHODS_BY_REGION[region] ?? LOGIN_METHODS_BY_REGION.US;
+  return LOGIN_METHODS_BY_KNOWN_REGION[region as KnownAccountRegion] ?? ENGLISH_LOGIN_METHODS;
 }
 
 export function getAgreementsByRegion(region: AccountRegion) {
-  return AGREEMENTS_BY_REGION[region] ?? AGREEMENTS_BY_REGION.US;
+  return AGREEMENTS_BY_KNOWN_REGION[region as KnownAccountRegion] ?? AGREEMENTS_BY_KNOWN_REGION.US;
 }
 
 export function getAgreeModalTitle(region: AccountRegion) {
-  return AGREE_MODAL_TITLES[region] ?? AGREE_MODAL_TITLES.US;
+  return AGREE_MODAL_TITLES[region as KnownAccountRegion] ?? AGREE_MODAL_TITLES.US;
 }
 
 export function getAgreementItemLabel(key: AgreementKey, region: AccountRegion) {
@@ -290,15 +303,15 @@ export function getAgreementItemLabel(key: AgreementKey, region: AccountRegion) 
 }
 
 export function getMarketingConsentLabel(region: AccountRegion) {
-  return MARKETING_CONSENT_LABELS[region] ?? MARKETING_CONSENT_LABELS.US;
+  return MARKETING_CONSENT_LABELS[region as KnownAccountRegion] ?? MARKETING_CONSENT_LABELS.US;
 }
 
 export function hasMarketingConsent(region: AccountRegion) {
-  return REGIONS_WITH_MARKETING_CONSENT.includes(region);
+  return REGIONS_WITH_MARKETING_CONSENT.includes(region as KnownAccountRegion);
 }
 
 export function getAgreeModalConfirmText(region: AccountRegion, mode: 'email' | 'provider') {
-  const labels = AGREE_MODAL_CONFIRM_LABELS[region] ?? AGREE_MODAL_CONFIRM_LABELS.US;
+  const labels = AGREE_MODAL_CONFIRM_LABELS[region as KnownAccountRegion] ?? AGREE_MODAL_CONFIRM_LABELS.US;
   return labels[mode];
 }
 
@@ -328,7 +341,7 @@ const PROFILE_SETUP_COPY_EN: ProfileSetupCopy = {
   submit: 'Go to Chat',
 };
 
-const PROFILE_SETUP_COPY: Record<AccountRegion, ProfileSetupCopy> = {
+const PROFILE_SETUP_COPY: Partial<Record<KnownAccountRegion, ProfileSetupCopy>> = {
   TW: PROFILE_SETUP_COPY_EN,
   HK: PROFILE_SETUP_COPY_EN,
   CN: PROFILE_SETUP_COPY_EN,
@@ -351,5 +364,5 @@ const PROFILE_SETUP_COPY: Record<AccountRegion, ProfileSetupCopy> = {
 };
 
 export function getProfileSetupCopy(region: AccountRegion) {
-  return PROFILE_SETUP_COPY[region] ?? PROFILE_SETUP_COPY.US;
+  return PROFILE_SETUP_COPY[region as KnownAccountRegion] ?? PROFILE_SETUP_COPY_EN;
 }

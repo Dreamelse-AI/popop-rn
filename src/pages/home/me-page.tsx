@@ -6,8 +6,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 
 import { hasAuthToken, useAuthStore } from '@/features/auth/auth-store'
+import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
 import { useMeProfileStore } from '@/features/user-persona'
 import { apiClient } from '@/shared/api/api-client'
+import { waitForAccountRegion } from '@/shared/api/account-region-store'
+import type { AccountRegion } from '@/features/auth/auth-types'
 import { deregister } from '@/generated/arca_api'
 import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 import { CenterDialog } from '@/shared/ui/center-dialog'
@@ -16,8 +19,7 @@ import { UserPersonaSheet } from '@/features/user-persona/components/user-person
 import { AboutPage } from './about-page'
 import { InvitePage } from './invite-page'
 import { useLongPress } from './messages/use-long-press'
-import { getRegionFromLanguage } from '@/features/auth/region-config'
-import { setAccountRegion } from '@/shared/api/account-region-store'
+import { persistUiLanguage } from '@/i18n/ui-language-store'
 import i18n, { LANGUAGE_OPTIONS } from '@/i18n'
 
 import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
@@ -62,6 +64,14 @@ export function MePage({ isActive = true }: MePageProps) {
   const avatarUrl = useMeProfileStore(s => s.avatarUrl)
   const profileLoading = useMeProfileStore(s => s.loading)
   const refreshMeProfile = useMeProfileStore(s => s.refresh)
+
+  const [region, setRegion] = useState<AccountRegion | null>(null)
+  useAppTerms(region)
+
+  useEffect(() => {
+    if (!isActive) return
+    void waitForAccountRegion().then(r => setRegion(r))
+  }, [isActive])
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -223,7 +233,8 @@ export function MePage({ isActive = true }: MePageProps) {
               key={option.code}
               style={styles.langOption}
               onPress={() => {
-                setAccountRegion(getRegionFromLanguage(option.code))
+                persistUiLanguage(option.code)
+                void i18n.changeLanguage(option.code)
                 setShowLangPicker(false)
               }}
             >
