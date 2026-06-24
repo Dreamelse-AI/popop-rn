@@ -1,4 +1,4 @@
-import { uploadImageToTos } from '@/features/chat/lib/tos-upload';
+import { uploadAiGenImageToTos } from '@/features/chat/lib/tos-upload';
 
 import { USE_CHARACTER_CREATION_MOCK } from '../config';
 
@@ -12,5 +12,5 @@ export async function uploadCharacterAppearanceImage(fileUri: string): Promise<s
     return fileUri;
   }
 
-  return uploadImageToTos(fileUri);
+  return uploadAiGenImageToTos(fileUri);
 }

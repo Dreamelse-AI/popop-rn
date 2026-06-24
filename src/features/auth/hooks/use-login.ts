@@ -325,7 +325,6 @@ export function useLogin(navigation: UseLoginNavigation) {
         gender: state.profileGender!,
         profile: state.profileInstructions.trim(),
         avatar_url: avatarUrl,
-        is_default: true,
       })
 
       if (!isProfileSetupSessionActive(session)) {

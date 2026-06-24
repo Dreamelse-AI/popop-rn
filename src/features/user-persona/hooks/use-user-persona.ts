@@ -122,7 +122,7 @@ export function useUserPersona(
         const items = resp.items ?? []
         const picked =
           personaId === undefined
-            ? (items.find(item => item.is_default) ?? items[0])
+            ? (items.find(item => item.is_current) ?? items[0])
             : items.find(item => item.persona_id === personaId)
         if (picked) commitForm(toForm(picked))
         else if (personaId !== undefined) commitForm(EMPTY_FORM)
@@ -168,7 +168,6 @@ export function useUserPersona(
         gender: form.gender,
         profile: form.profile,
         avatar_url: avatarUrl,
-        is_default: isDefaultOnCreate,
       })
       commitForm(toForm(resp.persona))
       syncMeProfileFromPersona(resp.persona)

@@ -11,7 +11,7 @@ import {
 } from '@/generated';
 
 export const userPersonaApi = {
-  list: () => listUserPersonas(),
+  list: () => listUserPersonas({}),
   create: (req: CreateUserPersonaReq) => createUserPersona(req),
   update: (req: UpdateUserPersonaReq) => updateUserPersona(req),
   delete: (req: DeleteUserPersonaReq) => deleteUserPersona(req),

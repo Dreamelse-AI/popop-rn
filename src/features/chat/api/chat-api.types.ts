@@ -5,7 +5,7 @@ export type {
   EmojiItem,
   ListCharacterPhoneChatHistoryReq,
   ListCharacterPhoneChatHistoryResp,
-  ListEmojisResp,
+  ListEmojiPanelResp,
   MemoryRollbackReq,
   UpdateMessageClickStatusReq,
   UpdateMessageClickStatusResp,
