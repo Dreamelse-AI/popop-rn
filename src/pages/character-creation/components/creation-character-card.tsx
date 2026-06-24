@@ -4,28 +4,21 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import type { CreationCharacterItem } from '@/features/character-creation/types';
-import { characterAssets } from '@/shared/assets/character';
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload';
-import { PopImage } from '@/shared/ui/pop-image';
+import { cdnImage } from '@/shared/lib/cdn';
 
 import { IconLightning, IconPencil, IconPublish, IconTrash, SpinnerIcon } from './creation-icons';
 
-/** 358×268 卡片内图案尺寸/偏移（对齐 PC EmptyCoverPattern） */
-const DRAFT_EMPTY_PATTERN = {
-  widthRatio: 1728 / 358,
-  heightRatio: 1037 / 268,
-  leftRatio: -19 / 358,
-  topRatio: -99 / 268,
-} as const;
+const characterPlaceholder = cdnImage('assets/character-placeholder.png');
 
 function DraftEmptyCoverBackground() {
   return (
     <View style={styles.draftEmptyBg}>
-      <PopImage
-        uri={characterAssets.creationDraftCardEmptyPattern.uri}
-        style={styles.draftEmptyPattern}
-        contentFit="cover"
-        accessibilityLabel=""
+      <Image
+        source={{ uri: characterPlaceholder }}
+        style={styles.draftEmptyImage}
+        contentFit="contain"
+        contentPosition="bottom center"
       />
     </View>
   );
@@ -184,19 +177,6 @@ export function CreationCharacterCard({
         <DraftEmptyCoverBackground />
       )}
 
-      {hasCover && (
-        <LinearGradient
-          colors={
-            isPublished
-              ? ['rgba(0,0,0,0.3)', 'transparent', 'transparent']
-              : ['rgba(0,0,0,0.25)', 'transparent', 'rgba(0,0,0,0.35)']
-          }
-          locations={[0, 0.5, 1]}
-          style={styles.coverOverlay}
-          pointerEvents="none"
-        />
-      )}
-
       {isPublished ? (
         <PublishedCharacterCard
           displayName={displayName}
@@ -253,21 +233,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     overflow: 'hidden',
   },
-  draftEmptyPattern: {
+  draftEmptyImage: {
     position: 'absolute',
-    width: `${DRAFT_EMPTY_PATTERN.widthRatio * 100}%`,
-    height: `${DRAFT_EMPTY_PATTERN.heightRatio * 100}%`,
-    left: `${DRAFT_EMPTY_PATTERN.leftRatio * 100}%`,
-    top: `${DRAFT_EMPTY_PATTERN.topRatio * 100}%`,
-    opacity: 0.04,
-  },
-  coverOverlay: {
-    position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1,
+    height: '100%',
   },
 });
 

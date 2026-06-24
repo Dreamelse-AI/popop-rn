@@ -10,10 +10,9 @@ type FormSectionNavProps = {
 const NAV_ITEMS: {
   key: CreationFormSection;
   emoji: string;
-  required?: boolean;
 }[] = [
-  { key: 'basic', emoji: '📝', required: true },
-  { key: 'appearance', emoji: '🖼', required: true },
+  { key: 'basic', emoji: '📝' },
+  { key: 'appearance', emoji: '🖼' },
   { key: 'opening', emoji: '💬' },
   { key: 'details', emoji: '📓' },
   { key: 'beautify', emoji: '🎨' },
@@ -22,7 +21,7 @@ const NAV_ITEMS: {
 export function FormSectionNav({ activeSection, onSelect }: FormSectionNavProps) {
   return (
     <View style={styles.container}>
-      {NAV_ITEMS.map(({ key, emoji, required }) => {
+      {NAV_ITEMS.map(({ key, emoji }) => {
         const active = activeSection === key;
         return (
           <Pressable
@@ -38,9 +37,6 @@ export function FormSectionNav({ activeSection, onSelect }: FormSectionNavProps)
             >
               {emoji}
             </Text>
-            {required && (
-              <Text style={styles.required}>*</Text>
-            )}
           </Pressable>
         );
       })}
@@ -65,7 +61,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   button: {
-    position: 'relative',
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -84,14 +79,5 @@ const styles = StyleSheet.create({
   },
   emojiInactive: {
     opacity: 0.45,
-  },
-  required: {
-    position: 'absolute',
-    right: 2,
-    top: 2,
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 10,
-    color: '#ff4d4f',
   },
 });
