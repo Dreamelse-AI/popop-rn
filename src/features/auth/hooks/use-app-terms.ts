@@ -2,16 +2,18 @@ import type { TermsInfo } from '@/generated/arca_apiComponents';
 import { useEffect, useState } from 'react';
 
 import type { AccountRegion } from '../auth-types';
-import { fetchAppTerms, getCachedAppTerms } from '../lib/app-terms';
+import { fetchAppTerms } from '../lib/app-terms';
 
-export function useAppTerms(region: AccountRegion) {
-  const [termsList, setTermsList] = useState<TermsInfo[]>(() => getCachedAppTerms(region) ?? []);
+export function useAppTerms(region: AccountRegion | null) {
+  const [termsList, setTermsList] = useState<TermsInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!region) return;
+
     let alive = true;
 
-    setTermsList(getCachedAppTerms(region) ?? []);
+    setTermsList([]);
     setError(null);
 
     fetchAppTerms(region)

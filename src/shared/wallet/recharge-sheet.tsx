@@ -11,9 +11,7 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
 import type { RechargePackageItem, TermsInfo } from '@/generated/arca_apiComponents'
-import { getAccountRegion } from '@/shared/api/account-region-store'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 
@@ -196,7 +194,7 @@ export function RechargeSheet({
 }: RechargeSheetProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const { termsList } = useAppTerms(getAccountRegion())
+  const termsList: TermsInfo[] = []
   const totalTokens = useWalletStore(s => s.totalTokens)
   const freeTokens = useWalletStore(s => s.freeTokens)
 

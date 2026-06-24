@@ -52,22 +52,12 @@ async function requestTermsForRegion(region: AccountRegion): Promise<TermsInfo[]
   return mapTermsResponse(json.data);
 }
 
-const cache = new Map<AccountRegion, TermsInfo[]>();
 const inflight = new Map<AccountRegion, Promise<TermsInfo[]>>();
 
 export function fetchAppTerms(region: AccountRegion): Promise<TermsInfo[]> {
-  const cached = cache.get(region);
-  if (cached) {
-    return Promise.resolve(cached);
-  }
-
   let promise = inflight.get(region);
   if (!promise) {
     promise = requestTermsForRegion(region)
-      .then(terms => {
-        cache.set(region, terms);
-        return terms;
-      })
       .finally(() => {
         inflight.delete(region);
       });
@@ -75,15 +65,4 @@ export function fetchAppTerms(region: AccountRegion): Promise<TermsInfo[]> {
   }
 
   return promise;
-}
-
-export function getCachedAppTerms(region: AccountRegion): TermsInfo[] | null {
-  return cache.get(region) ?? null;
-}
-
-/** 启动阶段预取条款，登录页可直接读缓存展示协议弹窗 */
-export function prefetchAppTerms(region: AccountRegion): void {
-  void fetchAppTerms(region).catch(err => {
-    console.error('[app-terms] prefetch failed:', err);
-  });
 }

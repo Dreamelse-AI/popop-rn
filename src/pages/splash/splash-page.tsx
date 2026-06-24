@@ -7,8 +7,7 @@ import {
   createAuthLoginShellPlaceholders,
 } from '@/pages/auth/auth-login-shell'
 import { useAuthStore } from '@/features/auth/auth-store'
-import { fetchAppTerms } from '@/features/auth/lib/app-terms'
-import { bootstrapAccountRegion, getAccountRegion } from '@/shared/api/account-region-store'
+import { bootstrapAccountRegion } from '@/shared/api/account-region-store'
 
 type SplashNav = NativeStackNavigationProp<RootStackParamList, 'Splash'>
 
@@ -28,7 +27,6 @@ export function SplashPage() {
     void (async () => {
       try {
         await bootstrapAccountRegion()
-        await fetchAppTerms(getAccountRegion())
       } catch (err) {
         console.error('[SplashPage] bootstrap failed:', err)
       }
