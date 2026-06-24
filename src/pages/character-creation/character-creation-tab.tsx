@@ -36,6 +36,7 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
     error,
     deletingId,
     isPublishing,
+    getPublishError,
     refresh,
     deleteItem,
     publishDraft,
@@ -116,6 +117,8 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
                     onPublish={() => void publishDraft(item.id)}
                     publishing={isPublishing(item.id)}
                     deleting={deletingId === item.id}
+                    rejected={item.draftAuditStatus === 'rejected'}
+                    rejectReason={getPublishError(item.id)}
                   />
                 ))}
               </View>

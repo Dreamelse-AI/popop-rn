@@ -324,6 +324,9 @@
       "detailsAddCustom": "사용자 설정 추가",
       "detailsFilledCount": "{{count}}개 설정 추가됨",
       "beautifyPlaceholder": "효과 설명을 입력하세요...",
+      "beautifyGenerate": "꾸미기 스타일 생성",
+      "beautifyRestoreDefault": "기본값으로 복원",
+      "beautifyGenerateFailed": "소개 페이지 생성 실패",
       "preview": "시사"
     },
     "creation": {
@@ -332,6 +335,7 @@
       "unnamed": "이름 없는 캐릭터",
       "publish": "게시",
       "publishing": "게시 중…",
+      "rejected": "심사 거부됨",
       "publishSuccessTitle": "🎉 게시 완료",
       "publishSuccessMessage": "이 세상에 온 첫 동적을 게시해 더 많은 사람에게 알려 보세요!",
       "publishSuccessDismiss": "괜찮아요",

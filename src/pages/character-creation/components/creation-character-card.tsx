@@ -32,6 +32,8 @@ type CreationCharacterCardProps = {
   onPostDynamic?: () => void;
   publishing?: boolean;
   deleting?: boolean;
+  rejected?: boolean;
+  rejectReason?: string;
 };
 
 function DraftCharacterCard({
@@ -41,6 +43,8 @@ function DraftCharacterCard({
   onPublish,
   publishing,
   deleting,
+  rejected,
+  rejectReason,
 }: {
   displayName: string;
   onEdit?: () => void;
@@ -48,6 +52,8 @@ function DraftCharacterCard({
   onPublish?: () => void;
   publishing?: boolean;
   deleting?: boolean;
+  rejected?: boolean;
+  rejectReason?: string;
 }) {
   const { t } = useTranslation();
 
@@ -70,6 +76,14 @@ function DraftCharacterCard({
       </View>
 
       <View style={draftStyles.bottomRow}>
+        {rejected && (
+          <View style={draftStyles.rejectedBadge}>
+            <Text style={draftStyles.rejectedText}>
+              {t('character.creation.rejected')}
+              {rejectReason ? `: ${rejectReason}` : ''}
+            </Text>
+          </View>
+        )}
         <Pressable
           onPress={onPublish}
           disabled={publishing}
@@ -154,6 +168,8 @@ export function CreationCharacterCard({
   onPostDynamic,
   publishing = false,
   deleting = false,
+  rejected = false,
+  rejectReason,
 }: CreationCharacterCardProps) {
   const { t } = useTranslation();
   const displayName = item.name.trim() || t('character.creation.unnamed');
@@ -193,6 +209,8 @@ export function CreationCharacterCard({
           onPublish={onPublish}
           publishing={publishing}
           deleting={deleting}
+          rejected={rejected}
+          rejectReason={rejectReason}
         />
       )}
     </View>
@@ -285,8 +303,21 @@ const draftStyles = StyleSheet.create({
   },
   bottomRow: {
     marginTop: 'auto',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  rejectedBadge: {
+    maxWidth: '100%',
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  rejectedText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#ffffff',
   },
   publishButton: {
     flexDirection: 'row',

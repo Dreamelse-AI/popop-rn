@@ -324,6 +324,9 @@
       "detailsAddCustom": "カスタム設定を追加",
       "detailsFilledCount": "{{count}}件の設定を追加済み",
       "beautifyPlaceholder": "効果の詳細を入力...",
+      "beautifyGenerate": "美化スタイルを生成",
+      "beautifyRestoreDefault": "デフォルトに戻す",
+      "beautifyGenerateFailed": "紹介ページの生成に失敗しました",
       "preview": "プレビュー"
     },
     "creation": {
@@ -332,6 +335,7 @@
       "unnamed": "名前未設定キャラ",
       "publish": "公開",
       "publishing": "公開中…",
+      "rejected": "審査不合格",
       "publishSuccessTitle": "🎉 公開成功",
       "publishSuccessMessage": "この世界での最初のダイナミックを投稿して、もっと多くの人に見てもらいましょう！",
       "publishSuccessDismiss": "結構です",

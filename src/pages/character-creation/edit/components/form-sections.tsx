@@ -244,7 +244,6 @@ export function BeautifySection({
   const { t } = useTranslation();
   const [stylesList, setStylesList] = useState<AppearanceStyleItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const defaultStyleAppliedRef = useRef(false);
 
   useEffect(() => {
     setLoading(true);
@@ -257,15 +256,9 @@ export function BeautifySection({
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (form.landingPageStyleKey || stylesList.length === 0 || defaultStyleAppliedRef.current) return;
-    defaultStyleAppliedRef.current = true;
-    onChange({ landingPageStyleKey: stylesList[0]!.style_key });
-  }, [form.landingPageStyleKey, onChange, stylesList]);
-
   const selectedStyleKey = form.landingPageStyleKey;
   const isGenerating = generateState === 'generating';
-  const canGenerate = Boolean(selectedStyleKey.trim()) && !isGenerating;
+  const canGenerate = (Boolean(selectedStyleKey.trim()) || Boolean(form.landingPagePrompt?.trim())) && !isGenerating;
   const generateLabel =
     generateState === 'generating'
       ? t('character.createPage.beautifyGenerating')

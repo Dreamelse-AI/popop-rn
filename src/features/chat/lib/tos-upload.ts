@@ -9,7 +9,7 @@ import { hmacSha256Bytes } from './hmac-sha256'
 
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 
-const PRESIGNED_URL_EXPIRES_SECONDS = 3600
+const PRESIGNED_URL_EXPIRES_SECONDS = 604800 // 7 days
 
 export function resolveTosAssetUrl(url: string): string {
   return normalizeAssetUrl(url)
@@ -324,6 +324,6 @@ export async function uploadAudioToTos(fileUri: string): Promise<string> {
 }
 
 export async function uploadAiGenImageToTos(fileUri: string): Promise<string> {
-  const result = await uploadToTos(fileUri, { prefix: 'ai-gen-images', expiresIn: 3600 })
+  const result = await uploadToTos(fileUri, { prefix: 'ai-gen-images', expiresIn: PRESIGNED_URL_EXPIRES_SECONDS })
   return result.url
 }

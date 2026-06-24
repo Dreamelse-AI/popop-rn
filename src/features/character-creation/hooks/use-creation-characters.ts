@@ -16,6 +16,7 @@ type UseCreationCharactersResult = {
   creating: boolean;
   deletingId: string | null;
   isPublishing: (draftId: string) => boolean;
+  getPublishError: (draftId: string) => string | undefined;
   refresh: () => Promise<void>;
   createDraft: () => Promise<string | null>;
   deleteItem: (item: CreationCharacterItem) => Promise<void>;
@@ -56,6 +57,17 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
       return draft?.draftAuditStatus === 'auditing';
     },
     [jobs, drafts],
+  );
+
+  const getPublishError = useCallback(
+    (draftId: string): string | undefined => {
+      const job = jobs[draftId];
+      if (job?.status === 'error' && job.errorMessage) {
+        return job.errorMessage;
+      }
+      return undefined;
+    },
+    [jobs],
   );
 
   const refresh = useCallback(async () => {
@@ -181,6 +193,7 @@ export function useCreationCharacters(enabled: boolean): UseCreationCharactersRe
     creating,
     deletingId,
     isPublishing,
+    getPublishError,
     refresh,
     createDraft,
     deleteItem,

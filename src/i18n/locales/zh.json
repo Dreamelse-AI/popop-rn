@@ -324,6 +324,9 @@
       "detailsAddCustom": "添加自定义设定",
       "detailsFilledCount": "已添加 {{count}} 项设定",
       "beautifyPlaceholder": "请输入效果补充...",
+      "beautifyGenerate": "生成美化风格",
+      "beautifyRestoreDefault": "恢复默认",
+      "beautifyGenerateFailed": "介绍页生成失败",
       "preview": "预览"
     },
     "creation": {
@@ -332,6 +335,7 @@
       "unnamed": "未命名角色",
       "publish": "发布",
       "publishing": "发布中…",
+      "rejected": "审核未通过",
       "publishSuccessTitle": "🎉 发布成功",
       "publishSuccessMessage": "去发布Ta来到这个世界的第一条动态，让更多人看到吧！",
       "publishSuccessDismiss": "不了，谢谢",

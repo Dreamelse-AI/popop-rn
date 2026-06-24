@@ -324,6 +324,9 @@
       "detailsAddCustom": "Add custom setting",
       "detailsFilledCount": "{{count}} setting(s) added",
       "beautifyPlaceholder": "Enter effect details...",
+      "beautifyGenerate": "Generate Beautify Style",
+      "beautifyRestoreDefault": "Restore Default",
+      "beautifyGenerateFailed": "Landing page generation failed",
       "preview": "Preview"
     },
     "creation": {
@@ -332,6 +335,7 @@
       "unnamed": "Unnamed Character",
       "publish": "Publish",
       "publishing": "Publishing…",
+      "rejected": "Review rejected",
       "publishSuccessTitle": "🎉 Published",
       "publishSuccessMessage": "Post their first update in this world and let more people discover them!",
       "publishSuccessDismiss": "No thanks",
