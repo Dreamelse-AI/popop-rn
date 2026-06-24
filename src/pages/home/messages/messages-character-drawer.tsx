@@ -8,6 +8,9 @@ import type { RootStackParamList } from '@/app/navigation'
 import Svg, { Circle, Path } from 'react-native-svg'
 import { Image } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
+import type { CharacterListItem } from './types'
+import { MessagesRowMenu } from './messages-row-menu'
+import { markReopenCharacterDrawer } from './drawer-return-flag'
 
 const IconPin = cdnImage('assets/character/dialog-pin.png')
 const IconEndRelation = cdnImage('assets/character/icon-feedback.png')

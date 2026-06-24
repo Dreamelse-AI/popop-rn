@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { cdnImage } from "@/shared/lib/cdn";
+import type { MessageConversation } from "./types";
 import { useLongPress } from "./use-long-press";
 
 const IconUnreadDot = cdnImage("assets/character/red-dot.png");
