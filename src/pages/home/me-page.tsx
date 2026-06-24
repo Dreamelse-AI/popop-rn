@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, Pressable, StyleSheet, ScrollView, TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -7,15 +7,16 @@ import type { RootStackParamList } from '@/app/navigation'
 
 import { hasAuthToken, useAuthStore } from '@/features/auth/auth-store'
 import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
-import { useMeProfileStore } from '@/features/user-persona'
 import { apiClient } from '@/shared/api/api-client'
 import { waitForAccountRegion } from '@/shared/api/account-region-store'
 import type { AccountRegion } from '@/features/auth/auth-types'
-import { deregister } from '@/generated/arca_api'
+import { deregister, getUserInfo, updateUserInfo } from '@/generated/arca_api'
 import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 import { CenterDialog } from '@/shared/ui/center-dialog'
 import { PopImage } from '@/shared/ui/pop-image'
-import { UserPersonaSheet } from '@/features/user-persona/components/user-persona-sheet'
+import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
+import { resolvePersonaAvatarUrl, userAvatarPlaceholder } from '@/features/user-persona/lib/persona-utils'
 import { AboutPage } from './about-page'
 import { InvitePage } from './invite-page'
 import { useLongPress } from './messages/use-long-press'
@@ -27,6 +28,159 @@ import IconLogout from '@/shared/assets/me/icon-logout.svg'
 import IconAbout from '@/shared/assets/me/icon-about.svg'
 import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
 
+type MeUserInfo = {
+  userName: string
+  avatarUrl: string
+}
+
+const ME_USER_NAME_MAX = 128
+
+function normalizeMeUserName(name: string): string {
+  return name.trim().slice(0, ME_USER_NAME_MAX)
+}
+
+function isValidMeUserName(name: string): boolean {
+  return normalizeMeUserName(name).length > 0
+}
+
+type MeUserInfoSheetProps = {
+  open: boolean
+  info: MeUserInfo | null
+  onClose: () => void
+  onUserNameSaved?: (userName: string) => void
+}
+
+function MeUserInfoSheet({ open, info, onClose, onUserNameSaved }: MeUserInfoSheetProps) {
+  const { t } = useTranslation()
+  const [draftName, setDraftName] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!open) {
+      setSubmitted(false)
+      return
+    }
+    setDraftName(info?.userName ?? '')
+  }, [info?.userName, open])
+
+  const nameInvalid = submitted && !isValidMeUserName(draftName)
+
+  const handleSave = async () => {
+    setSubmitted(true)
+    const userName = normalizeMeUserName(draftName)
+    if (!isValidMeUserName(userName)) return
+    if (userName === info?.userName) {
+      onClose()
+      return
+    }
+    setSaving(true)
+    try {
+      await updateUserInfo({ user_name: userName })
+      onUserNameSaved?.(userName)
+      onClose()
+    } catch (e) {
+      console.error('[MeUserInfoSheet] updateUserInfo failed:', e)
+      showGlobalToast(t('persona.saveFailed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      header={<SheetHeader title={t('me.userInfoTitle')} />}
+      footer={
+        <SheetFooterButton
+          label={saving ? t('persona.saving') : t('persona.save')}
+          onPress={() => void handleSave()}
+          disabled={saving}
+          loading={saving}
+        />
+      }
+    >
+      <SheetBody>
+        <View style={sheetStyles.avatarSection}>
+          <View style={sheetStyles.avatarWrapper}>
+            <PopImage uri={info?.avatarUrl ?? ''} style={sheetStyles.avatarImage} />
+          </View>
+        </View>
+
+        <View style={sheetStyles.field}>
+          <View style={sheetStyles.labelRow}>
+            <Text style={sheetStyles.label}>{t('persona.name')}</Text>
+            <Text style={sheetStyles.requiredMark}>*</Text>
+          </View>
+          <TextInput
+            value={draftName}
+            onChangeText={text => setDraftName(normalizeMeUserName(text))}
+            maxLength={ME_USER_NAME_MAX}
+            placeholder={t('persona.namePlaceholder')}
+            placeholderTextColor="rgba(0,0,0,0.2)"
+            style={[sheetStyles.nameInput, nameInvalid && sheetStyles.inputError]}
+          />
+        </View>
+      </SheetBody>
+    </BottomSheet>
+  )
+}
+
+const sheetStyles = StyleSheet.create({
+  avatarSection: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  avatarWrapper: {
+    width: 144,
+    height: 144,
+    borderRadius: 72,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+  },
+  avatarImage: {
+    width: 144,
+    height: 144,
+  },
+  field: {
+    gap: 8,
+    marginTop: 16,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(0,0,0,0.5)',
+  },
+  requiredMark: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#ff5a5a',
+  },
+  nameInput: {
+    height: 60,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  inputError: {
+    borderColor: '#ff5a5a',
+  },
+})
+
 type MeNav = NativeStackNavigationProp<RootStackParamList, 'Home'>
 
 type MenuItem = {
@@ -34,10 +188,6 @@ type MenuItem = {
   label: string
   trailing?: string
   onPress?: () => void
-}
-
-function isRemoteAvatarUrl(url: string): boolean {
-  return url.startsWith('http://') || url.startsWith('https://')
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -59,11 +209,9 @@ export function MePage({ isActive = true }: MePageProps) {
   const navigation = useNavigation<MeNav>()
   const logout = useAuthStore(s => s.logout)
   const hasToken = useAuthStore(s => Boolean(s.token))
-  const displayName = useMeProfileStore(s => s.displayName)
-  const displayUid = useMeProfileStore(s => s.displayUid)
-  const avatarUrl = useMeProfileStore(s => s.avatarUrl)
-  const profileLoading = useMeProfileStore(s => s.loading)
-  const refreshMeProfile = useMeProfileStore(s => s.refresh)
+  const [meUserInfo, setMeUserInfo] = useState<MeUserInfo | null>(null)
+  const [displayUid, setDisplayUid] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
 
   const [region, setRegion] = useState<AccountRegion | null>(null)
   useAppTerms(region)
@@ -83,13 +231,29 @@ export function MePage({ isActive = true }: MePageProps) {
   const [showPersona, setShowPersona] = useState(false)
 
   const currentLangLabel = LANGUAGE_OPTIONS.find(l => l.code === i18n.language)?.label ?? 'English'
-  const remoteAvatarUrl = isRemoteAvatarUrl(avatarUrl) ? avatarUrl : null
 
   useEffect(() => {
     if (!hasToken || !isActive || !hasAuthToken()) return
-    void refreshMeProfile()
+
+    setProfileLoading(true)
+    void getUserInfo({})
+      .then(resp => {
+        const info = resp.info as typeof resp.info & { avatar?: { url?: string }; avatar_url?: string }
+        setDisplayUid(info.display_uid ?? '')
+        setMeUserInfo({
+          userName: info.user_name?.trim() ?? '',
+          avatarUrl: resolvePersonaAvatarUrl(info.avatar ?? info.avatar_url) || userAvatarPlaceholder,
+        })
+      })
+      .catch(e => {
+        console.error('[MePage] getUserInfo failed:', e)
+      })
+      .finally(() => {
+        setProfileLoading(false)
+      })
+
     void refreshWallet()
-  }, [hasToken, isActive, refreshMeProfile])
+  }, [hasToken, isActive])
 
   const handleCopyUid = async () => {
     if (!displayUid) return
@@ -98,6 +262,10 @@ export function MePage({ isActive = true }: MePageProps) {
   }
 
   const uidLongPress = useLongPress({ onLongPress: () => { void handleCopyUid() } })
+
+  const handleUserNameSaved = (userName: string) => {
+    setMeUserInfo(prev => (prev ? { ...prev, userName } : prev))
+  }
 
   const handleLogout = () => {
     apiClient.setToken(null)
@@ -142,10 +310,10 @@ export function MePage({ isActive = true }: MePageProps) {
 
         <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
           <View style={styles.avatarWrapper}>
-            <PopImage uri={avatarUrl} style={styles.avatarImage} />
+            <PopImage uri={meUserInfo?.avatarUrl ?? ''} style={styles.avatarImage} />
           </View>
           <Text style={styles.displayName}>
-            {displayName || (profileLoading ? t('persona.loading') : '...')}
+            {meUserInfo?.userName || (profileLoading ? t('persona.loading') : '...')}
           </Text>
         </Pressable>
 
@@ -255,10 +423,11 @@ export function MePage({ isActive = true }: MePageProps) {
         <InvitePage onBack={() => setShowInvite(false)} />
       ) : null}
 
-      <UserPersonaSheet
+      <MeUserInfoSheet
         open={showPersona}
+        info={meUserInfo}
         onClose={() => setShowPersona(false)}
-        fallbackAvatar={remoteAvatarUrl ?? undefined}
+        onUserNameSaved={handleUserNameSaved}
       />
     </>
   )
