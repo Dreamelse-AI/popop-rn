@@ -31,33 +31,65 @@ function getAllImages(dirPath) {
   return results;
 }
 
-async function main() {
-  console.log('Uploading images to OSS...\n');
-  let success = 0;
-  let failed = 0;
-
+function resolveOssKey(filePath) {
+  const absPath = path.resolve(filePath);
   for (const { dir, ossPath } of config.localAssetDirs) {
     const absDir = path.resolve(__dirname, dir);
-    console.log(`\nScanning: ${absDir}`);
-    const files = getAllImages(absDir);
-    console.log(`  Found ${files.length} image files\n`);
+    if (absPath === absDir || absPath.startsWith(`${absDir}${path.sep}`)) {
+      const relativePath = path.relative(absDir, absPath);
+      return `${config.ossPrefix}${ossPath}${relativePath}`;
+    }
+  }
+  return null;
+}
 
-    for (const filePath of files) {
-      const relativePath = path.relative(absDir, filePath);
-      const ossKey = `${config.ossPrefix}${ossPath}${relativePath}`;
-      try {
-        await client.put(ossKey, filePath);
-        console.log(`  OK ${path.basename(filePath)} -> ${config.cdnDomain}/${ossKey}`);
-        success++;
-      } catch (err) {
-        console.log(`  FAIL ${path.basename(filePath)}: ${err.message}`);
-        failed++;
-      }
+async function uploadFile(filePath) {
+  const ossKey = resolveOssKey(filePath);
+  if (!ossKey) {
+    console.log(`  SKIP ${path.basename(filePath)}: not under configured asset dirs`);
+    return 'skipped';
+  }
+
+  await client.put(ossKey, filePath);
+  console.log(`  OK ${path.basename(filePath)} -> ${config.cdnDomain}/${ossKey}`);
+  return 'success';
+}
+
+async function main() {
+  const filesFromArgs = process.argv.slice(2).map((f) => path.resolve(f));
+  let files = filesFromArgs;
+
+  if (files.length === 0) {
+    console.log('Uploading images to OSS...\n');
+    files = [];
+    for (const { dir } of config.localAssetDirs) {
+      const absDir = path.resolve(__dirname, dir);
+      console.log(`\nScanning: ${absDir}`);
+      const dirFiles = getAllImages(absDir);
+      console.log(`  Found ${dirFiles.length} image files\n`);
+      files.push(...dirFiles);
+    }
+  } else {
+    console.log(`Uploading ${files.length} image(s) to OSS...\n`);
+  }
+
+  let success = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const filePath of files) {
+    try {
+      const result = await uploadFile(filePath);
+      if (result === 'success') success++;
+      else skipped++;
+    } catch (err) {
+      console.log(`  FAIL ${path.basename(filePath)}: ${err.message}`);
+      failed++;
     }
   }
 
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`Upload complete! Success: ${success}, Failed: ${failed}\n`);
+  console.log(`Upload complete! Success: ${success}, Failed: ${failed}, Skipped: ${skipped}\n`);
 }
 
 main().catch((err) => {
