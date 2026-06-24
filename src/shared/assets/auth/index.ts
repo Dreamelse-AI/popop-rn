@@ -1,11 +1,11 @@
 // 登录模块素材统一导出
-import iconChecked from './checked.svg';
-import iconCheck from './check.svg';
-import iconChevronRight from './chevron-right.svg';
-import iconValidCircle from './valid-circle.svg';
-import iconClose from './icon-close.svg';
-import iconGlobe from './icon-globe.svg';
-import iconRequiredMark from './required-mark.svg';
+const iconChecked = require('./checked.svg');
+const iconCheck = require('./check.svg');
+const iconChevronRight = require('./chevron-right.svg');
+const iconValidCircle = require('./valid-circle.svg');
+const iconClose = require('./icon-close.svg');
+const iconGlobe = require('./icon-globe.svg');
+const iconRequiredMark = require('./required-mark.svg');
 import { userAvatarPlaceholder as avatarPlaceholder } from '../user-avatar';
 
 export const authAssets = {

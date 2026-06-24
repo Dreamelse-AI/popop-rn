@@ -1,20 +1,20 @@
 // 角色 / 消息页素材统一导出
 import { cdnImage } from '@/shared/lib/cdn';
-import iconMenu from './back.svg';
-import mascotEmpty from './popop-logo-grey.svg';
+const iconMenu = require('./back.svg');
+const mascotEmpty = require('./popop-logo-grey.svg');
 const sceneBanner = { uri: cdnImage('assets/character/character-banner.png') };
 const creationDraftCardEmptyPattern = { uri: cdnImage('assets/character/creation-draft-card-empty-pattern.png') };
-import tagPillBg from './character-rectangle.svg';
-import iconLocation from './location.svg';
-import iconPin from './dialog-pin.svg';
-import iconEndRelation from './icon-feedback.svg';
-import iconUnreadDot from './red-dot.svg';
-import iconActiveDot from './white-dot.svg';
-import avatar1 from './character-icon1.svg';
-import avatar2 from './character-icon2.svg';
-import avatar3 from './character-icon3.svg';
-import dialogBubbleAbove from './dialog-union.svg';
-import dialogBubbleBelow from './dialog-union2.svg';
+const tagPillBg = require('./character-rectangle.svg');
+const iconLocation = require('./location.svg');
+const iconPin = require('./dialog-pin.svg');
+const iconEndRelation = require('./icon-feedback.svg');
+const iconUnreadDot = require('./red-dot.svg');
+const iconActiveDot = require('./white-dot.svg');
+const avatar1 = require('./character-icon1.svg');
+const avatar2 = require('./character-icon2.svg');
+const avatar3 = require('./character-icon3.svg');
+const dialogBubbleAbove = require('./dialog-union.svg');
+const dialogBubbleBelow = require('./dialog-union2.svg');
 
 export const characterAssets = {
   iconMenu,

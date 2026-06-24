@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconShare from '@/shared/assets/character/main/character-main-share.svg'
+const IconShare = cdnImage('assets/character/main/character-main-share.png')
 
 import { ShareSheet } from './share-sheet'
 import { buildCharacterShareContent } from './share-types'
@@ -32,11 +34,7 @@ export function CharacterShareButton({
         accessibilityLabel="分享"
         accessibilityRole="button"
       >
-        <IconShare
-          width={22}
-          height={20}
-          color={iconTone === 'light' ? '#fff' : '#000'}
-        />
+        <Image source={{ uri: IconShare }} style={{width: 22, height: 20}} />
       </Pressable>
 
       <ShareSheet

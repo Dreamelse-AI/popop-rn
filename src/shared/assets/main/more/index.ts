@@ -1,7 +1,7 @@
 // 推荐-更多页素材统一导出
 import { cdnImage } from '@/shared/lib/cdn';
-import iconBack from './back.svg';
-import iconContent from './content.svg';
+const iconBack = require('./back.svg');
+const iconContent = require('./content.svg');
 const cardImage0 = cdnImage('assets/main/more/Frame 2117132555.png');
 const cardImage1 = cdnImage('assets/main/more/Frame 2117132555-1.png');
 const cardImage2 = cdnImage('assets/main/more/Frame 2117132555-2.png');

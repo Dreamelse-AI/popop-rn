@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import Svg, { Path } from 'react-native-svg'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import type { RootStackParamList } from '@/app/navigation'
 import { friendshipApi } from '@/features/friendship/api'
@@ -16,7 +17,7 @@ import { useFeedSearch } from '@/features/feed/search/hooks/use-feed-search'
 import { useDiscoverGrid } from '@/features/feed/search/hooks/use-discover-grid'
 import type { SearchChatItem, SearchStoryItem, DiscoverGridItem } from '@/features/feed/search/types'
 
-import IconSearchSolid from '@/shared/assets/feed/icon/icon-search-solid.svg'
+const IconSearchSolid = cdnImage('assets/feed/icon/icon-search-solid.png')
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const GRID_PADDING = 8
@@ -192,7 +193,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps) {
             />
             <View style={styles.divider} />
             <Pressable onPress={handleSearch} style={styles.searchIconButton} accessibilityLabel={t('search.search')}>
-              <IconSearchSolid width={24} height={24} />
+              <Image source={{ uri: IconSearchSolid }} style={{width: 24, height: 24}} />
             </Pressable>
           </View>
         </View>

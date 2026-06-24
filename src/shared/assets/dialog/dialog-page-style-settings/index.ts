@@ -1,14 +1,14 @@
 import { cdnImage } from '@/shared/lib/cdn';
-import add from './dialogPageStyleSettings-add.svg';
-import back from './dialogPageStyleSettings-back.svg';
-import blackBack from './dialogPageStyleSettings-blackBack.svg';
-import blackVector from './dialogPageStyleSettings-blackVector.svg';
-import close from './dialogPageStyleSettings-close.svg';
-import deleteIcon from './dialogPageStyleSettings-delete.svg';
-import downArrow from './dialogPageStyleSettings-downArrow.svg';
-import greyBack from './dialogPageStyleSettings-greyBack.svg';
-import selected from './dialogPageStyleSettings-selected.svg';
-import union from './dialogPageStyleSettings-union.svg';
+const add = require('./dialogPageStyleSettings-add.svg');
+const back = require('./dialogPageStyleSettings-back.svg');
+const blackBack = require('./dialogPageStyleSettings-blackBack.svg');
+const blackVector = require('./dialogPageStyleSettings-blackVector.svg');
+const close = require('./dialogPageStyleSettings-close.svg');
+const deleteIcon = require('./dialogPageStyleSettings-delete.svg');
+const downArrow = require('./dialogPageStyleSettings-downArrow.svg');
+const greyBack = require('./dialogPageStyleSettings-greyBack.svg');
+const selected = require('./dialogPageStyleSettings-selected.svg');
+const union = require('./dialogPageStyleSettings-union.svg');
 
 const tempImg1 = { uri: cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-tempImg1.png') };
 const tempImg2 = { uri: cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-tempImg2.png') };

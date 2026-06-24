@@ -3,10 +3,12 @@ import { View, Text, Pressable, StyleSheet, Modal } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { getLanguageOption, SELECTABLE_LANGUAGE_OPTIONS } from '../region-config'
 import { persistUiLanguage } from '@/i18n/ui-language-store'
+import { PopImage } from '@/shared/ui/pop-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconGlobe from '@/shared/assets/auth/icon-globe.svg'
-import IconChevronRight from '@/shared/assets/auth/chevron-right.svg'
-import IconChecked from '@/shared/assets/auth/checked.svg'
+const IconGlobe = cdnImage('assets/auth/icon-globe.png')
+const IconChevronRight = cdnImage('assets/auth/chevron-right.png')
+const IconChecked = cdnImage('assets/auth/checked.png')
 
 export function LanguageSelector() {
   const { i18n } = useTranslation()
@@ -27,10 +29,10 @@ export function LanguageSelector() {
         accessibilityLabel={`当前语言 ${selected.code}，点击切换`}
         accessibilityRole="button"
       >
-        <IconGlobe width={16} height={16} />
+        <PopImage uri={IconGlobe} style={{width: 16, height: 16}} />
         <Text style={styles.triggerText}>{selected.code}</Text>
         <View style={open && styles.chevronOpen}>
-          <IconChevronRight width={16} height={16} />
+          <PopImage uri={IconChevronRight} style={{width: 16, height: 16}} />
         </View>
       </Pressable>
 
@@ -54,7 +56,7 @@ export function LanguageSelector() {
                   <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                     {option.code}
                   </Text>
-                  {isSelected && <IconChecked width={16} height={16} />}
+                  {isSelected && <PopImage uri={IconChecked} style={{width: 16, height: 16}} />}
                 </Pressable>
               )
             })}

@@ -2,9 +2,11 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import type { useLogin } from '@/features/auth/hooks/use-login'
 import { AuthBottomSheet } from './auth-bottom-sheet'
+import { PopImage } from '@/shared/ui/pop-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconValidCircle from '@/shared/assets/auth/valid-circle.svg'
-import IconCheck from '@/shared/assets/auth/check.svg'
+const IconValidCircle = cdnImage('assets/auth/valid-circle.png')
+const IconCheck = cdnImage('assets/auth/check.png')
 
 type EmailModalProps = {
   loginHook: ReturnType<typeof useLogin>
@@ -13,9 +15,9 @@ type EmailModalProps = {
 function EmailValidIcon() {
   return (
     <View style={styles.validIcon}>
-      <IconValidCircle width={24} height={24} />
+      <PopImage uri={IconValidCircle} style={{width: 24, height: 24}} />
       <View style={styles.validCheckOverlay}>
-        <IconCheck width={20} height={20} />
+        <PopImage uri={IconCheck} style={{width: 20, height: 20}} />
       </View>
     </View>
   )

@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import type { TermsInfo } from '@/generated/arca_apiComponents'
 import type { useLogin } from '../hooks/use-login'
 import { AuthBottomSheet } from './auth-bottom-sheet'
-import IconChevronRight from '@/shared/assets/auth/chevron-right.svg'
+import { PopImage } from '@/shared/ui/pop-image'
+import { cdnImage } from '@/shared/lib/cdn'
+const IconChevronRight = cdnImage('assets/auth/chevron-right.png')
 
 type AgreeModalProps = {
   loginHook: ReturnType<typeof useLogin>
@@ -52,11 +54,11 @@ function AgreementRow({ checked, label, href, showChevron = false, onToggle }: A
             style={styles.rowChevron}
             accessibilityLabel={`View ${label}`}
           >
-            <IconChevronRight width={24} height={24} />
+            <PopImage uri={IconChevronRight} style={{width: 24, height: 24}} />
           </Pressable>
         ) : (
           <View style={styles.rowChevron} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <IconChevronRight width={24} height={24} />
+            <PopImage uri={IconChevronRight} style={{width: 24, height: 24}} />
           </View>
         )
       )}

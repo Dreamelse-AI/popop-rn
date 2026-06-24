@@ -1,7 +1,9 @@
 import { View, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
-import IconSearch from '@/shared/assets/feed/icon/Frame 2117132466-1.svg'
+const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png')
+const IconSearch = cdnImage('assets/feed/icon/Frame 2117132466-1.png')
 
 type TopNavBarProps = {
   onSearchPress: () => void
@@ -11,7 +13,7 @@ export function TopNavBar({ onSearchPress }: TopNavBarProps) {
   return (
     <View style={styles.container}>
       <View style={styles.logoWrapper}>
-        <LogoPopop width={220} height={30} />
+        <Image source={{ uri: LogoPopop }} style={{width: 190, height: 30}} />
       </View>
 
       <Pressable
@@ -20,7 +22,7 @@ export function TopNavBar({ onSearchPress }: TopNavBarProps) {
         accessibilityLabel="搜索"
         accessibilityRole="button"
       >
-        <IconSearch width={36} height={36} />
+        <Image source={{ uri: IconSearch }} style={{width: 36, height: 36}} />
       </Pressable>
     </View>
   )

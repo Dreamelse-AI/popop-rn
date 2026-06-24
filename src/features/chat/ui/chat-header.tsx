@@ -1,9 +1,10 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import IconBack from '@/shared/assets/dialog/dialog-topleft-back.svg'
-import IconMenu from '@/shared/assets/dialog/dialog-topright-back.svg'
 import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
+
+const IconBack = cdnImage('assets/dialog/dialog-topleft-back.png')
+const IconMenu = cdnImage('assets/dialog/dialog-topright-back.png')
 
 type ChatHeaderProps = {
   name: string
@@ -26,7 +27,7 @@ export function ChatHeader({
     <View style={[styles.container, { paddingTop: Math.max(10, insets.top) }]}>
       <View style={styles.left}>
         <Pressable onPress={onBack} style={styles.backButton} accessibilityLabel="返回">
-          <IconBack width={36} height={36} />
+          <Image source={{ uri: IconBack }} style={{width: 36, height: 36}} />
         </Pressable>
 
         <View style={styles.nameRow}>
@@ -41,7 +42,7 @@ export function ChatHeader({
       </View>
 
       <Pressable onPress={onMenuPress} style={styles.menuButton} accessibilityLabel="菜单">
-        <IconMenu width={36} height={36} />
+        <Image source={{ uri: IconMenu }} style={{width: 36, height: 36}} />
       </Pressable>
     </View>
   )

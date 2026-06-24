@@ -1,25 +1,25 @@
 // 角色聊天页素材统一导出
-import iconPlus from './dialog-plus.svg';
-import iconEmoji from './dialog-emoji.svg';
-import iconVoice from './dialog-voice.svg';
-import iconVoiceUnion from './dialog-voice-union.svg';
-import iconVoiceReceive from './dialog-message-voice-receive.svg';
-import iconVoiceSend from './dialog-message-voice-send.svg';
-import iconWaiting from './dialog-waiting.svg';
-import iconWarning from './dialog-warning.svg';
-import bubbleTailWhite from './dialog-pop-down-white.svg';
-import bubbleTailYellow from './dialog-pop-down-yellow.svg';
-import characterAvatarPlaceholder from './character-icon.svg';
-import iconBlackSend from './dialog-black-send.svg';
-import iconBlackEmoji from './dialog-black-emoji.svg';
-import iconKeyboard from './dialog-keyboard.svg';
-import iconTopLeftBack from './dialog-topleft-back.svg';
-import iconTopLeftTag from './dialog-topleft-tag.svg';
-import iconTopRightMenu from './dialog-topright-back.svg';
+const iconPlus = require('./dialog-plus.svg');
+const iconEmoji = require('./dialog-emoji.svg');
+const iconVoice = require('./dialog-voice.svg');
+const iconVoiceUnion = require('./dialog-voice-union.svg');
+const iconVoiceReceive = require('./dialog-message-voice-receive.svg');
+const iconVoiceSend = require('./dialog-message-voice-send.svg');
+const iconWaiting = require('./dialog-waiting.svg');
+const iconWarning = require('./dialog-warning.svg');
+const bubbleTailWhite = require('./dialog-pop-down-white.svg');
+const bubbleTailYellow = require('./dialog-pop-down-yellow.svg');
+const characterAvatarPlaceholder = require('./character-icon.svg');
+const iconBlackSend = require('./dialog-black-send.svg');
+const iconBlackEmoji = require('./dialog-black-emoji.svg');
+const iconKeyboard = require('./dialog-keyboard.svg');
+const iconTopLeftBack = require('./dialog-topleft-back.svg');
+const iconTopLeftTag = require('./dialog-topleft-tag.svg');
+const iconTopRightMenu = require('./dialog-topright-back.svg');
 import { cdnImage } from '@/shared/lib/cdn';
-import dialogSettingsOption from './dialogSettings-option.svg';
-import dialogSettingsRightBack from './dialogSettings-rightBack.svg';
-import dialogSettingsDownBack from './dialogSettings-downBack.svg';
+const dialogSettingsOption = require('./dialogSettings-option.svg');
+const dialogSettingsRightBack = require('./dialogSettings-rightBack.svg');
+const dialogSettingsDownBack = require('./dialogSettings-downBack.svg');
 const dialogSettingsTempIcon = { uri: cdnImage('assets/dialog/dialogSettings-tempIcon.png') };
 
 export const dialogAssets = {

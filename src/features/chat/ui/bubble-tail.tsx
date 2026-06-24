@@ -1,11 +1,13 @@
 import { View, StyleSheet } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
+import { Image } from 'expo-image'
 
 import type { BubbleTailVariant } from '../lib/chat-atmosphere-presets'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconBlackVector from '@/shared/assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-blackVector.svg'
-import IconTailYellow from '@/shared/assets/dialog/dialog-pop-down-yellow.svg'
-import IconTailWhite from '@/shared/assets/dialog/dialog-pop-down-white.svg'
+const IconBlackVector = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-blackVector.png')
+const IconTailYellow = cdnImage('assets/dialog/dialog-pop-down-yellow.png')
+const IconTailWhite = cdnImage('assets/dialog/dialog-pop-down-white.png')
 
 type BubbleTailProps = {
   variant: BubbleTailVariant
@@ -36,7 +38,7 @@ export function BubbleTail({ variant, side, style }: BubbleTailProps) {
   if (variant === 'black') {
     return (
       <View style={[styles.tail, positionStyle, mirrorStyle, style]}>
-        <IconBlackVector width={TAIL_WIDTH} height={9} />
+        <Image source={{ uri: IconBlackVector }} style={{width: TAIL_WIDTH, height: 9}} />
       </View>
     )
   }
@@ -44,7 +46,7 @@ export function BubbleTail({ variant, side, style }: BubbleTailProps) {
   if (variant === 'yellow') {
     return (
       <View style={[styles.tail, positionStyle, mirrorStyle, style]}>
-        <IconTailYellow width={TAIL_WIDTH} height={9} />
+        <Image source={{ uri: IconTailYellow }} style={{width: TAIL_WIDTH, height: 9}} />
       </View>
     )
   }
@@ -52,7 +54,7 @@ export function BubbleTail({ variant, side, style }: BubbleTailProps) {
   if (variant === 'white') {
     return (
       <View style={[styles.tail, positionStyle, mirrorStyle, style]}>
-        <IconTailWhite width={TAIL_WIDTH} height={9} />
+        <Image source={{ uri: IconTailWhite }} style={{width: TAIL_WIDTH, height: 9}} />
       </View>
     )
   }

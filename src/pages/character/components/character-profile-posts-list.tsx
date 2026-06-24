@@ -5,6 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   useWindowDimensions,
   type ListRenderItemInfo,
@@ -92,7 +93,7 @@ function GridCell({
 
       {cell.showMusicIcon ? (
         <View style={styles.musicIconWrap} pointerEvents="none">
-          <IconMusic width={16} height={16} />
+          <Image source={IconMusic} style={{width: 16, height: 16}} />
         </View>
       ) : null}
       </Pressable>

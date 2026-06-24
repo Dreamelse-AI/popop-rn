@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import type { RootStackParamList } from '@/app/navigation'
 import { useAddableCharacters } from '@/features/character/hooks/use-addable-characters'
@@ -14,8 +16,8 @@ import { SpinnerIcon } from '@/pages/character-creation/components/creation-icon
 import { showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
 
-import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
-import IconSearch from '@/shared/assets/character/add-character/icon-search.svg'
+const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconSearch = cdnImage('assets/character/add-character/icon-search.png')
 
 type AddCharacterTab = 'chat' | 'create'
 type Nav = NativeStackNavigationProp<RootStackParamList>
@@ -110,7 +112,7 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
           style={[styles.backButton, pageLocked && styles.disabled]}
           accessibilityLabel="返回"
         >
-          <IconBack width={36} height={36} />
+          <Image source={{ uri: IconBack }} style={{width: 36, height: 36}} />
         </Pressable>
 
         <View style={styles.tabsCenter}>
@@ -151,7 +153,7 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
         <>
           <View style={styles.searchBar}>
             <Pressable onPress={onOpenSearch} style={styles.searchButton}>
-              <IconSearch width={16} height={16} style={{ opacity: 0.3 }} />
+              <Image source={{ uri: IconSearch }} style={{width: 16, height: 16, opacity: 0.3}} />
               <Text style={styles.searchPlaceholder}>{t('character.searchPlaceholder')}</Text>
             </Pressable>
           </View>

@@ -1,13 +1,14 @@
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Image } from 'expo-image'
-
-import IconRequiredMark from '@/shared/assets/auth/required-mark.svg'
+import { cdnImage } from '@/shared/lib/cdn'
 import { authAssets } from '@/shared/assets/auth'
 import { PopImage } from '@/shared/ui/pop-image'
 import type { ProfileGender } from '../auth-types'
 import { AuthBottomSheet } from './auth-bottom-sheet'
 import { SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
+
+const IconRequiredMark = cdnImage('assets/auth/required-mark.png')
 
 export type ProfileSetupValues = {
   name: string
@@ -32,7 +33,7 @@ function FieldLabel({ label, required }: { label: string; required?: boolean }) 
   return (
     <View style={styles.fieldLabelRow}>
       <Text style={styles.fieldLabelText}>{label}</Text>
-      {required && <IconRequiredMark width={12} height={10} />}
+      {required && <Image source={{ uri: IconRequiredMark }} style={{width: 12, height: 10}} />}
     </View>
   )
 }

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
+const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
 
 type CharacterCreatePageProps = {
   onClose: () => void
@@ -15,7 +17,7 @@ export function CharacterCreatePage({ onClose }: CharacterCreatePageProps) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={onClose} style={styles.backButton} accessibilityLabel="뒤로가기">
-          <IconBack width={36} height={36} />
+          <Image source={{ uri: IconBack }} style={{width: 36, height: 36}} />
         </Pressable>
         <Text style={styles.headerTitle}>캐릭터 생성</Text>
         <Pressable style={styles.saveButton}>

@@ -1,18 +1,18 @@
 // 推荐页素材统一导出
-import iconSearch from './icon/Frame 2117132466-1.svg';
-import iconSearchSolid from './icon/icon-search-solid.svg';
-import iconClose from './icon/Frame 2117132466.svg';
-import iconLike from './icon/like 1.svg';
-import iconMusic from './icon/音乐 1.svg';
-import iconMoreImg from './icon/moreImg-icon.svg';
-import iconFlash from './icon/white_image-flash-1-Streamline-Plump.svg';
-import iconChat from './icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.svg';
-import iconCreate from './icon/Group 2117131456.svg';
-import iconSkull from './icon/black_interface_edit_skull_1_Streamline_Plump.svg';
-import iconChevron from './icon/back.svg';
-import iconUnreadRing from './icon/Ellipse 111367.svg';
-import logoPopop from './icon/Group 2117132529.svg';
-import promoCharacter from './icon/Frame 2117132547.svg';
+const iconSearch = require('./icon/Frame 2117132466-1.svg');
+const iconSearchSolid = require('./icon/icon-search-solid.svg');
+const iconClose = require('./icon/Frame 2117132466.svg');
+const iconLike = require('./icon/like 1.svg');
+const iconMusic = require('./icon/音乐 1.svg');
+const iconMoreImg = require('./icon/moreImg-icon.svg');
+const iconFlash = require('./icon/white_image-flash-1-Streamline-Plump.svg');
+const iconChat = require('./icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.svg');
+const iconCreate = require('./icon/Group 2117131456.png');
+const iconSkull = require('./icon/black_interface_edit_skull_1_Streamline_Plump.svg');
+const iconChevron = require('./icon/back.svg');
+const iconUnreadRing = require('./icon/Ellipse 111367.svg');
+const logoPopop = require('./icon/Group 2117132529.svg');
+const promoCharacter = require('./icon/Frame 2117132547.svg');
 
 import { cdnImage } from '@/shared/lib/cdn';
 

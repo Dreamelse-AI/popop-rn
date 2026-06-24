@@ -1,14 +1,16 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import { FEED_RECOMMENDED_PREVIEW_LIMIT } from '../../features/feed/lib/recommended-characters'
 import type { HomeFeedCharacter } from '@/features/feed/feed-types'
 import { FeedCharacterCard } from '@/features/feed/ui/feed-character-card'
 
-import IconChevronRight from '@/shared/assets/feed/icon/chevron-right.svg'
+const IconChevronRight = cdnImage('assets/feed/icon/chevron-right.png')
 
 type RecommendedSectionProps = {
   items: HomeFeedCharacter[]
@@ -33,7 +35,7 @@ export function RecommendedSection({ items, onCharacterClick }: RecommendedSecti
         <Pressable onPress={openRecommendedMore} style={styles.viewAllButton}>
           <Text style={styles.viewAllText}>{t('feed.viewAll')}</Text>
           <View style={styles.chevronWrapper}>
-            <IconChevronRight width={16} height={16} />
+            <Image source={{ uri: IconChevronRight }} style={{width: 16, height: 16}} />
           </View>
         </Pressable>
       </View>

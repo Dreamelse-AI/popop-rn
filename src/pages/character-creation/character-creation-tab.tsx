@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation';
+import { cdnImage } from '@/shared/lib/cdn';
 
 import { useCreationCharacters } from '@/features/character-creation/hooks/use-creation-characters';
 import type { CreationCharacterItem, CreationListTab } from '@/features/character-creation/types';
@@ -15,7 +17,7 @@ import { CreationNewCard } from './components/creation-new-card';
 import { CreationPostDynamicSheet } from './components/creation-post-dynamic-sheet';
 import { CreationTopTabs } from './components/creation-top-tabs';
 
-import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg';
+const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png');
 
 type CharacterCreationTabProps = {
   isActive?: boolean;
@@ -75,7 +77,7 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
   return (
     <View style={styles.container}>
       <View style={styles.logoBar}>
-        <LogoPopop width={190} height={30} />
+        <Image source={{ uri: LogoPopop }} style={{width: 190, height: 30}} />
       </View>
 
       {isGloballyEmpty ? (

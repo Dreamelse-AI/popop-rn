@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  View,
+import { View,
   Text,
   Pressable,
   ScrollView,
@@ -9,23 +8,24 @@ import {
   Animated,
   useWindowDimensions,
   type NativeSyntheticEvent,
-  type NativeScrollEvent,
-} from 'react-native'
+  type NativeScrollEvent } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import type { CharacterPostView } from '@/features/post/post-mapper'
 import { formatCharacterProfilePostTime, postReactionApi, usePostBgmPlayer } from '@/features/post'
 import { characterMainAssets } from '@/shared/assets/character/main'
 import { PopImage } from '@/shared/ui/pop-image'
 
-import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
+const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconMusic = cdnImage('assets/character/main/character-music.png')
 
 import type { CharacterProfileCellAnchor } from './character-profile-posts-list'
 
 const HEADER_HEIGHT = 56
 const BGM_SPIN_DURATION_MS = 3000
-const IconMusic = characterMainAssets.iconMusic
 
 type CharacterProfilePostsOverlayProps = {
   characterName: string
@@ -65,7 +65,7 @@ function SpinningMusicIcon({ spinning }: { spinning: boolean }) {
 
   return (
     <Animated.View style={{ transform: [{ rotate }] }}>
-      <IconMusic width={16} height={16} />
+      <Image source={{ uri: IconMusic }} style={{width: 16, height: 16}} />
     </Animated.View>
   )
 }
@@ -308,7 +308,7 @@ export function CharacterProfilePostsOverlay({
     <View style={[styles.overlay, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={handleClose} style={styles.backButton} accessibilityLabel="返回">
-          <IconBack width={36} height={36} />
+          <Image source={{ uri: IconBack }} style={{width: 36, height: 36}} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>{characterName}</Text>
       </View>

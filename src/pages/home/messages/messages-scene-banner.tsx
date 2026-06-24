@@ -2,9 +2,9 @@ import { View, Text, StyleSheet } from 'react-native'
 
 import { cdnImage } from '@/shared/lib/cdn'
 const SceneBannerBg = { uri: cdnImage('assets/character/character-banner.png') }
-import TagPillBg from '@/shared/assets/character/character-rectangle.svg'
-import IconLocation from '@/shared/assets/character/location.svg'
-import IconActiveDot from '@/shared/assets/character/white-dot.svg'
+const TagPillBg = cdnImage('assets/character/character-rectangle.png')
+const IconLocation = cdnImage('assets/character/location.png')
+const IconActiveDot = cdnImage('assets/character/white-dot.png')
 
 import type { MessageScene } from './types'
 import { Image } from 'expo-image'
@@ -20,7 +20,7 @@ export function MessagesSceneBanner({ scene }: MessagesSceneBannerProps) {
       <View style={styles.gradientOverlay} />
 
       <View style={styles.tagContainer}>
-        <TagPillBg width={67} height={24} />
+        <Image source={{ uri: TagPillBg }} style={{width: 67, height: 24}} />
         <Text style={styles.tagText}>{scene.tag}</Text>
       </View>
 
@@ -30,13 +30,13 @@ export function MessagesSceneBanner({ scene }: MessagesSceneBannerProps) {
             <Text style={[styles.characterName, !character.active && styles.characterNameInactive]}>
               {character.name}
             </Text>
-            {character.active && <IconActiveDot width={4} height={4} />}
+            {character.active && <Image source={{ uri: IconActiveDot }} style={{width: 4, height: 4}} />}
           </View>
         ))}
       </View>
 
       <View style={styles.locationRow}>
-        <IconLocation width={12} height={12} />
+        <Image source={{ uri: IconLocation }} style={{width: 12, height: 12}} />
         <Text style={styles.locationText}>{scene.location}</Text>
       </View>
     </View>

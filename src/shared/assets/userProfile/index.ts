@@ -1,7 +1,7 @@
-import userProfileAdd from './userProfile-add.svg';
-import userProfileClose from './userProfile-close.svg';
-import userProfileDefault from './userProfile-default.svg';
-import userProfileEdit from './userProfile-edit.svg';
+const userProfileAdd = require('./userProfile-add.svg');
+const userProfileClose = require('./userProfile-close.svg');
+const userProfileDefault = require('./userProfile-default.svg');
+const userProfileEdit = require('./userProfile-edit.svg');
 
 export const userProfileAssets = {
   add: userProfileAdd,

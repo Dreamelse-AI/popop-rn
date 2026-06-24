@@ -1,12 +1,12 @@
 // 角色主页素材统一导出（Figma 625:5346）
 import { cdnImage } from '@/shared/lib/cdn';
-import iconClose from './character-close.svg';
-import iconShare from './character-main-share.svg';
-import iconGallery from './character-union.svg';
-import iconMusic from './character-music.svg';
-import avatarRing from './character-avatar-while-circle.svg';
-import avatarGreyCircle from './character-avatar-grey-circle.svg';
-import badgeTail from './character-avatar-like-down.svg';
+const iconClose = require('./character-close.svg');
+const iconShare = require('./character-main-share.svg');
+const iconGallery = require('./character-union.svg');
+const iconMusic = require('./character-music.svg');
+const avatarRing = require('./character-avatar-while-circle.svg');
+const avatarGreyCircle = require('./character-avatar-grey-circle.svg');
+const badgeTail = require('./character-avatar-like-down.svg');
 
 const avatarMask = { uri: cdnImage('assets/character/main/Rectangle 346243755.png') };
 const gridImage0 = { uri: cdnImage('assets/character/main/Frame 2117132557.png') };

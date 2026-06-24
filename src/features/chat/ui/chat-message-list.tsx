@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react'
 import { View, Text, Pressable, FlatList, StyleSheet, type ListRenderItemInfo } from 'react-native'
 import { Image, type ImageLoadEventData } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
+import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 
 import type { BubbleStyleTokens } from '../lib/chat-atmosphere-presets'
 import { getBubbleStyleTokens } from '../lib/chat-atmosphere-presets'
@@ -11,11 +13,10 @@ import { BubbleTail } from './bubble-tail'
 import { ChatTypingIndicator } from './chat-typing-indicator'
 import { ShareCardBubble } from './share-card-bubble'
 
-import IconVoiceReceive from '@/shared/assets/dialog/dialog-message-voice-receive.svg'
-import IconVoiceSend from '@/shared/assets/dialog/dialog-message-voice-send.svg'
-import IconWaiting from '@/shared/assets/dialog/dialog-waiting.svg'
-import IconWarning from '@/shared/assets/dialog/dialog-warning.svg'
-import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
+const IconVoiceReceive = cdnImage('assets/dialog/dialog-message-voice-receive.png')
+const IconVoiceSend = cdnImage('assets/dialog/dialog-message-voice-send.png')
+const IconWaiting = cdnImage('assets/dialog/dialog-waiting.png')
+const IconWarning = cdnImage('assets/dialog/dialog-warning.png')
 
 const CHAT_IMAGE_MAX_WIDTH = 240
 const CHAT_IMAGE_MAX_HEIGHT = 256
@@ -263,10 +264,10 @@ function UserTextBubble({ text, status, bubbleStyle, onFailedPress }: { text: st
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <IconWaiting width={24} height={24} />}
+      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
-          <IconWarning width={24} height={24} />
+          <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
         </Pressable>
       )}
       <View style={[styles.sentBubble, { backgroundColor: sent.bgColor }]}>
@@ -296,10 +297,10 @@ function UserEmojiBubble({ url, status, bubbleStyle, onFailedPress }: { url: str
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <IconWaiting width={24} height={24} />}
+      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
-          <IconWarning width={24} height={24} />
+          <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
         </Pressable>
       )}
       <View style={[styles.sentBubble, styles.emojiBubble, { backgroundColor: sent.bgColor }]}>
@@ -353,10 +354,10 @@ function UserImageBubble({
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <IconWaiting width={24} height={24} />}
+      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
-          <IconWarning width={24} height={24} />
+          <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
         </Pressable>
       )}
       <View style={[styles.sentBubble, styles.imageBubble, { backgroundColor: sent.bgColor }]}>
@@ -376,7 +377,7 @@ function CharacterVoiceBubble({ avatar, duration, isPlaying, bubbleStyle, onAvat
       </Pressable>
       <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
         <View style={styles.voiceContent}>
-          <IconVoiceReceive width={20} height={20} />
+          <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
           <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
         </View>
         <BubbleTail variant={received.tail} side="left" />
@@ -389,15 +390,15 @@ function UserVoiceBubble({ duration, status, bubbleStyle, onPress, onLongPress, 
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <IconWaiting width={24} height={24} />}
+      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
-          <IconWarning width={24} height={24} />
+          <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
         </Pressable>
       )}
       <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.sentBubble, { backgroundColor: sent.bgColor }]}>
         <View style={[styles.voiceContent, { flexDirection: 'row-reverse' }]}>
-          <IconVoiceSend width={20} height={20} />
+          <Image source={{ uri: IconVoiceSend }} style={{width: 20, height: 20}} />
           <Text style={[styles.voiceDuration, { color: '#575757' }]}>{duration}"</Text>
         </View>
         <BubbleTail variant={sent.tail} side="right" />

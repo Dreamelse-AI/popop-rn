@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet, ScrollView, TextInput } from 'react-native'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -22,11 +23,12 @@ import { InvitePage } from './invite-page'
 import { useLongPress } from './messages/use-long-press'
 import { persistUiLanguage } from '@/i18n/ui-language-store'
 import i18n, { LANGUAGE_OPTIONS } from '@/i18n'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
-import IconLogout from '@/shared/assets/me/icon-logout.svg'
-import IconAbout from '@/shared/assets/me/icon-about.svg'
-import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
+const IconChevron = cdnImage('assets/me/icon-chevron-right.png')
+const IconLogout = cdnImage('assets/me/icon-logout.png')
+const IconAbout = cdnImage('assets/me/icon-about.png')
+const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png')
 
 type MeUserInfo = {
   userName: string
@@ -305,7 +307,7 @@ export function MePage({ isActive = true }: MePageProps) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logoHeader}>
-          <LogoPopop width={190} height={30} />
+          <Image source={{ uri: LogoPopop }} style={{width: 190, height: 30}} />
         </View>
 
         <Pressable style={styles.profileSection} onPress={() => setShowPersona(true)}>
@@ -335,19 +337,19 @@ export function MePage({ isActive = true }: MePageProps) {
               {item.emoji ? (
                 <Text style={styles.menuEmoji}>{item.emoji}</Text>
               ) : (
-                <IconAbout width={20} height={12} />
+                <Image source={{ uri: IconAbout }} style={{width: 20, height: 12}} />
               )}
               <Text style={styles.menuLabel}>{item.label}</Text>
               {item.trailing ? (
                 <Text style={styles.menuTrailingText}>{item.trailing}</Text>
               ) : null}
-              <IconChevron width={24} height={24} />
+              <Image source={{ uri: IconChevron }} style={{width: 24, height: 24}} />
             </Pressable>
           ))}
 
           <Pressable style={styles.logoutRow} onPress={() => setShowLogoutModal(true)}>
             <Text style={styles.logoutText}>{t('me.logout')}</Text>
-            <IconLogout width={16} height={16} />
+            <Image source={{ uri: IconLogout }} style={{width: 16, height: 16}} />
           </Pressable>
         </View>
       </ScrollView>

@@ -1,12 +1,12 @@
 // 添加角色页素材（Figma: 101:34877 / 1110:13392）
-import iconBack from './icon-back.svg';
-import iconSearch from './icon-search.svg';
-import characterAddCreateBack from './characterAddCreate-back.svg';
-import characterAddCreateCheck from './characterAddCreate-check.svg';
-import characterAddCreateDefaultImage from './characterAddCreate-defaultImage.svg';
-import characterAddCreateGreyHeart from './characterAddCreate-greyHeart.svg';
-import characterAddCreateRedRequired from './characterAddCreate-red*.svg';
-import characterAddCreateRightGreyArrow from './characterAddCreate-rightGreyArrow.svg';
+const iconBack = require('./icon-back.svg');
+const iconSearch = require('./icon-search.svg');
+const characterAddCreateBack = require('./characterAddCreate-back.svg');
+const characterAddCreateCheck = require('./characterAddCreate-check.svg');
+const characterAddCreateDefaultImage = require('./characterAddCreate-defaultImage.svg');
+const characterAddCreateGreyHeart = require('./characterAddCreate-greyHeart.svg');
+const characterAddCreateRedRequired = require('./characterAddCreate-red*.svg');
+const characterAddCreateRightGreyArrow = require('./characterAddCreate-rightGreyArrow.svg');
 
 export const addCharacterAssets = {
   iconBack,

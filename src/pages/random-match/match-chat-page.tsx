@@ -1,19 +1,21 @@
 import { useEffect, useState, useCallback, type ComponentType } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 import Svg, { Path } from 'react-native-svg'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconClose from '@/shared/assets/random-match/icon-close.svg'
-import IconShuffle from '@/shared/assets/random-match/icon-shuffle.svg'
-import IconPhoto from '@/shared/assets/random-match/icon-photo.svg'
-import IconSend from '@/shared/assets/random-match/icon-send.svg'
-import IconSendActive from '@/shared/assets/random-match/icon-send-active.svg'
-import IconMic from '@/shared/assets/random-match/icon-mic.svg'
-import IconMicWhite from '@/shared/assets/random-match/icon-mic-white.svg'
+const IconClose = cdnImage('assets/random-match/icon-close.png')
+const IconShuffle = cdnImage('assets/random-match/icon-shuffle.png')
+const IconPhoto = cdnImage('assets/random-match/icon-photo.png')
+const IconSend = cdnImage('assets/random-match/icon-send.png')
+const IconSendActive = cdnImage('assets/random-match/icon-send-active.png')
+const IconMic = cdnImage('assets/random-match/icon-mic.png')
+const IconMicWhite = cdnImage('assets/random-match/icon-mic-white.png')
 
 import type { PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents'
 import {
@@ -49,9 +51,11 @@ const GENDER_OPTIONS = [
 function TemplateOverlay({ style }: { style: (typeof MATCH_TEMPLATES)[MatchTemplate] }) {
   if (!style.overlayImage) return null
   if (style.overlayMode === 'cover') {
+    const img = style.overlayImage
     return (
       <PopImage
-        source={style.overlayImage as number}
+        uri={typeof img === 'string' ? img : undefined}
+        source={typeof img === 'string' ? undefined : (img as { uri: string })}
         style={styles.templateOverlayCover}
         contentFit="cover"
       />
@@ -259,7 +263,7 @@ export function MatchChatPage({
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => setShowExitConfirm(true)} style={styles.headerButton}>
-          <IconClose width={36} height={36} />
+          <Image source={{ uri: IconClose }} style={{width: 36, height: 36}} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('randomMatch.title')}</Text>
         <View style={styles.headerRight}>
@@ -277,7 +281,7 @@ export function MatchChatPage({
               <Text style={styles.shufflePriceEmoji}>🧊</Text>
               <Text style={styles.shufflePriceText}>{randomMatchCost.label}</Text>
             </View>
-            <IconShuffle width={20} height={20} />
+            <Image source={{ uri: IconShuffle }} style={{width: 20, height: 20}} />
           </Pressable>
         </View>
       </View>
@@ -354,7 +358,7 @@ export function MatchChatPage({
               onPress={() => void handlePickImage()}
               disabled={imageUploading}
             >
-              <IconPhoto width={36} height={36} />
+              <Image source={{ uri: IconPhoto }} style={{width: 36, height: 36}} />
             </Pressable>
             <View style={styles.rightActions}>
               <Pressable
@@ -363,9 +367,9 @@ export function MatchChatPage({
                 style={[styles.micButton, voiceActive && styles.micButtonActive]}
               >
                 {voiceActive ? (
-                  <IconMicWhite width={36} height={36} />
+                  <Image source={{ uri: IconMicWhite }} style={{width: 36, height: 36}} />
                 ) : (
-                  <IconMic width={36} height={36} />
+                  <Image source={{ uri: IconMic }} style={{width: 36, height: 36}} />
                 )}
               </Pressable>
               <Pressable
@@ -374,9 +378,9 @@ export function MatchChatPage({
                 style={styles.sendButton}
               >
                 {!isSending && (inputText.trim() || sentImageUrl) ? (
-                  <IconSendActive width={36} height={36} />
+                  <Image source={{ uri: IconSendActive }} style={{width: 36, height: 36}} />
                 ) : (
-                  <IconSend width={36} height={36} />
+                  <Image source={{ uri: IconSend }} style={{width: 36, height: 36}} />
                 )}
               </Pressable>
             </View>
