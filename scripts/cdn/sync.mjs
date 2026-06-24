@@ -75,11 +75,12 @@ async function main() {
   console.log('[cdn:sync] Compressing...');
   execSync('node scripts/compress-assets.mjs', { cwd: ROOT, stdio: 'inherit' });
 
-  // Recompute hashes after compression
+  // Recompute hashes after compression and stage the compressed files
   for (const f of changed) {
     const rel = path.relative(assetsDir, f);
     if (fs.existsSync(f)) {
       manifest[rel] = getFileHash(f);
+      execSync(`git add "${f}"`, { cwd: ROOT });
     }
   }
 
