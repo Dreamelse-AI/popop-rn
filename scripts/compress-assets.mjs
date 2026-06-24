@@ -74,11 +74,41 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
 }
 
-async function main() {
-  console.log('Compressing images in src/shared/assets...\n');
+async function compressFile(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const basename = path.basename(filePath);
 
+  if (SKIP_FILES.includes(basename)) {
+    return { skipped: true, basename };
+  }
+
+  let result;
+  if (ext === '.png') {
+    result = await compressPng(filePath);
+    result.type = 'png';
+  } else if (ext === '.jpg' || ext === '.jpeg') {
+    result = await compressJpg(filePath);
+    result.type = 'jpg';
+  } else if (ext === '.svg') {
+    result = compressSvg(filePath);
+    result.type = 'svg';
+  } else {
+    return { skipped: true, basename };
+  }
+
+  return { skipped: false, basename, ...result };
+}
+
+async function main() {
+  const filesFromArgs = process.argv.slice(2).map((f) => path.resolve(f));
   const absDir = path.resolve(ROOT, ASSET_DIR);
-  const files = getAllFiles(absDir);
+  const files = filesFromArgs.length > 0 ? filesFromArgs : getAllFiles(absDir);
+
+  if (filesFromArgs.length > 0) {
+    console.log(`Compressing ${files.length} image(s)...\n`);
+  } else {
+    console.log('Compressing images in src/shared/assets...\n');
+  }
 
   let totalOriginal = 0;
   let totalNew = 0;
@@ -87,38 +117,25 @@ async function main() {
   let skippedCount = 0;
 
   for (const filePath of files) {
-    const ext = path.extname(filePath).toLowerCase();
-    const basename = path.basename(filePath);
-
-    if (SKIP_FILES.includes(basename)) {
-      skippedCount++;
-      continue;
-    }
-
     try {
-      let result;
-      if (ext === '.png') {
-        result = await compressPng(filePath);
-        pngCount++;
-      } else if (ext === '.jpg' || ext === '.jpeg') {
-        result = await compressJpg(filePath);
-        pngCount++;
-      } else if (ext === '.svg') {
-        result = compressSvg(filePath);
-        svgCount++;
-      } else {
+      const result = await compressFile(filePath);
+      if (result.skipped) {
+        skippedCount++;
         continue;
       }
+
+      if (result.type === 'svg') svgCount++;
+      else pngCount++;
 
       totalOriginal += result.originalSize;
       totalNew += result.newSize;
 
       if (result.saved) {
         const pct = ((1 - result.newSize / result.originalSize) * 100).toFixed(1);
-        console.log(`  ✓ ${basename}: ${formatBytes(result.originalSize)} → ${formatBytes(result.newSize)} (-${pct}%)`);
+        console.log(`  ✓ ${result.basename}: ${formatBytes(result.originalSize)} → ${formatBytes(result.newSize)} (-${pct}%)`);
       }
     } catch (err) {
-      console.log(`  ✗ ${basename}: ${err.message}`);
+      console.log(`  ✗ ${path.basename(filePath)}: ${err.message}`);
     }
   }
 

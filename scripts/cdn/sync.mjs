@@ -2,7 +2,7 @@
  * Pre-push: compress new/changed images and upload to CDN.
  * Tracks uploaded files via a manifest to skip unchanged ones (incremental).
  */
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -58,22 +58,36 @@ async function main() {
   const changed = allImages.filter((f) => {
     const hash = getFileHash(f);
     const rel = path.relative(assetsDir, f);
-    if (manifest[rel] === hash) return false;
-    manifest[rel] = hash;
-    return true;
+    return manifest[rel] !== hash;
   });
 
   if (changed.length === 0) {
     console.log('[cdn:sync] No new or changed images. Skipping.');
-    saveManifest(manifest);
     return;
   }
 
-  console.log(`[cdn:sync] ${changed.length} new/changed images detected.`);
+  console.log(`[cdn:sync] ${changed.length} new/changed image(s) detected.`);
 
-  // Upload
-  console.log('[cdn:sync] Uploading to CDN...');
-  execSync('node scripts/cdn/upload.mjs', { cwd: ROOT, stdio: 'inherit' });
+  console.log('[cdn:sync] Compressing changed files...');
+  execFileSync('node', ['scripts/compress-assets.mjs', ...changed], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+
+  console.log('[cdn:sync] Uploading changed files...');
+  execFileSync('node', ['scripts/cdn/upload.mjs', ...changed], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+
+  for (const f of changed) {
+    const rel = path.relative(assetsDir, f);
+    if (fs.existsSync(f)) {
+      manifest[rel] = getFileHash(f);
+    } else {
+      delete manifest[rel];
+    }
+  }
 
   saveManifest(manifest);
   console.log('[cdn:sync] Done!');
