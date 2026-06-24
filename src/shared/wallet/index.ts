@@ -1,4 +1,12 @@
 export { refreshWallet, useWalletStore } from './wallet-store';
+export {
+  refreshChargePoints,
+  useChargePointsStore,
+  useChargePointDisplay,
+  useChargePointPrice,
+  getChargePointPrice,
+} from './charge-points-store';
+export type { ChargePointScene } from './charge-points-store';
 export { createRechargeOrder, verifyRechargeOrder } from './recharge-api';
 export { runPaidAction } from './run-paid-action';
 export type { PaidActionSource, RunPaidActionOptions } from './run-paid-action';

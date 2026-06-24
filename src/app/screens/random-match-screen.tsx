@@ -3,7 +3,6 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation'
 import type { PhoneMessageOutput } from '@/generated/arca_apiComponents'
-import { RandomMatchPage } from '@/pages/random-match/random-match-page'
 import { MatchingPage } from '@/pages/random-match/matching-page'
 import { MatchChatPage } from '@/pages/random-match/match-chat-page'
 
@@ -15,32 +14,16 @@ type MatchState = {
   greetingMessages: PhoneMessageOutput[]
 }
 
-type Phase = 'setup' | 'matching' | 'chat'
+type Phase = 'matching' | 'chat'
 
 export function RandomMatchScreen() {
   const navigation = useNavigation<Nav>()
-  const [phase, setPhase] = useState<Phase>('setup')
+  const [phase, setPhase] = useState<Phase>('matching')
   const [matchState, setMatchState] = useState<MatchState | null>(null)
-
-  const handleBack = useCallback(() => {
-    navigation.goBack()
-  }, [navigation])
-
-  const handleStartMatching = useCallback(() => {
-    setPhase('matching')
-  }, [])
 
   const handleMatchSuccess = useCallback((state: MatchState) => {
     setMatchState(state)
     setPhase('chat')
-  }, [])
-
-  const handleMatchFailed = useCallback(() => {
-    setPhase('setup')
-  }, [])
-
-  const handleAdjustFilters = useCallback(() => {
-    setPhase('setup')
   }, [])
 
   const handleExit = useCallback(() => {
@@ -51,16 +34,6 @@ export function RandomMatchScreen() {
     setMatchState(null)
     setPhase('matching')
   }, [])
-
-  if (phase === 'matching') {
-    return (
-      <MatchingPage
-        onMatchSuccess={handleMatchSuccess}
-        onMatchFailed={handleMatchFailed}
-        onAdjustFilters={handleAdjustFilters}
-      />
-    )
-  }
 
   if (phase === 'chat' && matchState) {
     return (
@@ -75,9 +48,9 @@ export function RandomMatchScreen() {
   }
 
   return (
-    <RandomMatchPage
-      onBack={handleBack}
-      onStartMatching={handleStartMatching}
+    <MatchingPage
+      onMatchSuccess={handleMatchSuccess}
+      onExit={handleExit}
     />
   )
 }

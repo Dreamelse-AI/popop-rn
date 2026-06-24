@@ -143,4 +143,4 @@ PC 端代码（`apps/pc/`）不迁移。
 
 - **Bundle ID**: `com.popop.app`
 - **Scheme**: `popop`
-- **API Base URL**: `https://i18n-api.imaginewithu.com`（可通过环境变量 `API_BASE_URL` 覆盖）
+- **API Base URL**: `https://api.popop.dev`（可通过环境变量 `API_BASE_URL` 覆盖）

@@ -183,7 +183,12 @@
     "adjustFilters": "Adjust filters",
     "myTags": "#Anonymous",
     "editTitle": "Anonymous Character Intro",
-    "addTagPlaceholder": "Add a tag"
+    "addTagPlaceholder": "Add a tag",
+    "voiceListening": "Listening...",
+    "voiceProcessing": "Recognizing...",
+    "voiceRequesting": "Requesting mic permission...",
+    "voiceNoSpeech": "No speech detected, please retry",
+    "voicePermissionDenied": "Cannot access microphone"
   },
   "history": {
     "back": "Back",

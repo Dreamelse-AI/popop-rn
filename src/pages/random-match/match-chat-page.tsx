@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, type ComponentType } from 'react'
-import { View, Text, TextInput, Pressable, Modal, StyleSheet } from 'react-native'
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
@@ -14,27 +14,23 @@ import IconSend from '@/shared/assets/random-match/icon-send.svg'
 import IconSendActive from '@/shared/assets/random-match/icon-send-active.svg'
 import IconMic from '@/shared/assets/random-match/icon-mic.svg'
 import IconMicWhite from '@/shared/assets/random-match/icon-mic-white.svg'
-import IconEdit from '@/shared/assets/random-match/icon-edit.svg'
 
 import type { PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents'
 import {
   addFriendFromAnonymousChat,
-  getMyAnonymousTags,
   sendMessageToAnonymousCharacter,
-  setMyAnonymousTags,
 } from '@/generated/arca_api'
 import { ApiError } from '@/shared/api/api-errors'
-import { showGlobalToast } from '@/shared/wallet'
+import { runPaidAction, showGlobalToast, useChargePointDisplay, refreshChargePoints } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
-import { useVoiceRecorder } from '@/features/chat/hooks/use-voice-recorder'
-import { VoiceRecordingBanner } from '@/features/chat/ui/chat-input-bar'
 import {
   getImageUploadErrorMessage,
   pickAndUploadImages,
 } from '@/features/chat/lib/pick-and-upload-images'
 
 import { MATCH_TEMPLATES, type MatchTemplate } from './match-templates'
-import { getMatchPreference, savePreference, MOODS } from './random-match-page'
+import { getMatchPreference, saveMatchGender, type MatchGender } from './match-preference'
+import { useMatchVoiceRecorder } from './use-match-voice-recorder'
 
 function resolveTemplate(emotion?: string): MatchTemplate {
   if (emotion === 'heartbeat') return 'heartbeat'
@@ -47,7 +43,7 @@ const GENDER_OPTIONS = [
   { emoji: '☺️', labelKey: 'randomMatch.genderNoLimit', value: null },
   { emoji: '👩', labelKey: 'randomMatch.genderFemale', value: 'female' },
   { emoji: '👨', labelKey: 'randomMatch.genderMale', value: 'male' },
-  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'non-human' },
+  { emoji: '👾', labelKey: 'randomMatch.genderNonHuman', value: 'other' },
 ] as const
 
 function TemplateOverlay({ style }: { style: (typeof MATCH_TEMPLATES)[MatchTemplate] }) {
@@ -94,32 +90,23 @@ export function MatchChatPage({
   const [isSending, setIsSending] = useState(false)
   const [template, setTemplate] = useState<MatchTemplate>('default')
   const [showExitConfirm, setShowExitConfirm] = useState(false)
-  const [genderFilter, setGenderFilter] = useState<string | null>(null)
+  const [genderFilter, setGenderFilter] = useState<MatchGender>(() => getMatchPreference().gender)
   const [genderMenuOpen, setGenderMenuOpen] = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
   const [sentImageUrl, setSentImageUrl] = useState('')
-
-  const [myTags, setMyTags] = useState<string[]>(() => getMatchPreference().tags)
-  const [myEmoji, setMyEmoji] = useState<string>(() => getMatchPreference().emoji)
-  const [showEditPanel, setShowEditPanel] = useState(false)
-  const [editMoodIndex, setEditMoodIndex] = useState(() => {
-    const pref = getMatchPreference()
-    const idx = MOODS.findIndex(m => m.emoji === pref.emoji)
-    return idx >= 0 ? idx : 1
-  })
-  const [editTagInput, setEditTagInput] = useState('')
-
   const [showFriendInvite, setShowFriendInvite] = useState(false)
 
-  const voiceRecorder = useVoiceRecorder()
+  const voiceRecorder = useMatchVoiceRecorder()
+  const randomMatchCost = useChargePointDisplay('random_match')
 
-  const myTagsDisplay = myTags.length > 0
-    ? `${myEmoji} ${myTags.map(tag => `#${tag}`).join(' ')}`
-    : `${myEmoji} #匿名`
+  const currentGenderLabel = (() => {
+    const option = GENDER_OPTIONS.find(o => o.value === genderFilter)
+    return option ? t(option.labelKey) : t('randomMatch.genderNoLimit')
+  })()
 
-  const currentGenderLabel = GENDER_OPTIONS.find(o => o.value === genderFilter)?.labelKey
-    ? t(GENDER_OPTIONS.find(o => o.value === genderFilter)!.labelKey)
-    : t('randomMatch.genderMale')
+  useEffect(() => {
+    void refreshChargePoints()
+  }, [])
 
   useEffect(() => {
     const greeting = greetingMessages?.[0]
@@ -130,14 +117,6 @@ export function MatchChatPage({
       }
     }
   }, [greetingMessages])
-
-  useEffect(() => {
-    void getMyAnonymousTags()
-      .then(resp => {
-        if (resp.tags && resp.tags.length > 0) setMyTags(resp.tags)
-      })
-      .catch(() => { /* ignore */ })
-  }, [])
 
   const handleSend = useCallback(async () => {
     const value = inputText.trim()
@@ -160,10 +139,17 @@ export function MatchChatPage({
     }
 
     try {
-      const resp = await sendMessageToAnonymousCharacter({
-        chat_session_id: chatSessionId,
-        messages,
-      })
+      const resp = await runPaidAction(
+        () => sendMessageToAnonymousCharacter({ chat_session_id: chatSessionId, messages }),
+        {
+          source: 'anonymous_chat_send',
+          onInsufficientBalance: () => {
+            setInputText(value)
+            setSentImageUrl(imageUrl)
+          },
+        },
+      )
+      if (resp === null) return
       const replies = resp.character_messages ?? []
       setCharacterMessage('')
       const lastTextReply = [...replies].reverse().find(m => m.text?.text)
@@ -238,43 +224,34 @@ export function MatchChatPage({
     setShowFriendInvite(false)
   }, [])
 
-  const handleVoiceEnd = useCallback(async () => {
-    const result = await voiceRecorder.finishRecording()
-    if (result?.transcript) {
-      setInputText(prev => prev + result.transcript)
-    }
+  const handleVoiceStart = useCallback(() => {
+    void voiceRecorder.startRecording()
   }, [voiceRecorder])
 
-  const handleOpenEdit = useCallback(() => {
-    setEditMoodIndex(MOODS.findIndex(m => m.emoji === myEmoji) >= 0 ? MOODS.findIndex(m => m.emoji === myEmoji) : 1)
-    setEditTagInput('')
-    setShowEditPanel(true)
-  }, [myEmoji])
+  const handleVoiceEnd = useCallback(async () => {
+    const result = await voiceRecorder.finishRecording()
+    if (!result) return
+    const transcript = result.transcript.trim()
+    if (!transcript) {
+      if (result.error === 'permission') {
+        showGlobalToast(t('randomMatch.voicePermissionDenied', '无法访问麦克风'))
+      } else if (result.error === 'network') {
+        showGlobalToast(t('randomMatch.networkError'))
+      } else if (result.error === 'no-speech') {
+        showGlobalToast(t('randomMatch.voiceNoSpeech', '未识别到语音，请重试'))
+      }
+      return
+    }
+    setInputText(prev => (prev ? `${prev}${transcript}` : transcript))
+  }, [voiceRecorder, t])
 
-  const handleCloseEdit = useCallback(() => {
-    const newEmoji = MOODS[editMoodIndex]?.emoji ?? '🫠'
-    setMyEmoji(newEmoji)
-    const pref = getMatchPreference()
-    savePreference({ ...pref, tags: myTags, emoji: newEmoji })
-    setShowEditPanel(false)
-    void setMyAnonymousTags({ tags: myTags })
-      .then(resp => {
-        if (resp.tags) setMyTags(resp.tags)
-      })
-      .catch(() => { /* ignore */ })
-  }, [editMoodIndex, myTags])
-
-  const handleEditAddTag = useCallback(() => {
-    const trimmed = editTagInput.trim()
-    if (!trimmed || trimmed.length > 8 || myTags.length >= 3) return
-    setMyTags(prev => [...prev, trimmed])
-    setEditTagInput('')
-  }, [editTagInput, myTags])
-
-  const handleEditRemoveTag = useCallback((index: number) => {
-    setMyTags(prev => prev.filter((_, i) => i !== index))
+  const handleSelectGender = useCallback((value: MatchGender) => {
+    setGenderFilter(value)
+    setGenderMenuOpen(false)
+    saveMatchGender(value)
   }, [])
 
+  const voiceActive = voiceRecorder.phase !== 'idle'
   const style = MATCH_TEMPLATES[template]
 
   return (
@@ -292,11 +269,15 @@ export function MatchChatPage({
           >
             <Text style={styles.genderTriggerText}>{currentGenderLabel}</Text>
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none" style={genderMenuOpen ? { transform: [{ rotate: '-90deg' }] } : { transform: [{ rotate: '90deg' }] }}>
-              <Path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+              <Path d="M6 4l4 4-4 4" stroke="rgba(0,0,0,0.9)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </Pressable>
-          <Pressable onPress={onShuffle} style={styles.headerButton}>
-            <IconShuffle width={36} height={36} />
+          <Pressable onPress={onShuffle} style={styles.shuffleButton}>
+            <View style={styles.shufflePrice}>
+              <Text style={styles.shufflePriceEmoji}>🧊</Text>
+              <Text style={styles.shufflePriceText}>{randomMatchCost.label}</Text>
+            </View>
+            <IconShuffle width={20} height={20} />
           </Pressable>
         </View>
       </View>
@@ -307,7 +288,7 @@ export function MatchChatPage({
           {GENDER_OPTIONS.map(opt => (
             <Pressable
               key={opt.labelKey}
-              onPress={() => { setGenderFilter(opt.value); setGenderMenuOpen(false) }}
+              onPress={() => handleSelectGender(opt.value)}
               style={styles.genderOption}
             >
               <Text style={styles.genderEmoji}>{opt.emoji}</Text>
@@ -324,9 +305,11 @@ export function MatchChatPage({
         {/* Character card */}
         <View style={[styles.characterCard, { backgroundColor: style.bgColor }]}>
           <TemplateOverlay style={style} />
-          <Text style={[styles.anonTags, { color: style.tagColor }]}>
-            {anonymousTags.map(tag => `#${tag}`).join(' ') || '#匿名'}
-          </Text>
+          {anonymousTags.length > 0 && (
+            <Text style={[styles.anonTags, { color: style.tagColor }]}>
+              {anonymousTags.map(tag => `#${tag}`).join(' ')}
+            </Text>
+          )}
           <View style={styles.messageArea}>
             {isTyping ? (
               <Text style={styles.typingText}>{t('randomMatch.typing')}</Text>
@@ -354,10 +337,6 @@ export function MatchChatPage({
           {sentImageUrl ? (
             <PopImage uri={sentImageUrl} style={styles.sentImageOverlay} contentFit="cover" />
           ) : null}
-          <Pressable onPress={handleOpenEdit} style={styles.myTagsRow}>
-            <Text style={styles.myTagsText}>{myTagsDisplay}</Text>
-            <IconEdit width={12} height={12} />
-          </Pressable>
           <View style={styles.myInputArea}>
             <TextInput
               value={inputText}
@@ -379,11 +358,11 @@ export function MatchChatPage({
             </Pressable>
             <View style={styles.rightActions}>
               <Pressable
-                onPressIn={() => voiceRecorder.startRecording(0)}
+                onPressIn={handleVoiceStart}
                 onPressOut={() => void handleVoiceEnd()}
-                style={[styles.micButton, voiceRecorder.phase !== 'idle' && styles.micButtonActive]}
+                style={[styles.micButton, voiceActive && styles.micButtonActive]}
               >
-                {voiceRecorder.phase !== 'idle' ? (
+                {voiceActive ? (
                   <IconMicWhite width={36} height={36} />
                 ) : (
                   <IconMic width={36} height={36} />
@@ -406,16 +385,17 @@ export function MatchChatPage({
       </View>
 
       {/* Voice recording banner */}
-      {voiceRecorder.phase !== 'idle' && (
+      {voiceActive && (
         <View style={styles.voiceBannerOverlay}>
-          <VoiceRecordingBanner
-            phase={voiceRecorder.phase}
-            isCancelled={voiceRecorder.isCancelled}
-            isPressTooShort={voiceRecorder.isPressTooShort}
-            permissionDenied={voiceRecorder.permissionDenied}
-            cancelZone={voiceRecorder.cancelZone}
-            interimTranscript={voiceRecorder.interimTranscript}
-          />
+          <View style={styles.voiceBanner}>
+            <Text style={styles.voiceBannerText}>
+              {voiceRecorder.phase === 'requesting'
+                ? t('randomMatch.voiceRequesting', '正在请求麦克风权限…')
+                : voiceRecorder.phase === 'processing'
+                  ? (voiceRecorder.interimTranscript || t('randomMatch.voiceProcessing', '正在识别语音…'))
+                  : (voiceRecorder.interimTranscript || t('randomMatch.voiceListening', '正在聆听…'))}
+            </Text>
+          </View>
         </View>
       )}
 
@@ -452,74 +432,6 @@ export function MatchChatPage({
             </View>
           </View>
         </View>
-      )}
-
-      {/* Edit panel */}
-      {showEditPanel && (
-        <Modal visible transparent animationType="slide" onRequestClose={handleCloseEdit}>
-          <View style={styles.editOverlay}>
-            <Pressable style={styles.editBackdrop} onPress={handleCloseEdit} />
-            <View style={styles.editPanel}>
-              <View style={styles.editHeader}>
-                <Text style={styles.editTitle}>🎭 {t('randomMatch.editTitle')}</Text>
-                <Pressable onPress={handleCloseEdit} style={styles.editCloseButton}>
-                  <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
-                    <Path d="M2 2l10 10M12 2L2 12" stroke="#333" strokeWidth={2} strokeLinecap="round" />
-                  </Svg>
-                </Pressable>
-              </View>
-
-              {/* Emoji selector */}
-              <View style={styles.emojiSection}>
-                <Text style={styles.emojiSectionTitle}>{t('randomMatch.currentMood')}</Text>
-                <View style={styles.emojiCarousel}>
-                  {MOODS.map((mood, index) => {
-                    const isSelected = index === editMoodIndex
-                    return (
-                      <Pressable key={mood.labelKey} onPress={() => setEditMoodIndex(index)} style={styles.emojiItem}>
-                        <Text style={{ fontSize: isSelected ? 80 : 50, opacity: isSelected ? 1 : 0.3 }}>{mood.emoji}</Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
-                <Text style={styles.emojiLabel2}>
-                  {MOODS[editMoodIndex] ? t(MOODS[editMoodIndex].labelKey) : ''}
-                </Text>
-              </View>
-
-              {/* Tags */}
-              <View style={styles.tagsSection}>
-                {myTags.map((tag, i) => (
-                  <View key={i} style={styles.tagRow}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                    <Pressable onPress={() => handleEditRemoveTag(i)} style={styles.tagRemoveButton}>
-                      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                        <Path d="M7 7l10 10M17 7l-10 10" stroke="#999" strokeWidth={2} strokeLinecap="round" />
-                      </Svg>
-                    </Pressable>
-                  </View>
-                ))}
-                {myTags.length < 3 && (
-                  <View style={styles.tagRow}>
-                    <TextInput
-                      value={editTagInput}
-                      onChangeText={(v) => setEditTagInput(v.slice(0, 8))}
-                      placeholder={t('randomMatch.addTagPlaceholder')}
-                      placeholderTextColor="rgba(0,0,0,0.3)"
-                      style={styles.tagInput}
-                      onSubmitEditing={handleEditAddTag}
-                    />
-                    <Pressable onPress={handleEditAddTag} style={styles.tagAddButton}>
-                      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                        <Path d="M7 12h10M12 7v10" stroke="#999" strokeWidth={2} strokeLinecap="round" />
-                      </Svg>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        </Modal>
       )}
     </View>
   )
@@ -575,9 +487,34 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: 'rgba(0,0,0,0.9)',
   },
+  shuffleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 32,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 6,
+  },
+  shufflePrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  shufflePriceEmoji: {
+    fontSize: 16,
+  },
+  shufflePriceText: {
+    minWidth: 8,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#000000',
+  },
   genderDropdown: {
     position: 'absolute',
-    right: 60,
+    right: 12,
     top: 100,
     zIndex: 50,
     width: 160,
@@ -686,16 +623,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     borderRadius: 30,
   },
-  myTagsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  myTagsText: {
-    fontSize: 12,
-    fontFamily: 'Black Han Sans',
-    color: '#e8ce83',
-  },
   myInputArea: {
     flex: 1,
     alignItems: 'center',
@@ -742,9 +669,23 @@ const styles = StyleSheet.create({
   voiceBannerOverlay: {
     position: 'absolute',
     top: '50%',
-    left: '50%',
-    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
+    left: 0,
+    right: 0,
+    alignItems: 'center',
     zIndex: 50,
+  },
+  voiceBanner: {
+    maxWidth: '80%',
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  voiceBannerText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#ffffff',
+    textAlign: 'center',
   },
   confirmOverlay: {
     position: 'absolute',
@@ -852,102 +793,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#ffffff',
-  },
-  editOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  editBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  editPanel: {
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    backgroundColor: '#f7f7f7',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  editHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  editTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Black Han Sans',
-  },
-  editCloseButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiSection: {
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  emojiSectionTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: 'rgba(0,0,0,0.9)',
-  },
-  emojiCarousel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 140,
-    gap: 20,
-  },
-  emojiItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiLabel2: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(0,0,0,0.3)',
-    textAlign: 'center',
-  },
-  tagsSection: {
-    marginTop: 16,
-    gap: 8,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-  },
-  tagText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-  },
-  tagRemoveButton: {
-    width: 24,
-    height: 24,
-  },
-  tagInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    padding: 0,
-  },
-  tagAddButton: {
-    width: 24,
-    height: 24,
   },
 })

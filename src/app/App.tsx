@@ -8,7 +8,7 @@ import { RootNavigator } from './navigation'
 import { useAuthStore } from '@/features/auth/auth-store'
 import { useAppState } from '@/shared/hooks/use-app-state'
 import { apiClient } from '@/shared/api/api-client'
-import { RechargeHost, GlobalToastHost, refreshWallet, useWalletStore } from '@/shared/wallet'
+import { RechargeHost, GlobalToastHost, refreshWallet, useWalletStore, refreshChargePoints, useChargePointsStore } from '@/shared/wallet'
 import { PublishSuccessModalHost } from '@/features/character-creation/ui/publish-success-modal-host'
 
 SplashScreen.preventAutoHideAsync()
@@ -29,8 +29,10 @@ export function App() {
     apiClient.setToken(token)
     if (token) {
       void refreshWallet()
+      void refreshChargePoints()
     } else {
       useWalletStore.getState().reset()
+      useChargePointsStore.getState().reset()
     }
   }, [token])
 

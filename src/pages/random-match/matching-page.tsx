@@ -5,11 +5,10 @@ import { useTranslation } from 'react-i18next'
 import type { PhoneMessageOutput } from '@/generated/arca_apiComponents'
 import { randomMatchCharacter } from '@/generated/arca_api'
 import { ApiError } from '@/shared/api/api-client'
-import { showGlobalToast } from '@/shared/wallet'
+import { runPaidAction, showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
 
-import { buildRandomMatchRequest } from '@/features/random-match/lib/build-match-request'
-import { clearMatchSetup, getMatchPreference } from './random-match-page'
+import { getMatchPreference } from './match-preference'
 
 import { cdnImage } from '@/shared/lib/cdn'
 
@@ -26,11 +25,10 @@ type MatchingPageProps = {
     anonymousTags: string[]
     greetingMessages: PhoneMessageOutput[]
   }) => void
-  onMatchFailed: () => void
-  onAdjustFilters: () => void
+  onExit: () => void
 }
 
-export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }: MatchingPageProps) {
+export function MatchingPage({ onMatchSuccess, onExit }: MatchingPageProps) {
   const { t } = useTranslation()
   const aborted = useRef(false)
   const [phase, setPhase] = useState<MatchPhase>('loading')
@@ -39,8 +37,7 @@ export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }:
     aborted.current = false
     setPhase('loading')
     const startTime = Date.now()
-    const pref = getMatchPreference()
-    const matchReq = buildRandomMatchRequest(pref)
+    const { gender } = getMatchPreference()
 
     const waitMinLoading = async () => {
       const remaining = MIN_LOADING_MS - (Date.now() - startTime)
@@ -49,10 +46,19 @@ export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }:
 
     const run = async () => {
       try {
-        const resp = await randomMatchCharacter(matchReq)
+        const resp = await runPaidAction(
+          () => randomMatchCharacter({ tags: [], gender: gender ?? undefined }),
+          { source: 'random_match' },
+        )
         if (aborted.current) return
         await waitMinLoading()
         if (aborted.current) return
+
+        // 余额不足：runPaidAction 已弹充值窗，返回上一页
+        if (resp === null) {
+          onExit()
+          return
+        }
 
         if (!resp.chat_session_id) {
           setPhase('no_match')
@@ -79,19 +85,13 @@ export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }:
         } else {
           showGlobalToast(t('randomMatch.networkError'))
         }
-        clearMatchSetup()
-        onMatchFailed()
+        onExit()
       }
     }
 
     void run()
     return () => { aborted.current = true }
-  }, [onMatchSuccess, onMatchFailed, t])
-
-  const handleAdjustFilters = () => {
-    clearMatchSetup()
-    onAdjustFilters()
-  }
+  }, [onMatchSuccess, onExit, t])
 
   return (
     <View style={styles.container}>
@@ -101,8 +101,8 @@ export function MatchingPage({ onMatchSuccess, onMatchFailed, onAdjustFilters }:
       ) : (
         <View style={styles.noMatchContainer}>
           <Text style={styles.noMatchText}>{t('randomMatch.noMatchCharacter')}</Text>
-          <Pressable onPress={handleAdjustFilters} style={styles.adjustButton}>
-            <Text style={styles.adjustButtonText}>{t('randomMatch.adjustFilters')}</Text>
+          <Pressable onPress={onExit} style={styles.adjustButton}>
+            <Text style={styles.adjustButtonText}>{t('randomMatch.exitConfirm')}</Text>
           </Pressable>
         </View>
       )}
