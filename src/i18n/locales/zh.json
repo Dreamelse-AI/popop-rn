@@ -97,7 +97,8 @@
     "deleteAccountFailed": "删除账号失败，请稍后重试。",
     "cancel": "取消",
     "confirm": "确认",
-    "copySuccess": "复制成功"
+    "copySuccess": "复制成功",
+    "userInfoTitle": "用户信息"
   },
   "persona": {
     "title": "我的聊天资料",
@@ -112,7 +113,9 @@
     "goChat": "去聊天",
     "saving": "保存中...",
     "loading": "加载中...",
-    "changeHint": "可随时在「角色 - 聊天 - 侧边栏设置」中修改。"
+    "changeHint": "可随时在「角色 - 聊天 - 侧边栏设置」中修改。",
+    "save": "保存",
+    "saveFailed": "保存失败，请稍后重试"
   },
   "feed": {
     "talk": "对话",

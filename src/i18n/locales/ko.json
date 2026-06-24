@@ -97,7 +97,8 @@
     "deleteAccountFailed": "계정 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.",
     "cancel": "취소",
     "confirm": "확인",
-    "copySuccess": "복사되었습니다"
+    "copySuccess": "복사되었습니다",
+    "userInfoTitle": "사용자 정보"
   },
   "persona": {
     "title": "내 채팅 프로필",
@@ -112,7 +113,9 @@
     "goChat": "채팅하러 가세요",
     "saving": "저장 중...",
     "loading": "불러오는 중...",
-    "changeHint": "\"캐릭터 - 채팅 - 사이드바 설정\"에서 언제든지 변경할 수 있습니다."
+    "changeHint": "\"캐릭터 - 채팅 - 사이드바 설정\"에서 언제든지 변경할 수 있습니다.",
+    "save": "저장",
+    "saveFailed": "저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
   },
   "feed": {
     "talk": "말하다",

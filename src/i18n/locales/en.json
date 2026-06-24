@@ -97,7 +97,8 @@
     "deleteAccountFailed": "Failed to delete account. Please try again later.",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "copySuccess": "Copied"
+    "copySuccess": "Copied",
+    "userInfoTitle": "User info"
   },
   "persona": {
     "title": "My Chat Profile",
@@ -112,7 +113,9 @@
     "goChat": "Go chat",
     "saving": "Saving...",
     "loading": "Loading...",
-    "changeHint": "You can change it anytime in \"Character - Chat - Sidebar Settings\"."
+    "changeHint": "You can change it anytime in \"Character - Chat - Sidebar Settings\".",
+    "save": "Save",
+    "saveFailed": "Save failed. Please try again."
   },
   "feed": {
     "talk": "Talk",

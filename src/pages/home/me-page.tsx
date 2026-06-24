@@ -242,7 +242,7 @@ export function MePage({ isActive = true }: MePageProps) {
         setDisplayUid(info.display_uid ?? '')
         setMeUserInfo({
           userName: info.user_name?.trim() ?? '',
-          avatarUrl: resolvePersonaAvatarUrl(info.avatar ?? info.avatar_url) || userAvatarPlaceholder,
+          avatarUrl: resolvePersonaAvatarUrl(info.avatar?.url ?? info.avatar_url) || userAvatarPlaceholder,
         })
       })
       .catch(e => {
