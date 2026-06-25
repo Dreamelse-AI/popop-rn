@@ -53,7 +53,10 @@ export function CharacterFixedNavHeader({
         accessibilityLabel="关闭"
         pointerEvents="auto"
       >
-        <Image source={{ uri: IconClose }} style={{width: 36, height: 36}} />
+        <Image
+          source={{ uri: IconClose }}
+          style={[{ width: 36, height: 36 }, iconTone === 'light' && styles.iconWhite]}
+        />
       </Pressable>
 
       <CharacterShareButton
@@ -91,5 +94,8 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconWhite: {
+    tintColor: '#ffffff',
   },
 })
