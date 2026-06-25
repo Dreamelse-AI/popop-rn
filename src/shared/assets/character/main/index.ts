@@ -1,15 +1,15 @@
-// 角色主页素材统一导出（Figma 625:5346）
 import { cdnImage } from '@/shared/lib/cdn';
-import iconClose from './character-close.svg';
-import iconShare from './character-main-share.svg';
-import iconGallery from './character-union.svg';
-import iconMusic from './character-music.svg';
-import avatarRing from './character-avatar-while-circle.svg';
-import avatarGreyCircle from './character-avatar-grey-circle.svg';
-import badgeTail from './character-avatar-like-down.svg';
 
-const avatarMask = { uri: cdnImage('assets/character/main/Rectangle 346243755.png') };
-const gridImage0 = { uri: cdnImage('assets/character/main/Frame 2117132557.png') };
+const iconClose = cdnImage('assets/character/main/character-close.png');
+const iconShare = cdnImage('assets/character/main/character-main-share.png');
+const iconGallery = cdnImage('assets/character/main/character-union.png');
+const iconMusic = cdnImage('assets/character/main/character-music.png');
+const avatarRing = cdnImage('assets/character/main/character-avatar-while-circle.png');
+const avatarGreyCircle = cdnImage('assets/character/main/character-avatar-grey-circle.png');
+const badgeTail = cdnImage('assets/character/main/character-avatar-like-down.png');
+
+const avatarMask = { uri: cdnImage('assets/character/main/Rectangle_346243755.png') };
+const gridImage0 = { uri: cdnImage('assets/character/main/Frame_2117132557.png') };
 const gridImage1 = { uri: cdnImage('assets/character/main/40d771a3cf5eec02423c6270e5fd88ca49bd8ff6.png') };
 const gridImage2 = { uri: cdnImage('assets/character/main/f10cde6928ea1fb62d6094769cc2fefa6d058a82.png') };
 

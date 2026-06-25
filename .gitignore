@@ -49,3 +49,7 @@ ai-analysis/
 # CDN scripts - sensitive
 scripts/cdn/config.mjs
 scripts/cdn/upload-manifest.json
+scripts/cdn-config.mjs
+
+# Compiled PNG assets (uploaded to CDN, not stored in repo)
+src/shared/assets-png/

@@ -9,7 +9,7 @@ import { resolvePersonaAvatarUrl } from '@/features/user-persona/lib/persona-uti
 import type { UserPersonaItem } from '@/generated'
 import { userProfileAssets } from '@/shared/assets/userProfile'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
-import { PopIcon } from '@/shared/ui/pop-icon'
+import { Image } from 'expo-image'
 import { PopImage } from '@/shared/ui/pop-image'
 import {
   SheetBody,
@@ -73,7 +73,7 @@ function ProfileCard({
         {persona.avatarUrl ? (
           <PopImage uri={persona.avatarUrl} style={styles.avatar} />
         ) : (
-          <PopIcon icon={userProfileAssets.default} size={76} />
+          <Image source={{ uri: userProfileAssets.default }} style={{width: 76, height: 76}} />
         )}
         <View style={styles.profileNameRow}>
           <Text style={styles.profileName} numberOfLines={1}>
@@ -91,7 +91,7 @@ function ProfileCard({
         accessibilityLabel={t('chatProfileSheet.edit')}
         style={styles.editButton}
       >
-        <PopIcon icon={userProfileAssets.edit} size={24} />
+        <Image source={{ uri: userProfileAssets.edit }} style={{width: 24, height: 24}} />
       </Pressable>
     </View>
   )

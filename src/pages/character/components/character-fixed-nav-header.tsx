@@ -1,9 +1,11 @@
 import { View, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import { CharacterShareButton } from '@/features/share'
 
-import IconClose from '@/shared/assets/character/main/character-close.svg'
+const IconClose = cdnImage('assets/character/main/character-close.png')
 
 import {
   CHARACTER_PROFILE_HEADER_HEIGHT,
@@ -51,10 +53,9 @@ export function CharacterFixedNavHeader({
         accessibilityLabel="关闭"
         pointerEvents="auto"
       >
-        <IconClose
-          width={36}
-          height={36}
-          color={iconTone === 'light' ? '#fff' : '#000'}
+        <Image
+          source={{ uri: IconClose }}
+          style={[{ width: 36, height: 36 }, iconTone === 'light' && styles.iconWhite]}
         />
       </Pressable>
 
@@ -93,5 +94,8 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconWhite: {
+    tintColor: '#ffffff',
   },
 })

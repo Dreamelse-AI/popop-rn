@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Modal,
+  Image,
   useWindowDimensions,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
@@ -29,11 +30,13 @@ import {
   type StoredCustomBackground,
 } from '@/features/chat/lib/chat-background-store'
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
-import AddCardIcon from '@/shared/assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-add.svg'
+import { cdnImage } from '@/shared/lib/cdn'
 import { PageHeaderBar } from '@/shared/ui/fullscreen-page'
-import { PopIcon } from '@/shared/ui/pop-icon'
+
 import { PopImage } from '@/shared/ui/pop-image'
 import { Toast, useToast } from '@/shared/ui/toast'
+
+const AddCardIcon = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-add.png')
 
 const GRID_GAP = 9
 const GRID_PADDING_H = 12
@@ -89,7 +92,7 @@ function BackgroundCard({
           style={styles.deleteButton}
           accessibilityLabel={deleteLabel}
         >
-          <PopIcon icon={dialogPageStyleSettingsAssets.delete} size={24} />
+          <Image source={{ uri: dialogPageStyleSettingsAssets.delete }} style={{width: 24, height: 24}} />
         </Pressable>
       ) : null}
     </View>
@@ -194,7 +197,7 @@ export function ChatBackgroundPage({
             style={styles.backButton}
             accessibilityLabel={t('chatBackgroundPage.back')}
           >
-            <PopIcon icon={dialogPageStyleSettingsAssets.back} size={36} />
+            <Image source={{ uri: dialogPageStyleSettingsAssets.back }} style={{width: 36, height: 36}} />
           </Pressable>
           <Text style={styles.title}>{t('chatBackgroundPage.title')}</Text>
         </PageHeaderBar>
@@ -223,7 +226,7 @@ export function ChatBackgroundPage({
                     {uploading ? (
                       <ActivityIndicator size="small" color="rgba(0,0,0,0.3)" />
                     ) : (
-                      <AddCardIcon width={cardWidth} height={CARD_HEIGHT} />
+                      <Image source={{ uri: AddCardIcon }} style={{width: cardWidth, height: CARD_HEIGHT}} />
                     )}
                   </Pressable>
                 ) : (

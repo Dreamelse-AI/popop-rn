@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import type { HomeFeedPost } from '@/features/feed/feed-types'
 import { useOpenCharacterChat } from '@/features/friendship/hooks/use-open-character-chat'
 import { formatCharacterProfilePostTime, postApi } from '@/features/post'
 
-import IconLike from '@/shared/assets/feed/icon/like 1.svg'
-import IconMusic from '@/shared/assets/feed/icon/音乐 1.svg'
-import IconMoreImg from '@/shared/assets/feed/icon/moreImg-icon.svg'
 import { ExpandableText } from '@/shared/ui/expandable-text'
-import { Image } from 'expo-image'
+
+const IconLike = cdnImage('assets/feed/icon/like_1.png')
+const IconMusic = cdnImage('assets/feed/icon/music_1.png')
+const IconMoreImg = cdnImage('assets/feed/icon/moreImg-icon.png')
 
 type PostLikeState = {
   isLiked: boolean
@@ -83,7 +85,7 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
           <Image
             source={{ uri: post.imageUrl }}
             style={styles.postImage}
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <View style={styles.textFallback}>
@@ -94,12 +96,12 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
         )}
         {post.hasMultipleImages ? (
           <View style={styles.multiImageIconWrapper} pointerEvents="none">
-            <IconMoreImg width={34} height={34} />
+            <Image source={{ uri: IconMoreImg }} style={{width: 34, height: 34}} />
           </View>
         ) : null}
         {post.hasBgm ? (
           <View style={styles.musicIconWrapper} pointerEvents="none">
-            <IconMusic width={36} height={36} />
+            <Image source={{ uri: IconMusic }} style={{width: 36, height: 36}} />
           </View>
         ) : null}
       </Pressable>
@@ -158,10 +160,12 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
           {liked ? (
             <LikedHeartIcon />
           ) : (
-            <IconLike width={16} height={16} />
+            <Image source={{ uri: IconLike }} style={{width: 16, height: 16}} />
           )}
         </Pressable>
       </View>
+
+      <View style={styles.divider} />
     </View>
   )
 }
@@ -184,16 +188,16 @@ const styles = StyleSheet.create({
   },
   textFallback: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: '#1a2a4a',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
   textFallbackContent: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
-    lineHeight: 20,
-    color: 'rgba(0,0,0,0.7)',
+    lineHeight: 28,
+    color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
   },
   multiImageIconWrapper: {
@@ -288,5 +292,9 @@ const styles = StyleSheet.create({
   },
   likeButton: {
     padding: 4,
+  },
+  divider: {
+    height: 8,
+    backgroundColor: '#f0f0f0',
   },
 })

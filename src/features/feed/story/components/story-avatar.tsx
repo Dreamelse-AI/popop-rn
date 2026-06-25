@@ -5,9 +5,10 @@ import { useStoryReadStore } from '@/features/story/story-store'
 
 import { isHeadlineCharacterUnread } from '../headline-read'
 import type { StoryHeadline } from '../types'
-
-import IconUnreadRing from '@/shared/assets/feed/icon/Ellipse 111367.svg'
 import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
+
+const IconUnreadRing = cdnImage('assets/feed/icon/Ellipse_111367.png')
 
 type StoryAvatarProps = {
   item: StoryHeadline
@@ -48,7 +49,7 @@ export function StoryAvatar({ item, onClick }: StoryAvatarProps) {
 
       {showUnreadRing && (
         <View pointerEvents="none" style={styles.unreadRingWrapper}>
-          <IconUnreadRing width={68} height={68} />
+          <Image source={{ uri: IconUnreadRing }} style={{width: 68, height: 68}} />
         </View>
       )}
     </Pressable>

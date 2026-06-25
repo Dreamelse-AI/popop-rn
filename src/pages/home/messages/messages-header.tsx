@@ -1,7 +1,10 @@
 import { View, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
+import { LOGO_POPOP_PNG } from '@/shared/assets/feed'
 
-import LogoPopop from '@/shared/assets/feed/icon/Group 2117132529.svg'
-import IconMenu from '@/shared/assets/character/back.svg'
+const LogoPopop = LOGO_POPOP_PNG
+const IconMenu = cdnImage('assets/character/back.png')
 
 type MessagesHeaderProps = {
   onMenuPress?: () => void
@@ -11,11 +14,11 @@ export function MessagesHeader({ onMenuPress }: MessagesHeaderProps) {
   return (
     <View style={styles.container}>
       <Pressable onPress={onMenuPress} style={styles.leftButton} accessibilityLabel="菜单">
-        <IconMenu width={36} height={36} />
+        <Image source={{ uri: IconMenu }} style={{width: 36, height: 36}} />
       </Pressable>
 
       <View style={styles.logoWrapper}>
-        <LogoPopop width={190} height={30} />
+        <Image source={{ uri: LogoPopop }} style={{width: 190, height: 30}} />
       </View>
     </View>
   )

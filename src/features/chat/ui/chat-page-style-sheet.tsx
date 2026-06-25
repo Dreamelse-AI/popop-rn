@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import {
   BUBBLE_STYLE_TOKENS,
@@ -11,11 +13,11 @@ import {
   type ChatAtmosphereConfig,
 } from '@/features/chat/lib/chat-atmosphere-presets'
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
-import IconUnion from '@/shared/assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-union.svg'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
-import { PopIcon } from '@/shared/ui/pop-icon'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
+
+const IconUnion = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-union.png')
 
 import { BubbleTail } from './bubble-tail'
 import { ChatBackgroundPage } from './chat-background-page'
@@ -61,7 +63,7 @@ function ReceivedBubblePreview({ option }: { option: BubbleStyleOption['received
     return (
       <View style={styles.receivedBubbleRow}>
         <View style={styles.unionBubble}>
-          <IconUnion width={92} height={42} />
+          <Image source={{ uri: IconUnion }} style={{width: 92, height: 42}} />
         </View>
       </View>
     )
@@ -189,7 +191,7 @@ export function ChatPageStyleSheet({
                   style={styles.backgroundArrow}
                   accessibilityLabel={t('chatPageStyleSheet.viewAllBackgrounds')}
                 >
-                  <PopIcon icon={dialogPageStyleSettingsAssets.greyBack} size={24} />
+                  <Image source={{ uri: dialogPageStyleSettingsAssets.greyBack }} style={{width: 24, height: 24}} />
                 </Pressable>
               </View>
             </View>
@@ -217,7 +219,7 @@ export function ChatPageStyleSheet({
                 <SectionLabel>{t('chatPageStyleSheet.customTheme')}</SectionLabel>
                 <Pressable style={styles.viewAllButton}>
                   <Text style={styles.viewAllText}>{t('chatPageStyleSheet.viewAll')}</Text>
-                  <PopIcon icon={dialogPageStyleSettingsAssets.blackBack} size={16} />
+                  <Image source={{ uri: dialogPageStyleSettingsAssets.blackBack }} style={{width: 16, height: 16}} />
                 </Pressable>
               </View>
               <View style={styles.themeGrid}>

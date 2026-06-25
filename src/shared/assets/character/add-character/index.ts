@@ -1,12 +1,12 @@
-// 添加角色页素材（Figma: 101:34877 / 1110:13392）
-import iconBack from './icon-back.svg';
-import iconSearch from './icon-search.svg';
-import characterAddCreateBack from './characterAddCreate-back.svg';
-import characterAddCreateCheck from './characterAddCreate-check.svg';
-import characterAddCreateDefaultImage from './characterAddCreate-defaultImage.svg';
-import characterAddCreateGreyHeart from './characterAddCreate-greyHeart.svg';
-import characterAddCreateRedRequired from './characterAddCreate-red*.svg';
-import characterAddCreateRightGreyArrow from './characterAddCreate-rightGreyArrow.svg';
+import { cdnImage } from '@/shared/lib/cdn';
+
+const iconBack = cdnImage('assets/icon-back.png');
+const iconSearch = cdnImage('assets/character/add-character/icon-search.png');
+const characterAddCreateBack = cdnImage('assets/character/add-character/characterAddCreate-back.png');
+const characterAddCreateCheck = cdnImage('assets/character/add-character/characterAddCreate-check.png');
+const characterAddCreateDefaultImage = cdnImage('assets/character/add-character/characterAddCreate-defaultImage.png');
+const characterAddCreateGreyHeart = cdnImage('assets/character/add-character/characterAddCreate-greyHeart.png');
+const characterAddCreateRightGreyArrow = cdnImage('assets/character/add-character/characterAddCreate-rightGreyArrow.png');
 
 export const addCharacterAssets = {
   iconBack,
@@ -18,6 +18,5 @@ export const addCharacterCreateAssets = {
   check: characterAddCreateCheck,
   defaultImage: characterAddCreateDefaultImage,
   greyHeart: characterAddCreateGreyHeart,
-  redRequired: characterAddCreateRedRequired,
   rightGreyArrow: characterAddCreateRightGreyArrow,
 };

@@ -1,30 +1,31 @@
-// 推荐页素材统一导出
-import iconSearch from './icon/Frame 2117132466-1.svg';
-import iconSearchSolid from './icon/icon-search-solid.svg';
-import iconClose from './icon/Frame 2117132466.svg';
-import iconLike from './icon/like 1.svg';
-import iconMusic from './icon/音乐 1.svg';
-import iconMoreImg from './icon/moreImg-icon.svg';
-import iconFlash from './icon/white_image-flash-1-Streamline-Plump.svg';
-import iconChat from './icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.svg';
-import iconCreate from './icon/Group 2117131456.svg';
-import iconSkull from './icon/black_interface_edit_skull_1_Streamline_Plump.svg';
-import iconChevron from './icon/back.svg';
-import iconUnreadRing from './icon/Ellipse 111367.svg';
-import logoPopop from './icon/Group 2117132529.svg';
-import promoCharacter from './icon/Frame 2117132547.svg';
-
 import { cdnImage } from '@/shared/lib/cdn';
 
-const storyAvatar1 = { uri: cdnImage('assets/feed/img/Ellipse 111366.png') };
-const storyAvatar2 = { uri: cdnImage('assets/feed/img/Ellipse 111361.png') };
-const storyAvatar3 = { uri: cdnImage('assets/feed/img/Ellipse 111361-1.png') };
-const storyAvatar4 = { uri: cdnImage('assets/feed/img/Ellipse 111361-2.png') };
-const feedPostImage = { uri: cdnImage('assets/feed/img/Frame 2117132555-3.png') };
-const recCard1 = { uri: cdnImage('assets/feed/img/Frame 2117132556.png') };
-const recCard2 = { uri: cdnImage('assets/feed/img/Frame 2117132555-1.png') };
-const recCard3 = { uri: cdnImage('assets/feed/img/Frame 2117132555-2.png') };
-const characterAvatar = { uri: cdnImage('assets/feed/img/jimeng-2026-03-24-8382-美男，狐狸耳朵，狐狸尾巴，灰蓝色蓬松头发，瓷肌冷白皮略显苍白、单凤眼，微眯垂眸、... 1.png') };
+const iconSearch = cdnImage('assets/feed/icon/Frame_2117132466-1.png');
+const iconSearchSolid = cdnImage('assets/feed/icon/icon-search-solid.png');
+const iconClose = cdnImage('assets/feed/icon/Frame_2117132466.png');
+const iconLike = cdnImage('assets/feed/icon/like_1.png');
+const iconMusic = cdnImage('assets/feed/icon/music_1.png');
+const iconMoreImg = cdnImage('assets/feed/icon/moreImg-icon.png');
+const iconFlash = cdnImage('assets/feed/icon/white_image-flash-1-Streamline-Plump.png');
+const iconChat = cdnImage('assets/feed/icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.png');
+const iconCreate = cdnImage('assets/feed/icon/Group_2117131456.png');
+const iconSkull = cdnImage('assets/feed/icon/black_interface_edit_skull_1_Streamline_Plump.png');
+const iconChevron = cdnImage('assets/feed/icon/back.png');
+const iconUnreadRing = cdnImage('assets/feed/icon/Ellipse_111367.png');
+const promoCharacter = cdnImage('assets/feed/icon/Frame_2117132547.png');
+
+/** popop logo PNG，用于网络图片场景（<Image uri>） */
+export const LOGO_POPOP_PNG = cdnImage('assets/feed/icon/Group_2117132529.png');
+
+const storyAvatar1 = { uri: cdnImage('assets/feed/img/Ellipse_111366.png') };
+const storyAvatar2 = { uri: cdnImage('assets/feed/img/Ellipse_111361.png') };
+const storyAvatar3 = { uri: cdnImage('assets/feed/img/Ellipse_111361-1.png') };
+const storyAvatar4 = { uri: cdnImage('assets/feed/img/Ellipse_111361-2.png') };
+const feedPostImage = { uri: cdnImage('assets/feed/img/Frame_2117132555-3.png') };
+const recCard1 = { uri: cdnImage('assets/feed/img/Frame_2117132556.png') };
+const recCard2 = { uri: cdnImage('assets/feed/img/Frame_2117132555-1.png') };
+const recCard3 = { uri: cdnImage('assets/feed/img/Frame_2117132555-2.png') };
+const characterAvatar = { uri: cdnImage('assets/feed/img/character-avatar.png') };
 
 export const feedAssets = {
   iconSearch,
@@ -39,7 +40,6 @@ export const feedAssets = {
   iconSkull,
   iconChevron,
   iconUnreadRing,
-  logoPopop,
   promoCharacter,
   storyAvatar1,
   storyAvatar2,

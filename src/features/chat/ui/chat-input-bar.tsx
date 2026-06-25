@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  View,
+import { View,
   Text,
   TextInput,
   Pressable,
   PanResponder,
   StyleSheet,
-  Platform,
-} from 'react-native'
+  Platform } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconPlus from '@/shared/assets/dialog/dialog-plus.svg'
-import IconEmoji from '@/shared/assets/dialog/dialog-emoji.svg'
-import IconBlackEmoji from '@/shared/assets/dialog/dialog-black-emoji.svg'
-import IconVoice from '@/shared/assets/dialog/dialog-voice.svg'
-import IconVoiceWave from '@/shared/assets/dialog/dialog-message-voice-wave.svg'
-import IconKeyboard from '@/shared/assets/dialog/dialog-keyboard.svg'
+const IconPlus = cdnImage('assets/dialog/dialog-plus.png')
+const IconEmoji = cdnImage('assets/dialog/dialog-emoji.png')
+const IconBlackEmoji = cdnImage('assets/dialog/dialog-black-emoji.png')
+const IconVoice = cdnImage('assets/dialog/dialog-voice.png')
+const IconVoiceWave = cdnImage('assets/dialog/dialog-message-voice-wave.png')
+const IconKeyboard = cdnImage('assets/dialog/dialog-keyboard.png')
 
 import type { VoiceCancelZone, VoiceRecorderPhase } from '../hooks/use-voice-recorder'
 import { useKeyboardInset } from './hooks/use-keyboard-inset'
@@ -170,7 +170,7 @@ export function ChatInputBar({
     return (
       <View style={[styles.collapsedRow, { paddingBottom: bottomPadding }]}>
         <Pressable onPress={onPlusPress} style={styles.plusButton} accessibilityLabel="相册">
-          <IconPlus width={20} height={20} />
+          <Image source={{ uri: IconPlus }} style={{width: 20, height: 20}} />
         </Pressable>
 
         <View
@@ -187,7 +187,7 @@ export function ChatInputBar({
             accessibilityLabel="切换到键盘输入"
             accessibilityRole="button"
           >
-            <IconVoice width={24} height={24} />
+            <Image source={{ uri: IconVoice }} style={{width: 24, height: 24}} />
           </Pressable>
 
           {isRecordingUi ? (
@@ -229,9 +229,9 @@ export function ChatInputBar({
             accessibilityState={{ selected: showEmojiPanel }}
           >
             {showEmojiPanel ? (
-              <IconBlackEmoji width={24} height={24} />
+              <Image source={{ uri: IconBlackEmoji }} style={{width: 24, height: 24}} />
             ) : (
-              <IconEmoji width={24} height={24} />
+              <Image source={{ uri: IconEmoji }} style={{width: 24, height: 24}} />
             )}
           </Pressable>
         </View>
@@ -243,7 +243,7 @@ export function ChatInputBar({
   return (
     <View style={[styles.collapsedRow, { paddingBottom: bottomPadding }]}>
       <Pressable onPress={onPlusPress} style={styles.plusButton} accessibilityLabel="相册">
-        <IconPlus width={20} height={20} />
+        <Image source={{ uri: IconPlus }} style={{width: 20, height: 20}} />
       </Pressable>
 
       <View style={styles.collapsedBubble}>
@@ -253,7 +253,7 @@ export function ChatInputBar({
           accessibilityLabel="切换到语音输入"
           accessibilityRole="button"
         >
-          <IconKeyboard width={24} height={24} />
+          <Image source={{ uri: IconKeyboard }} style={{width: 24, height: 24}} />
         </Pressable>
 
         <TextInput
@@ -278,9 +278,9 @@ export function ChatInputBar({
           accessibilityState={{ selected: showEmojiPanel }}
         >
           {showEmojiPanel ? (
-            <IconBlackEmoji width={24} height={24} />
+            <Image source={{ uri: IconBlackEmoji }} style={{width: 24, height: 24}} />
           ) : (
-            <IconEmoji width={24} height={24} />
+            <Image source={{ uri: IconEmoji }} style={{width: 24, height: 24}} />
           )}
         </Pressable>
       </View>
@@ -380,7 +380,7 @@ function VoiceHoldZone({
         isCancelUi ? (
           <Text style={styles.voiceHoldLabelCancel}>{label}</Text>
         ) : (
-          <IconVoiceWave width={44} height={26} />
+          <Image source={{ uri: IconVoiceWave }} style={{width: 44, height: 26}} />
         )
       ) : (
         <Text style={styles.voiceHoldLabel}>{label}</Text>

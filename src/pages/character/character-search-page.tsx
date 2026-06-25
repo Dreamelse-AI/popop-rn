@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import Svg, { Circle, Path } from 'react-native-svg'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import { useCharacterSearch } from '@/features/character/hooks/use-character-search'
 import type { CharacterSearchItem } from '@/features/character/types'
 
-import IconBack from '@/shared/assets/character/add-character/icon-back.svg'
-import IconSearch from '@/shared/assets/character/add-character/icon-search.svg'
-import { Image } from 'expo-image'
+const IconBack = cdnImage('assets/icon-back.png')
+const IconSearch = cdnImage('assets/character/add-character/icon-search.png')
 
 type CharacterSearchPageProps = {
   onClose: () => void
@@ -65,7 +66,7 @@ export function CharacterSearchPage({ onClose, onSelectCharacter }: CharacterSea
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={onClose} style={styles.backButton} accessibilityLabel="返回">
-          <IconBack width={36} height={36} />
+          <Image source={{ uri: IconBack }} style={{width: 36, height: 36}} />
         </Pressable>
 
         <View style={styles.searchInput}>
@@ -86,7 +87,7 @@ export function CharacterSearchPage({ onClose, onSelectCharacter }: CharacterSea
               </Svg>
             </Pressable>
           ) : null}
-          <IconSearch width={20} height={20} style={{ opacity: 0.4 }} />
+          <Image source={{ uri: IconSearch }} style={{width: 20, height: 20, opacity: 0.4}} />
         </View>
       </View>
 

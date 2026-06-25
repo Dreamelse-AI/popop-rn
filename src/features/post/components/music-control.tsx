@@ -1,9 +1,11 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native'
+import { Image } from 'expo-image'
 import Svg, { Path, Line } from 'react-native-svg'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconMusic from '@/shared/assets/feed/icon/音乐 1.svg'
+const IconMusic = cdnImage('assets/feed/icon/music_1.png')
 
 type MusicControlProps = {
   musicName: string
@@ -146,7 +148,7 @@ export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
       return (
         <Pressable onPress={handleDiscClick} style={[styles.discButton, { backgroundColor: bgColor }]} accessibilityLabel="Music">
           <Animated.View style={{ transform: [{ rotate: isPlaying ? spin : '0deg' }] }}>
-            {muted ? <MuteIcon color={iconColor} /> : <IconMusic width={16} height={16} />}
+            {muted ? <MuteIcon color={iconColor} /> : <Image source={{ uri: IconMusic }} style={{width: 16, height: 16}} />}
           </Animated.View>
         </Pressable>
       )
@@ -156,7 +158,7 @@ export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
       <View style={[styles.pill, { backgroundColor: bgColor }]}>
         <View style={[styles.musicInfo, muted && styles.mutedOpacity]}>
           <Animated.View style={{ transform: [{ rotate: isPlaying ? spin : '0deg' }] }}>
-            <IconMusic width={16} height={16} />
+            <Image source={{ uri: IconMusic }} style={{width: 16, height: 16}} />
           </Animated.View>
           <Text style={[styles.musicName, { color: textColor }]} numberOfLines={1}>{musicName}</Text>
         </View>

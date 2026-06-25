@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, useWindowDimensions } from 'react-native'
+import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconPin from '@/shared/assets/character/dialog-pin.svg'
-import IconDeleteCharacter from '@/shared/assets/character/icon-delete-character.svg'
+const IconPin = cdnImage('assets/character/dialog-pin.png')
+const IconDeleteCharacter = cdnImage('assets/character/icon-delete-character.png')
 
 export type MessagesRowMenuAnchor = {
   x: number
@@ -82,28 +84,28 @@ export function MessagesRowMenu({
           {isPinnedVariant ? (
             <>
               <Pressable style={styles.menuItem} onPress={() => { onUnpin?.(); onClose() }}>
-                <IconPin width={24} height={24} />
+                <Image source={{ uri: IconPin }} style={{width: 24, height: 24}} />
                 <Text style={styles.menuItemText}>{t('messageMenu.unpin')}</Text>
               </Pressable>
               <View style={styles.dividerContainer}>
                 <View style={styles.divider} />
               </View>
               <Pressable style={styles.menuItem} onPress={() => { onEndRelation?.(); onClose() }}>
-                <IconDeleteCharacter width={24} height={24} />
+                <Image source={{ uri: IconDeleteCharacter }} style={{width: 24, height: 24}} />
                 <Text style={styles.menuItemTextDanger}>{t('messageMenu.endRelation')}</Text>
               </Pressable>
             </>
           ) : (
             <>
               <Pressable style={styles.menuItem} onPress={() => { onPin?.(); onClose() }}>
-                <IconPin width={24} height={24} />
+                <Image source={{ uri: IconPin }} style={{width: 24, height: 24}} />
                 <Text style={styles.menuItemText}>{t('messageMenu.pin')}</Text>
               </Pressable>
               <View style={styles.dividerContainer}>
                 <View style={styles.divider} />
               </View>
               <Pressable style={styles.menuItem} onPress={() => { onEndRelation?.(); onClose() }}>
-                <IconDeleteCharacter width={24} height={24} />
+                <Image source={{ uri: IconDeleteCharacter }} style={{width: 24, height: 24}} />
                 <Text style={styles.menuItemTextDanger}>{t('messageMenu.endRelation')}</Text>
               </Pressable>
             </>

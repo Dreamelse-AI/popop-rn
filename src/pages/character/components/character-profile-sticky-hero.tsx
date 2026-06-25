@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, type LayoutChangeEvent } from 'react
 import { useTranslation } from 'react-i18next'
 
 import { characterMainAssets } from '@/shared/assets/character/main'
+import { Image } from 'expo-image'
 import { PopImage } from '@/shared/ui/pop-image'
 
 import {
@@ -18,9 +19,9 @@ const HERO_HEIGHT = 248
 const HERO_MASK_OFFSET_X = 78
 const HERO_MASK_OFFSET_Y = 22
 
-const IconAvatarRing = characterMainAssets.avatarRing
-const IconAvatarGreyCircle = characterMainAssets.avatarGreyCircle
-const IconBadgeTail = characterMainAssets.badgeTail
+const IconAvatarRingUri = characterMainAssets.avatarRing
+const IconAvatarGreyCircleUri = characterMainAssets.avatarGreyCircle
+const IconBadgeTailUri = characterMainAssets.badgeTail
 
 type CharacterProfileStickyHeroProps = {
   progress: number
@@ -41,7 +42,7 @@ function ChatCountBadge({ count, opacity }: { count: string; opacity: number }) 
       <View style={styles.badgeInner}>
         <View style={styles.badgeIconWrap}>
           <View style={styles.badgeDot} />
-          <IconBadgeTail width={7} height={3} style={styles.badgeTail} />
+          <Image source={{ uri: IconBadgeTailUri }} style={[{ width: 7, height: 3 }, styles.badgeTail]} />
         </View>
         <Text style={styles.badgeText}>{count}</Text>
       </View>
@@ -131,9 +132,9 @@ function AnimatedAvatarGroup({
       </View>
 
       <View style={styles.avatarCircle}>
-        <IconAvatarGreyCircle width={CHARACTER_PROFILE_AVATAR.expanded} height={CHARACTER_PROFILE_AVATAR.expanded} />
+        <Image source={{ uri: IconAvatarGreyCircleUri }} style={{ width: CHARACTER_PROFILE_AVATAR.expanded, height: CHARACTER_PROFILE_AVATAR.expanded }} />
         <PopImage uri={avatar} style={styles.avatarImage} contentFit="cover" />
-        <IconAvatarRing width={CHARACTER_PROFILE_AVATAR.expanded} height={CHARACTER_PROFILE_AVATAR.expanded} />
+        <Image source={{ uri: IconAvatarRingUri }} style={{ width: CHARACTER_PROFILE_AVATAR.expanded, height: CHARACTER_PROFILE_AVATAR.expanded }} />
       </View>
 
       <View style={styles.badgeWrapper}>

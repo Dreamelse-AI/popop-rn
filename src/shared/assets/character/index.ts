@@ -1,20 +1,20 @@
-// 角色 / 消息页素材统一导出
 import { cdnImage } from '@/shared/lib/cdn';
-import iconMenu from './back.svg';
-import mascotEmpty from './popop-logo-grey.svg';
+
+const iconMenu = cdnImage('assets/character/back.png');
+const mascotEmpty = cdnImage('assets/character/popop-logo-grey.png');
 const sceneBanner = { uri: cdnImage('assets/character/character-banner.png') };
 const creationDraftCardEmptyPattern = { uri: cdnImage('assets/character/creation-draft-card-empty-pattern.png') };
-import tagPillBg from './character-rectangle.svg';
-import iconLocation from './location.svg';
-import iconPin from './dialog-pin.svg';
-import iconEndRelation from './icon-feedback.svg';
-import iconUnreadDot from './red-dot.svg';
-import iconActiveDot from './white-dot.svg';
-import avatar1 from './character-icon1.svg';
-import avatar2 from './character-icon2.svg';
-import avatar3 from './character-icon3.svg';
-import dialogBubbleAbove from './dialog-union.svg';
-import dialogBubbleBelow from './dialog-union2.svg';
+const tagPillBg = cdnImage('assets/character/character-rectangle.png');
+const iconLocation = cdnImage('assets/character/location.png');
+const iconPin = cdnImage('assets/character/dialog-pin.png');
+const iconEndRelation = cdnImage('assets/character/icon-feedback.png');
+const iconUnreadDot = cdnImage('assets/character/red-dot.png');
+const iconActiveDot = cdnImage('assets/character/white-dot.png');
+const avatar1 = cdnImage('assets/character/character-icon1.png');
+const avatar2 = cdnImage('assets/character/character-icon2.png');
+const avatar3 = cdnImage('assets/character/character-icon3.png');
+const dialogBubbleAbove = cdnImage('assets/character/dialog-union.png');
+const dialogBubbleBelow = cdnImage('assets/character/dialog-union2.png');
 
 export const characterAssets = {
   iconMenu,

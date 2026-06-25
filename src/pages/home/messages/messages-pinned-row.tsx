@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { View, Pressable, Text, ScrollView, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
-import IconUnreadDot from '@/shared/assets/character/red-dot.svg'
-import IconTailWhite from '@/shared/assets/dialog/dialog-pop-down-white.svg'
+const IconUnreadDot = cdnImage('assets/character/red-dot.png')
+const IconTailWhite = cdnImage('assets/dialog/dialog-pop-down-white.png')
 
 import { MessagesRowMenu, type MessagesRowMenuAnchor } from './messages-row-menu'
 import { useLongPress } from './use-long-press'
@@ -121,7 +122,7 @@ function PinnedAvatar({ item, showBubble, bubbleBelow, onPress, onOpenMenu }: Pi
         <Image source={{ uri: item.avatar }} style={styles.avatarImage} />
         {item.unread && (
           <View style={styles.unreadDot}>
-            <IconUnreadDot width={6} height={6} />
+            <Image source={{ uri: IconUnreadDot }} style={{width: 6, height: 6}} />
           </View>
         )}
       </Pressable>
@@ -154,7 +155,7 @@ function PreviewBubble({ text, placement }: PreviewBubbleProps) {
       <View style={styles.bubbleShadow}>
         {!isAbove && (
           <View style={styles.bubbleTailUp}>
-            <IconTailWhite width={19} height={9} />
+            <Image source={{ uri: IconTailWhite }} style={{width: 19, height: 9}} />
           </View>
         )}
 
@@ -166,7 +167,7 @@ function PreviewBubble({ text, placement }: PreviewBubbleProps) {
 
         {isAbove && (
           <View style={styles.bubbleTailDown}>
-            <IconTailWhite width={19} height={9} />
+            <Image source={{ uri: IconTailWhite }} style={{width: 19, height: 9}} />
           </View>
         )}
       </View>

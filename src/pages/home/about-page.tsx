@@ -1,10 +1,11 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
 
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
-import IconChevron from '@/shared/assets/me/icon-chevron-right.svg'
-import PopopLogo from '@/shared/assets/me/popop-logo-large.svg'
-import { Image } from 'expo-image'
+const IconChevron = cdnImage('assets/me/icon-chevron-right.png')
+const PopopLogo = cdnImage('assets/me/popop-logo-large.png')
 
 type AboutPageProps = {
   onBack: () => void
@@ -20,7 +21,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
 
       <View style={styles.content}>
         <View style={styles.logoSection}>
-          <PopopLogo width={168} height={130} />
+          <Image source={{ uri: PopopLogo }} style={{width: 168, height: 130}} />
           <Text style={styles.versionText}>v1.0</Text>
         </View>
 
@@ -28,12 +29,12 @@ export function AboutPage({ onBack }: AboutPageProps) {
           <Pressable style={styles.menuItem}>
             <Text style={styles.menuEmoji}>🤝🏻</Text>
             <Text style={styles.menuLabel}>User Agreement</Text>
-            <IconChevron width={24} height={24} />
+            <Image source={{ uri: IconChevron }} style={{width: 24, height: 24}} />
           </Pressable>
           <Pressable style={styles.menuItem}>
             <Text style={styles.menuEmoji}>🤐</Text>
             <Text style={styles.menuLabel}>Privacy Policy</Text>
-            <IconChevron width={24} height={24} />
+            <Image source={{ uri: IconChevron }} style={{width: 24, height: 24}} />
           </Pressable>
         </View>
       </View>

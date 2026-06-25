@@ -1,10 +1,11 @@
-// 消息页角色列表抽屉素材
-import iconEyes from './character-list-eyes.svg';
-import iconFlash from './character-list-flash.svg';
-import iconPlus from './character-list-plus.svg';
-import avatar1 from './icon1.svg';
-import avatar2 from './icon2.svg';
-import avatar3 from './icon3.svg';
+import { cdnImage } from '@/shared/lib/cdn';
+
+const iconEyes = cdnImage('assets/character/character-list/character-list-eyes.png');
+const iconFlash = cdnImage('assets/character/character-list/character-list-flash.png');
+const iconPlus = cdnImage('assets/character/character-list/character-list-plus.png');
+const avatar1 = cdnImage('assets/character/character-list/icon1.png');
+const avatar2 = cdnImage('assets/character/character-list/icon2.png');
+const avatar3 = cdnImage('assets/character/character-list/icon3.png');
 
 export const characterListAssets = {
   iconEyes,

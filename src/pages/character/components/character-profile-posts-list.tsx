@@ -86,13 +86,13 @@ function GridCell({
 
       {cell.showGalleryIcon ? (
         <View style={styles.galleryIconWrap} pointerEvents="none">
-          <IconGallery width={16} height={16} />
+          <PopImage uri={IconGallery} style={{ width: 16, height: 16 }} />
         </View>
       ) : null}
 
       {cell.showMusicIcon ? (
         <View style={styles.musicIconWrap} pointerEvents="none">
-          <IconMusic width={16} height={16} />
+          <PopImage uri={IconMusic} style={{ width: 16, height: 16 }} />
         </View>
       ) : null}
       </Pressable>

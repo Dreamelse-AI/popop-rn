@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import type { SvgProps } from 'react-native-svg';
 import { cdnImage } from '@/shared/lib/cdn';
 const cardHeartbeat = { uri: cdnImage('assets/random-match/card-heartbeat.png') };
-import cardEmoDrop from '@/shared/assets/random-match/emo-drop.svg';
+const cardEmoDrop = cdnImage('assets/random-match/emo-drop.png');
 
 export type MatchTemplate = 'default' | 'heartbeat' | 'emo' | 'shy';
 
@@ -11,7 +11,7 @@ export type TemplateStyle = {
   textColor: string;
   tagColor: string;
   emojiColor: string;
-  overlayImage: number | { uri: string } | FC<SvgProps> | null;
+  overlayImage: string | { uri: string } | FC<SvgProps> | null;
   /** 'cover' = 铺满卡片; 'decor' = 装饰性元素，右侧居中 */
   overlayMode: 'cover' | 'decor';
   emojiLabel: string;

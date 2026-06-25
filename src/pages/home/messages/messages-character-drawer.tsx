@@ -6,17 +6,17 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 import Svg, { Circle, Path } from 'react-native-svg'
-
-import IconPin from '@/shared/assets/character/dialog-pin.svg'
-import IconEndRelation from '@/shared/assets/character/icon-feedback.svg'
-import IconFlash from '@/shared/assets/character/character-list/character-list-flash.svg'
-import IconPlus from '@/shared/assets/character/character-list/character-list-plus.svg'
-import IconEyes from '@/shared/assets/character/character-list/character-list-eyes.svg'
-
+import { Image } from 'expo-image'
+import { cdnImage } from '@/shared/lib/cdn'
+import type { CharacterListItem } from './types'
 import { MessagesRowMenu } from './messages-row-menu'
 import { markReopenCharacterDrawer } from './drawer-return-flag'
-import type { CharacterListItem } from './types'
-import { Image } from 'expo-image'
+
+const IconPin = cdnImage('assets/character/dialog-pin.png')
+const IconEndRelation = cdnImage('assets/character/icon-feedback.png')
+const IconFlash = cdnImage('assets/character/character-list/character-list-flash.png')
+const IconPlus = cdnImage('assets/character/character-list/character-list-plus.png')
+const IconEyes = cdnImage('assets/character/character-list/character-list-eyes.png')
 
 const DRAWER_WIDTH = 300
 const SLIDE_DURATION_MS = 300
@@ -101,7 +101,7 @@ function CharacterAvatar({ item }: { item: CharacterListItem }) {
       </View>
       {item.pinned && (
         <View style={styles.pinnedBadge}>
-          <IconPin width={8} height={8} />
+          <Image source={{ uri: IconPin }} style={{width: 8, height: 8}} />
         </View>
       )}
     </View>
@@ -259,10 +259,10 @@ export function MessagesCharacterDrawer({
               }}
             >
               <View style={styles.eyesIcon}>
-                <IconEyes width={183} height={71} />
+                <Image source={{ uri: IconEyes }} style={{width: 183, height: 71}} />
               </View>
               <View style={styles.cardRow}>
-                <IconFlash width={20} height={20} />
+                <Image source={{ uri: IconFlash }} style={{width: 20, height: 20}} />
                 <Text style={[styles.cardText, styles.cardTextFlex]}>{t('messages.randomMatch')}</Text>
                 <ChevronRight />
               </View>
@@ -273,7 +273,7 @@ export function MessagesCharacterDrawer({
               style={styles.addFriendCard}
               onPress={() => { markReopenCharacterDrawer(); navigation.navigate('AddCharacter'); onClose() }}
             >
-              <IconPlus width={20} height={20} />
+              <Image source={{ uri: IconPlus }} style={{width: 20, height: 20}} />
               <Text style={[styles.cardText, styles.cardTextFlex]}>{t('messages.addFriend')}</Text>
               <ChevronRight />
             </Pressable>
@@ -288,7 +288,7 @@ export function MessagesCharacterDrawer({
                     disabled={selectedIds.length === 0 || deleting}
                     style={[styles.deleteButton, (selectedIds.length === 0 || deleting) && styles.deleteButtonDisabled]}
                   >
-                    <IconEndRelation width={24} height={24} />
+                    <Image source={{ uri: IconEndRelation }} style={{width: 24, height: 24}} />
                     <Text style={styles.deleteButtonText}>{t('messages.delete')}</Text>
                   </Pressable>
                 ) : (

@@ -1,14 +1,15 @@
 import { cdnImage } from '@/shared/lib/cdn';
-import add from './dialogPageStyleSettings-add.svg';
-import back from './dialogPageStyleSettings-back.svg';
-import blackBack from './dialogPageStyleSettings-blackBack.svg';
-import blackVector from './dialogPageStyleSettings-blackVector.svg';
-import close from './dialogPageStyleSettings-close.svg';
-import deleteIcon from './dialogPageStyleSettings-delete.svg';
-import downArrow from './dialogPageStyleSettings-downArrow.svg';
-import greyBack from './dialogPageStyleSettings-greyBack.svg';
-import selected from './dialogPageStyleSettings-selected.svg';
-import union from './dialogPageStyleSettings-union.svg';
+
+const add = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-add.png');
+const back = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-back.png');
+const blackBack = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-blackBack.png');
+const blackVector = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-blackVector.png');
+const close = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-close.png');
+const deleteIcon = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-delete.png');
+const downArrow = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-downArrow.png');
+const greyBack = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-greyBack.png');
+const selected = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-selected.png');
+const union = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-union.png');
 
 const tempImg1 = { uri: cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-tempImg1.png') };
 const tempImg2 = { uri: cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-tempImg2.png') };
