@@ -1,12 +1,13 @@
-// 登录模块素材统一导出
-const iconChecked = require('./checked.svg');
-const iconCheck = require('./check.svg');
-const iconChevronRight = require('./chevron-right.svg');
-const iconValidCircle = require('./valid-circle.svg');
-const iconClose = require('./icon-close.svg');
-const iconGlobe = require('./icon-globe.svg');
-const iconRequiredMark = require('./required-mark.svg');
+import { cdnImage } from '@/shared/lib/cdn';
 import { userAvatarPlaceholder as avatarPlaceholder } from '../user-avatar';
+
+const iconChecked = cdnImage('assets/auth/checked.png');
+const iconCheck = cdnImage('assets/auth/check.png');
+const iconChevronRight = cdnImage('assets/auth/chevron-right.png');
+const iconValidCircle = cdnImage('assets/auth/valid-circle.png');
+const iconClose = cdnImage('assets/auth/icon-close.png');
+const iconGlobe = cdnImage('assets/auth/icon-globe.png');
+const iconRequiredMark = cdnImage('assets/auth/required-mark.png');
 
 export const authAssets = {
   iconChecked,

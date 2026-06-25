@@ -9,7 +9,7 @@ import { cdnImage } from "@/shared/lib/cdn";
 
 const IconFlash = cdnImage("assets/feed/icon/white_image-flash-1-Streamline-Plump.png");
 const IconChat = cdnImage("assets/feed/icon/black_mail_chat_bubble_oval_smiley-1_Streamline-Plump.png");
-const IconCreate = cdnImage("assets/feed/icon/Group 2117131456.png");
+const IconCreate = cdnImage("assets/feed/icon/Group_2117131456.png");
 const IconSkull = cdnImage("assets/feed/icon/black_interface_edit_skull_1_Streamline_Plump.png");
 
 type NavTab = {

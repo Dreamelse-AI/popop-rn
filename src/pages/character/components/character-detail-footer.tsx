@@ -1,7 +1,9 @@
-import { View, Pressable, StyleSheet, Image } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { cdnImage } from "@/shared/lib/cdn";
 
-import chatIcon from "@/shared/assets/character/main/chat-icon.png";
+const chatIcon = cdnImage('assets/character/main/chat-icon.png');
 
 export type CharacterDetailFooterProps = {
   characterId: string;
@@ -26,7 +28,7 @@ export function CharacterDetailFooter({
           (disabled || !onAction) && styles.buttonDisabled,
         ]}
       >
-        <Image source={chatIcon} style={styles.icon} />
+        <Image source={{ uri: chatIcon }} style={styles.icon} />
       </Pressable>
     </View>
   );

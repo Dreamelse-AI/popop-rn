@@ -1,10 +1,11 @@
-// 消息页角色列表抽屉素材
-const iconEyes = require('./character-list-eyes.svg');
-const iconFlash = require('./character-list-flash.svg');
-const iconPlus = require('./character-list-plus.svg');
-const avatar1 = require('./icon1.svg');
-const avatar2 = require('./icon2.svg');
-const avatar3 = require('./icon3.svg');
+import { cdnImage } from '@/shared/lib/cdn';
+
+const iconEyes = cdnImage('assets/character/character-list/character-list-eyes.png');
+const iconFlash = cdnImage('assets/character/character-list/character-list-flash.png');
+const iconPlus = cdnImage('assets/character/character-list/character-list-plus.png');
+const avatar1 = cdnImage('assets/character/character-list/icon1.png');
+const avatar2 = cdnImage('assets/character/character-list/icon2.png');
+const avatar3 = cdnImage('assets/character/character-list/icon3.png');
 
 export const characterListAssets = {
   iconEyes,

@@ -6,6 +6,7 @@ import { fetchCharacterGalleryImages } from '@/features/character/api/fetch-char
 import { resolveTosAssetUrl } from '@/features/chat/lib/tos-upload'
 import { addCharacterCreateAssets } from '@/shared/assets/character/add-character'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import { Image } from 'expo-image'
 import { PopImage } from '@/shared/ui/pop-image'
 import {
   SheetBody,
@@ -37,7 +38,7 @@ export function CharacterGalleryPickerSheet({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
-  const CheckIcon = addCharacterCreateAssets.check
+  const checkIconUri = addCharacterCreateAssets.check
 
   const loadImages = useCallback(async () => {
     if (!characterId) {
@@ -135,7 +136,7 @@ export function CharacterGalleryPickerSheet({
                 >
                   <PopImage uri={resolveTosAssetUrl(url)} style={styles.image} contentFit="cover" />
                   <View style={[styles.checkCircle, selected && styles.checkCircleSelected]}>
-                    {selected ? <CheckIcon width={14} height={14} /> : null}
+                    {selected ? <Image source={{ uri: checkIconUri }} style={{ width: 14, height: 14 }} /> : null}
                   </View>
                 </Pressable>
               )

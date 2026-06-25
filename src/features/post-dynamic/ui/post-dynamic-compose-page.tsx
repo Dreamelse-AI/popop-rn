@@ -18,7 +18,7 @@ import { SpinnerIcon } from '@/pages/character-creation/components/creation-icon
 import { addCharacterCreateAssets } from '@/shared/assets/character/add-character'
 import { characterMainAssets } from '@/shared/assets/character/main'
 import { FullscreenPage, PageHeaderBar } from '@/shared/ui/fullscreen-page'
-import { PopIcon } from '@/shared/ui/pop-icon'
+import { Image } from 'expo-image'
 import { PopImage } from '@/shared/ui/pop-image'
 
 import { PostDynamicImagePickerSheet } from './post-dynamic-image-picker-sheet'
@@ -138,7 +138,7 @@ export function PostDynamicComposePage({
             style={[styles.closeButton, publishing && styles.closeButtonDisabled]}
             accessibilityLabel={t('character.detailPage.back')}
           >
-            <PopIcon icon={characterMainAssets.iconClose} size={24} />
+            <Image source={{ uri: characterMainAssets.iconClose }} style={{width: 24, height: 24}} />
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle} numberOfLines={1}>
@@ -228,7 +228,7 @@ export function PostDynamicComposePage({
                 {musicKey ? musicTitle || musicKey : t('character.creation.selectMusic')}
               </Text>
             </View>
-            <PopIcon icon={addCharacterCreateAssets.rightGreyArrow} size={12} style={styles.musicArrow} />
+            <Image source={{ uri: addCharacterCreateAssets.rightGreyArrow }} style={[{width: 12, height: 12}, styles.musicArrow]} />
           </Pressable>
         </ScrollView>
 

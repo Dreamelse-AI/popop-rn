@@ -1,8 +1,9 @@
 import { View, Pressable, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
+import { LOGO_POPOP_PNG } from '@/shared/assets/feed'
 
-const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png')
+const LogoPopop = LOGO_POPOP_PNG
 const IconMenu = cdnImage('assets/character/back.png')
 
 type MessagesHeaderProps = {

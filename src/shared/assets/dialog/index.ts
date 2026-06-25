@@ -1,26 +1,26 @@
-// 角色聊天页素材统一导出
-const iconPlus = require('./dialog-plus.svg');
-const iconEmoji = require('./dialog-emoji.svg');
-const iconVoice = require('./dialog-voice.svg');
-const iconVoiceUnion = require('./dialog-voice-union.svg');
-const iconVoiceReceive = require('./dialog-message-voice-receive.svg');
-const iconVoiceSend = require('./dialog-message-voice-send.svg');
-const iconWaiting = require('./dialog-waiting.svg');
-const iconWarning = require('./dialog-warning.svg');
-const bubbleTailWhite = require('./dialog-pop-down-white.svg');
-const bubbleTailYellow = require('./dialog-pop-down-yellow.svg');
-const characterAvatarPlaceholder = require('./character-icon.svg');
-const iconBlackSend = require('./dialog-black-send.svg');
-const iconBlackEmoji = require('./dialog-black-emoji.svg');
-const iconKeyboard = require('./dialog-keyboard.svg');
-const iconTopLeftBack = require('./dialog-topleft-back.svg');
-const iconTopLeftTag = require('./dialog-topleft-tag.svg');
-const iconTopRightMenu = require('./dialog-topright-back.svg');
 import { cdnImage } from '@/shared/lib/cdn';
-const dialogSettingsOption = require('./dialogSettings-option.svg');
-const dialogSettingsRightBack = require('./dialogSettings-rightBack.svg');
-const dialogSettingsDownBack = require('./dialogSettings-downBack.svg');
-const dialogSettingsTempIcon = { uri: cdnImage('assets/dialog/dialogSettings-tempIcon.png') };
+
+const iconPlus = cdnImage('assets/dialog/dialog-plus.png');
+const iconEmoji = cdnImage('assets/dialog/dialog-emoji.png');
+const iconVoice = cdnImage('assets/dialog/dialog-voice.png');
+const iconVoiceUnion = cdnImage('assets/dialog/dialog-voice-union.png');
+const iconVoiceReceive = cdnImage('assets/dialog/dialog-message-voice-receive.png');
+const iconVoiceSend = cdnImage('assets/dialog/dialog-message-voice-send.png');
+const iconWaiting = cdnImage('assets/dialog/dialog-waiting.png');
+const iconWarning = cdnImage('assets/dialog/dialog-warning.png');
+const bubbleTailWhite = cdnImage('assets/dialog/dialog-pop-down-white.png');
+const bubbleTailYellow = cdnImage('assets/dialog/dialog-pop-down-yellow.png');
+const characterAvatarPlaceholder = cdnImage('assets/dialog/character-icon.png');
+const iconBlackSend = cdnImage('assets/dialog/dialog-black-send.png');
+const iconBlackEmoji = cdnImage('assets/dialog/dialog-black-emoji.png');
+const iconKeyboard = cdnImage('assets/dialog/dialog-keyboard.png');
+const iconTopLeftBack = cdnImage('assets/dialog/dialog-topleft-back.png');
+const iconTopLeftTag = cdnImage('assets/dialog/dialog-topleft-tag.png');
+const iconTopRightMenu = cdnImage('assets/dialog/dialog-topright-back.png');
+const dialogSettingsOption = cdnImage('assets/dialog/dialogSettings-option.png');
+const dialogSettingsRightBack = cdnImage('assets/dialog/dialogSettings-rightBack.png');
+const dialogSettingsDownBack = cdnImage('assets/dialog/dialogSettings-downBack.png');
+const dialogSettingsTempIcon = cdnImage('assets/dialog/dialogSettings-tempIcon.png');
 
 export const dialogAssets = {
   iconPlus,

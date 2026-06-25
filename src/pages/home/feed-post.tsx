@@ -11,8 +11,8 @@ import { formatCharacterProfilePostTime, postApi } from '@/features/post'
 
 import { ExpandableText } from '@/shared/ui/expandable-text'
 
-const IconLike = cdnImage('assets/feed/icon/like 1.png')
-const IconMusic = cdnImage('assets/feed/icon/音乐 1.png')
+const IconLike = cdnImage('assets/feed/icon/like_1.png')
+const IconMusic = cdnImage('assets/feed/icon/music_1.png')
 const IconMoreImg = cdnImage('assets/feed/icon/moreImg-icon.png')
 
 type PostLikeState = {

@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/app/navigation';
-import { cdnImage } from '@/shared/lib/cdn';
-
+import { LOGO_POPOP_PNG } from '@/shared/assets/feed';
 import { useCreationCharacters } from '@/features/character-creation/hooks/use-creation-characters';
 import type { CreationCharacterItem, CreationListTab } from '@/features/character-creation/types';
 
@@ -17,7 +16,7 @@ import { CreationNewCard } from './components/creation-new-card';
 import { CreationPostDynamicSheet } from './components/creation-post-dynamic-sheet';
 import { CreationTopTabs } from './components/creation-top-tabs';
 
-const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png');
+const LogoPopop = LOGO_POPOP_PNG;
 
 type CharacterCreationTabProps = {
   isActive?: boolean;

@@ -32,7 +32,7 @@ import {
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
 import { cdnImage } from '@/shared/lib/cdn'
 import { PageHeaderBar } from '@/shared/ui/fullscreen-page'
-import { PopIcon } from '@/shared/ui/pop-icon'
+
 import { PopImage } from '@/shared/ui/pop-image'
 import { Toast, useToast } from '@/shared/ui/toast'
 
@@ -92,7 +92,7 @@ function BackgroundCard({
           style={styles.deleteButton}
           accessibilityLabel={deleteLabel}
         >
-          <PopIcon icon={dialogPageStyleSettingsAssets.delete} size={24} />
+          <Image source={{ uri: dialogPageStyleSettingsAssets.delete }} style={{width: 24, height: 24}} />
         </Pressable>
       ) : null}
     </View>
@@ -197,7 +197,7 @@ export function ChatBackgroundPage({
             style={styles.backButton}
             accessibilityLabel={t('chatBackgroundPage.back')}
           >
-            <PopIcon icon={dialogPageStyleSettingsAssets.back} size={36} />
+            <Image source={{ uri: dialogPageStyleSettingsAssets.back }} style={{width: 36, height: 36}} />
           </Pressable>
           <Text style={styles.title}>{t('chatBackgroundPage.title')}</Text>
         </PageHeaderBar>

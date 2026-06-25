@@ -17,7 +17,7 @@ import type { ChatModelDisplay } from '@/features/chat/lib/chat-model-display'
 import type { ChatAtmosphereConfig } from '@/features/chat/lib/chat-atmosphere-presets'
 import { useUserPersonaList } from '@/features/user-persona/hooks/use-user-persona-list'
 import { dialogAssets } from '@/shared/assets/dialog'
-import { PopIcon } from '@/shared/ui/pop-icon'
+import { Image } from 'expo-image'
 import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 
 import { ChatModeCustomSheet, DEFAULT_CHAT_MODE_CUSTOM_SETTINGS } from './chat-mode-custom-sheet'
@@ -77,7 +77,7 @@ function ModeRow({
         style={disabled && styles.disabled}
         accessibilityLabel={customSettingsLabel}
       >
-        <PopIcon icon={dialogAssets.dialogSettingsOption} size={36} />
+        <Image source={{ uri: dialogAssets.dialogSettingsOption }} style={{width: 36, height: 36}} />
       </Pressable>
     </View>
   )
@@ -96,7 +96,7 @@ function CustomSettingRow({
         <Text style={styles.settingTitle}>{item.title}</Text>
         <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
       </View>
-      <PopIcon icon={dialogAssets.dialogSettingsRightBack} size={24} />
+      <Image source={{ uri: dialogAssets.dialogSettingsRightBack }} style={{width: 24, height: 24}} />
     </Pressable>
   )
 }
@@ -280,13 +280,12 @@ export function ChatSettingsDrawer({
                           ? t('chatSettings.viewLess')
                           : t('chatSettings.viewAll')}
                       </Text>
-                      <PopIcon
-                        icon={dialogAssets.dialogSettingsDownBack}
-                        size={16}
-                        style={{
-                          transform: [{ rotate: chatPreference.expanded ? '180deg' : '0deg' }],
-                        }}
-                      />
+                      <View style={{ transform: [{ rotate: chatPreference.expanded ? '180deg' : '0deg' }] }}>
+                        <Image
+                          source={{ uri: dialogAssets.dialogSettingsDownBack }}
+                          style={{ width: 16, height: 16 }}
+                        />
+                      </View>
                     </Pressable>
                   ) : null}
                 </>

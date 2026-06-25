@@ -28,7 +28,8 @@ import { cdnImage } from '@/shared/lib/cdn'
 const IconChevron = cdnImage('assets/me/icon-chevron-right.png')
 const IconLogout = cdnImage('assets/me/icon-logout.png')
 const IconAbout = cdnImage('assets/me/icon-about.png')
-const LogoPopop = cdnImage('assets/feed/icon/Group 2117132529.png')
+import { LOGO_POPOP_PNG } from '@/shared/assets/feed'
+const LogoPopop = LOGO_POPOP_PNG
 
 type MeUserInfo = {
   userName: string

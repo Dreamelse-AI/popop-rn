@@ -14,7 +14,6 @@ import {
 } from '@/features/chat/lib/chat-atmosphere-presets'
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
-import { PopIcon } from '@/shared/ui/pop-icon'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
@@ -192,7 +191,7 @@ export function ChatPageStyleSheet({
                   style={styles.backgroundArrow}
                   accessibilityLabel={t('chatPageStyleSheet.viewAllBackgrounds')}
                 >
-                  <PopIcon icon={dialogPageStyleSettingsAssets.greyBack} size={24} />
+                  <Image source={{ uri: dialogPageStyleSettingsAssets.greyBack }} style={{width: 24, height: 24}} />
                 </Pressable>
               </View>
             </View>
@@ -220,7 +219,7 @@ export function ChatPageStyleSheet({
                 <SectionLabel>{t('chatPageStyleSheet.customTheme')}</SectionLabel>
                 <Pressable style={styles.viewAllButton}>
                   <Text style={styles.viewAllText}>{t('chatPageStyleSheet.viewAll')}</Text>
-                  <PopIcon icon={dialogPageStyleSettingsAssets.blackBack} size={16} />
+                  <Image source={{ uri: dialogPageStyleSettingsAssets.blackBack }} style={{width: 16, height: 16}} />
                 </Pressable>
               </View>
               <View style={styles.themeGrid}>

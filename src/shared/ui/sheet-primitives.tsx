@@ -10,12 +10,12 @@ import {
 } from 'react-native'
 
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
-import { PopIcon } from '@/shared/ui/pop-icon'
+import { Image } from 'expo-image'
 
 import { SHEET } from './sheet-tokens'
 
 export function SheetCloseIcon() {
-  return <PopIcon icon={dialogPageStyleSettingsAssets.close} size={SHEET.close.iconSize} />
+  return <Image source={{ uri: dialogPageStyleSettingsAssets.close }} style={{ width: SHEET.close.iconSize, height: SHEET.close.iconSize }} />
 }
 
 type SheetHeaderAction = {

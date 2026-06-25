@@ -5,7 +5,7 @@ import Svg, { Path, Line } from 'react-native-svg'
 import { useAudioPlayer } from 'expo-audio'
 import { cdnImage } from '@/shared/lib/cdn'
 
-const IconMusic = cdnImage('assets/feed/icon/音乐 1.png')
+const IconMusic = cdnImage('assets/feed/icon/music_1.png')
 
 type MusicControlProps = {
   musicName: string

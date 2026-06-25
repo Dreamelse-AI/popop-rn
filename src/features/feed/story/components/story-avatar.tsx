@@ -8,7 +8,7 @@ import type { StoryHeadline } from '../types'
 import { Image } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
 
-const IconUnreadRing = cdnImage('assets/feed/icon/Ellipse 111367.png')
+const IconUnreadRing = cdnImage('assets/feed/icon/Ellipse_111367.png')
 
 type StoryAvatarProps = {
   item: StoryHeadline
