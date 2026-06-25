@@ -14,7 +14,8 @@ import {
 } from '@/generated';
 import { runPaidAction } from '@/shared/wallet';
 
-const POST_TARGET_TYPE = 1 as const;
+// reaction target_type 枚举（IDL）：1-character 2-post 3-story
+const STORY_TARGET_TYPE = 3 as const;
 const LIKE_KIND = 1 as const;
 
 export const storyApi = {
@@ -33,10 +34,10 @@ export const storyApi = {
     storyViewMark({ story_id: storyId }),
 
   likeStory: (storyId: string) =>
-    addReaction({ target_type: POST_TARGET_TYPE, target_id: storyId, kind: LIKE_KIND }),
+    addReaction({ target_type: STORY_TARGET_TYPE, target_id: storyId, kind: LIKE_KIND }),
 
   unlikeStory: (storyId: string) =>
-    removeReaction({ target_type: POST_TARGET_TYPE, target_id: storyId, kind: LIKE_KIND }),
+    removeReaction({ target_type: STORY_TARGET_TYPE, target_id: storyId, kind: LIKE_KIND }),
 
   replyToStory: async (storyId: string, content: string) => {
     const resp = await runPaidAction(

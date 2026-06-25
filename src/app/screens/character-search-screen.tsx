@@ -1,21 +1,33 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation'
 import { CharacterSearchPage } from '@/pages/character/character-search-page'
+import { ensureCharacterFriend } from '@/features/friendship/lib/ensure-character-friend'
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CharacterSearch'>
 
 export function CharacterSearchScreen() {
   const navigation = useNavigation<Nav>()
+  const selectingRef = useRef(false)
 
   const handleClose = useCallback(() => {
     navigation.goBack()
   }, [navigation])
 
   const handleSelectCharacter = useCallback(
-    (characterId: string) => {
-      navigation.navigate('CharacterChat', { characterId })
+    async (characterId: string) => {
+      if (selectingRef.current) return
+      selectingRef.current = true
+      try {
+        // 进聊天页前先确保已加为好友（未加则调 /friendship/add）
+        await ensureCharacterFriend(characterId)
+        navigation.navigate('CharacterChat', { characterId })
+      } catch (e) {
+        console.error('[CharacterSearchScreen] add friend failed:', e)
+      } finally {
+        selectingRef.current = false
+      }
     },
     [navigation],
   )

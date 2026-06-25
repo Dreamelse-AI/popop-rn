@@ -5,6 +5,10 @@ import {
   mapStoryViewerToCharacter,
   type StoryViewerSession,
 } from './story-viewer-mapper'
+import {
+  ENABLE_MOCK_MUSIC_STORIES,
+  MOCK_MUSIC_STORY_CHARACTERS,
+} from './__mock__/mock-music-stories'
 
 export async function loadStoryViewerSession(
   headlineItems: StoryHeadline[],
@@ -25,17 +29,25 @@ export async function loadStoryViewerSession(
     }),
   )
 
-  const characters = viewerResults
+  const realCharacters = viewerResults
     .map(r => r?.character)
     .filter((c): c is NonNullable<typeof c> => c != null)
 
+  // DEV：把带可播放 mp3 BGM 的 mock 角色拼到最前面，方便测试 BGM 加载/进度条联动/预加载
+  const characters = __DEV__ && ENABLE_MOCK_MUSIC_STORIES
+    ? [...MOCK_MUSIC_STORY_CHARACTERS, ...realCharacters]
+    : realCharacters
+
   if (characters.length === 0) return null
 
-  const initialCharacterIndex = characters.findIndex(c => c.id === clickedCharacterId)
+  const useMock = __DEV__ && ENABLE_MOCK_MUSIC_STORIES
+  const initialCharacterIndex = useMock
+    ? 0
+    : characters.findIndex(c => c.id === clickedCharacterId)
   if (initialCharacterIndex < 0) return null
 
   const clickedResult = viewerResults.find(r => r?.character.id === clickedCharacterId)
-  const serverStartIndex = clickedResult?.startIndex ?? 0
+  const serverStartIndex = useMock ? 0 : (clickedResult?.startIndex ?? 0)
   const initialStoryIndex = serverStartIndex > 0 ? serverStartIndex : undefined
 
   return { characters, initialCharacterIndex, initialStoryIndex }

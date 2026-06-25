@@ -44,6 +44,23 @@ function RowMoreIcon() {
   )
 }
 
+function ChevronRight() {
+  return (
+    <View style={styles.chevron}>
+      <Svg width={8} height={14} viewBox="0 0 8 14" fill="none">
+        <Path
+          d="M1 1L7 7L1 13"
+          stroke="black"
+          strokeOpacity={0.3}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    </View>
+  )
+}
+
 function SelectionCheckbox({ selected, onToggle }: { selected: boolean; onToggle: () => void }) {
   return (
     <Pressable onPress={onToggle} style={styles.checkbox} accessibilityLabel={selected ? '取消选择' : '选择'}>
@@ -246,7 +263,8 @@ export function MessagesCharacterDrawer({
               </View>
               <View style={styles.cardRow}>
                 <IconFlash width={20} height={20} />
-                <Text style={styles.cardText}>{t('messages.randomMatch')}</Text>
+                <Text style={[styles.cardText, styles.cardTextFlex]}>{t('messages.randomMatch')}</Text>
+                <ChevronRight />
               </View>
             </Pressable>
 
@@ -256,7 +274,8 @@ export function MessagesCharacterDrawer({
               onPress={() => { markReopenCharacterDrawer(); navigation.navigate('AddCharacter'); onClose() }}
             >
               <IconPlus width={20} height={20} />
-              <Text style={styles.cardText}>{t('messages.addFriend')}</Text>
+              <Text style={[styles.cardText, styles.cardTextFlex]}>{t('messages.addFriend')}</Text>
+              <ChevronRight />
             </Pressable>
 
             {/* Character list */}
@@ -375,7 +394,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
     backgroundColor: '#fdeab3',
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 16,
     paddingVertical: 12,
     justifyContent: 'flex-end',
     overflow: 'hidden',
@@ -395,6 +415,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#000000',
   },
+  cardTextFlex: {
+    flex: 1,
+    minWidth: 0,
+  },
+  chevron: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addFriendCard: {
     height: 56,
     flexDirection: 'row',
@@ -404,7 +434,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
     backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 16,
   },
   listSection: {
     marginTop: 4,

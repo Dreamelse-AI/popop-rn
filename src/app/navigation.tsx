@@ -17,7 +17,7 @@ export type RootStackParamList = {
   Login: undefined
   Home: undefined
   CharacterChat: { characterId: string }
-  CharacterDetail: { characterId: string; source?: string; impressionId?: string }
+  CharacterDetail: { characterId: string; source?: string; impressionId?: string; closeTo?: 'characterDrawer' }
   CharacterProfile: { characterId: string }
   AddCharacter: undefined
   CharacterSearch: undefined

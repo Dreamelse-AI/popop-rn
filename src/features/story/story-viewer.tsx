@@ -15,6 +15,7 @@ import { useAutoPlay } from '@/features/post/hooks/use-auto-play'
 import { ProgressBar } from '@/features/post/components/progress-bar'
 import { MusicControl, type MusicControlHandle } from '@/features/post/components/music-control'
 import { Image } from 'expo-image'
+import { preload as preloadAudio } from 'expo-audio'
 import { useImageBrightness } from '@/shared/hooks/use-image-brightness'
 import { ViewerExpandableText } from '@/shared/components/viewer-expandable-text'
 
@@ -106,6 +107,9 @@ export function StoryViewer({
   const [isDraggingDown, setIsDraggingDown] = useState(false)
   const [textExpanded, setTextExpanded] = useState(false)
   const [musicExpanded, setMusicExpanded] = useState(false)
+  // 有 BGM 的 story 默认处于「加载中」：进度条先暂停，等 BGM 加载好再放行（含第一条）
+  const initialBgmLoading = !!characters[initialCharacterIndex]?.stories[initialStoryIdx]?.musicUrl
+  const [bgmLoading, setBgmLoading] = useState(initialBgmLoading)
   const reportedStoryRef = useRef<string | null>(null)
   const musicRef = useRef<MusicControlHandle>(null)
 
@@ -154,7 +158,7 @@ export function StoryViewer({
     onComplete: handleAllComplete,
   })
 
-  const shouldPause = pausedProp || inputFocused || isTapPaused || isDraggingDown || textExpanded || !modalVisible
+  const shouldPause = pausedProp || inputFocused || isTapPaused || isDraggingDown || textExpanded || !modalVisible || bgmLoading
 
   useEffect(() => {
     if (shouldPause) {
@@ -166,15 +170,22 @@ export function StoryViewer({
     }
   }, [shouldPause, pause, resume])
 
+  // 切换 story 时同步重置 BGM 加载态：有 BGM → 立即暂停进度条等待加载；无 BGM → 立即放行
+  useEffect(() => {
+    setBgmLoading(!!currentStory?.musicUrl)
+  }, [currentStory?.id, currentStory?.musicUrl])
+
   useEffect(() => {
     setStoryIndex(currentIndex)
   }, [currentIndex])
 
   const prevCharIndexRef = useRef(charIndex)
+  const targetStoryIndexOnCharSwitch = useRef(0)
   useEffect(() => {
     if (charIndex !== prevCharIndexRef.current) {
       prevCharIndexRef.current = charIndex
-      goTo(0)
+      goTo(targetStoryIndexOnCharSwitch.current)
+      targetStoryIndexOnCharSwitch.current = 0
     }
   }, [charIndex, goTo])
 
@@ -203,6 +214,18 @@ export function StoryViewer({
     ].filter((u): u is string => !!u)
     if (urls.length) Image.prefetch(urls)
   }, [currentChar, storyIndex])
+
+  // 预加载下一个角色的 story（第一段 BGM + 第一张图），避免跨角色切换时等待下载
+  useEffect(() => {
+    const nextStory = characters[charIndex + 1]?.stories?.[0]
+    if (!nextStory) return
+    const nextImg = nextStory.images?.[0]
+    if (nextImg) Image.prefetch(nextImg)
+    const nextUrl = nextStory.musicUrl
+    if (!nextUrl) return
+    // preload 是异步的，吞掉 rejection 避免未捕获错误
+    void Promise.resolve(preloadAudio({ uri: nextUrl })).catch(() => {})
+  }, [characters, charIndex])
 
   const animateHeart = useCallback(() => {
     heartScale.setValue(0)
@@ -235,9 +258,32 @@ export function StoryViewer({
     }
   }, [currentStory, animateHeart, animateHeartbreak])
 
+  // 向前切换：当前角色内先后退，到第一张时切到上一个角色的最后一张
+  const handleGoPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      goPrev()
+    } else if (charIndex > 0) {
+      const prevCharIndex = charIndex - 1
+      const prevChar = characters[prevCharIndex]
+      const lastStoryIndex = prevChar ? Math.max(0, prevChar.stories.length - 1) : 0
+      targetStoryIndexOnCharSwitch.current = lastStoryIndex
+      setCharIndex(prevCharIndex)
+      setStoryIndex(lastStoryIndex)
+    }
+  }, [currentIndex, charIndex, characters, goPrev])
+
+  // 向后切换：与自动播放完成时共用同一套跨角色/关闭边界
+  const handleGoNext = useCallback(() => {
+    if (currentIndex < totalStories - 1) {
+      goNext()
+    } else {
+      handleAllComplete()
+    }
+  }, [currentIndex, totalStories, goNext, handleAllComplete])
+
   const { offsetX, didSwipe, handleTouchStart, handleTouchMove, handleTouchEnd } = useStorySwipe({
-    onSwipeLeft: goNext,
-    onSwipeRight: goPrev,
+    onSwipeLeft: handleGoNext,
+    onSwipeRight: handleGoPrev,
     canSwipe: () => !isDragActive.current,
   })
 
@@ -246,13 +292,18 @@ export function StoryViewer({
       didSwipe.current = false
       return
     }
+    // 聚焦时点屏幕只收起键盘，暂停态交给 onInputBlur 统一处理
+    if (inputFocused) {
+      Keyboard.dismiss()
+      return
+    }
     Keyboard.dismiss()
     if (musicExpanded) {
       setMusicExpanded(false)
       return
     }
     setIsTapPaused(prev => !prev)
-  }, [musicExpanded])
+  }, [musicExpanded, inputFocused])
 
   // Drag-to-close handlers
   const dragStartXRef = useRef(0)
@@ -377,6 +428,7 @@ export function StoryViewer({
                 expanded={musicExpanded}
                 isDark={isDark}
                 onExpandChange={setMusicExpanded}
+                onLoadingChange={setBgmLoading}
               />
             </View>
           )}
@@ -387,7 +439,11 @@ export function StoryViewer({
             isDark={isDark}
             onLike={handleLike}
             onInputFocus={() => setInputFocused(true)}
-            onInputBlur={() => setInputFocused(false)}
+            onInputBlur={() => {
+              setInputFocused(false)
+              // 键盘收起后保持暂停，需用户点一下屏幕才恢复自动播放
+              setIsTapPaused(true)
+            }}
             onSent={() => setIsTapPaused(true)}
             onReply={content => sendComment(content)}
           />

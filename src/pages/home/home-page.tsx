@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, ScrollView, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useFocusEffect } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 
 import { NewUserRewardModal } from '@/features/auth/components/new-user-reward-modal'
@@ -47,6 +48,7 @@ export function HomePage() {
   const [bottomTab, setBottomTab] = useState('home')
   const [reopenDrawer] = useState(takeReopenCharacterDrawer)
   const [returnToCharacterTab] = useState(takeReturnToCharacterTab)
+  const [drawerOpenToken, setDrawerOpenToken] = useState(reopenDrawer ? 1 : 0)
   const [newUserRewardCoins, setNewUserRewardCoins] = useState<number | null>(null)
   const feedScrollRef = useRef<ScrollView>(null)
   const feedScrollOffsetRef = useRef(0)
@@ -107,6 +109,17 @@ export function HomePage() {
       setBottomTab('character')
     }
   }, [])
+
+  // 从角色落地页（匿名匹配加好友成功）返回时，Home 已挂载不会重新读 mount flag，
+  // 这里在重新获得焦点时检查 flag：切到角色 tab 并打开角色抽屉（匹配入口侧边栏）
+  useFocusEffect(
+    useCallback(() => {
+      if (takeReopenCharacterDrawer()) {
+        setBottomTab('character')
+        setDrawerOpenToken(token => token + 1)
+      }
+    }, []),
+  )
 
   useEffect(() => {
     const prevTab = prevBottomTabRef.current
@@ -191,6 +204,7 @@ export function HomePage() {
         <View style={[styles.tabPanel, styles.absoluteFill, bottomTab !== 'character' && styles.hidden]}>
           <MessagesPage
             openDrawerOnMount={reopenDrawer}
+            openDrawerToken={drawerOpenToken}
             isActive={bottomTab === 'character'}
           />
         </View>

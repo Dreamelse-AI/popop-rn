@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native'
 import Svg, { Path, Line } from 'react-native-svg'
-import { useAudioPlayer } from 'expo-audio'
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 
 import IconMusic from '@/shared/assets/feed/icon/音乐 1.svg'
 
@@ -11,6 +11,8 @@ type MusicControlProps = {
   expanded?: boolean
   isDark?: boolean
   onExpandChange?: (expanded: boolean) => void
+  /** BGM 加载状态变化：加载中 true / 可播放或无 BGM false。story 用它来暂停进度条 */
+  onLoadingChange?: (loading: boolean) => void
 }
 
 export type MusicControlHandle = {
@@ -39,17 +41,20 @@ function VolumeIcon({ color = 'white' }: { color?: string }) {
 }
 
 export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
-  function MusicControl({ musicName, musicUrl, expanded = false, isDark = true, onExpandChange }, ref) {
+  function MusicControl({ musicName, musicUrl, expanded = false, isDark = true, onExpandChange, onLoadingChange }, ref) {
     const iconColor = 'white'
     const bgColor = 'rgba(48,48,48,0.9)'
     const textColor = 'rgba(255,255,255,0.8)'
-    const [muted, setMuted] = useState(false)
+    const [muted, setMuted] = useState(true)
     const [pausedByViewer, setPausedByViewer] = useState(false)
     const userMutedRef = useRef(false)
+    const playedRef = useRef(false)
     const spinValue = useRef(new Animated.Value(0)).current
     const spinAnim = useRef<Animated.CompositeAnimation | null>(null)
 
     const player = useAudioPlayer(musicUrl ? { uri: musicUrl } : null)
+    const status = useAudioPlayerStatus(player)
+    const isLoaded = status?.isLoaded ?? false
 
     useImperativeHandle(ref, () => ({
       pause: () => {
@@ -65,16 +70,35 @@ export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
       },
     }), [player, pausedByViewer])
 
+    // 切换 BGM 时重置为「加载中」状态：静音、不转动，并通知外部暂停进度条
+    useEffect(() => {
+      playedRef.current = false
+      if (!musicUrl) {
+        setMuted(true)
+        onLoadingChange?.(false)
+        return
+      }
+      player.loop = true
+      setMuted(true)
+      setPausedByViewer(false)
+      onLoadingChange?.(userMutedRef.current ? false : true)
+    }, [musicUrl, player, onLoadingChange])
+
+    // BGM 可播放后：若用户未主动静音则自动播放并转动；通知外部恢复进度条
     useEffect(() => {
       if (!musicUrl) return
-      player.loop = true
-      if (!userMutedRef.current) {
-        player.play()
-        setMuted(false)
-      } else {
+      if (!isLoaded) return
+      if (playedRef.current) return
+      playedRef.current = true
+      if (userMutedRef.current) {
         setMuted(true)
+        onLoadingChange?.(false)
+        return
       }
-    }, [musicUrl, player])
+      player.play()
+      setMuted(false)
+      onLoadingChange?.(false)
+    }, [isLoaded, musicUrl, player, onLoadingChange])
 
     const isPlaying = !muted && !pausedByViewer
 
