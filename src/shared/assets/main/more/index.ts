@@ -1,7 +1,7 @@
 // 推荐-更多页素材统一导出
 import { cdnImage } from '@/shared/lib/cdn';
 
-const iconBack = cdnImage('assets/main/more/back.png');
+const iconBack = cdnImage('assets/icon-back.png');
 const iconContent = cdnImage('assets/main/more/content.png');
 const cardImage0 = cdnImage('assets/main/more/Frame_2117132555.png');
 const cardImage1 = cdnImage('assets/main/more/Frame_2117132555-1.png');

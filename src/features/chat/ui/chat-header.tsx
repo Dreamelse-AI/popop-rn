@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
 
-const IconBack = cdnImage('assets/dialog/dialog-topleft-back.png')
+const IconBack = cdnImage('assets/icon-back.png')
 const IconMenu = cdnImage('assets/dialog/dialog-topright-back.png')
 
 type ChatHeaderProps = {

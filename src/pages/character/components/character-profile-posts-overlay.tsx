@@ -19,7 +19,7 @@ import { formatCharacterProfilePostTime, postReactionApi, usePostBgmPlayer } fro
 import { characterMainAssets } from '@/shared/assets/character/main'
 import { PopImage } from '@/shared/ui/pop-image'
 
-const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconBack = cdnImage('assets/icon-back.png')
 const IconMusic = cdnImage('assets/character/main/character-music.png')
 
 import type { CharacterProfileCellAnchor } from './character-profile-posts-list'

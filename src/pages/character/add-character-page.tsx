@@ -16,7 +16,7 @@ import { SpinnerIcon } from '@/pages/character-creation/components/creation-icon
 import { showGlobalToast } from '@/shared/wallet'
 import { PopImage } from '@/shared/ui/pop-image'
 
-const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconBack = cdnImage('assets/icon-back.png')
 const IconSearch = cdnImage('assets/character/add-character/icon-search.png')
 
 type AddCharacterTab = 'chat' | 'create'

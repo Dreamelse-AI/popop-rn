@@ -1,8 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { cdnImage } from '@/shared/lib/cdn';
+
+const IconBack = cdnImage('assets/icon-back.png');
 
 import { resolveCharacterEditMode } from '@/features/character-creation/lib/character-edit-mode';
 import type { FlushToServerResult } from '@/features/character-creation/hooks/use-character-draft-form';
@@ -53,7 +57,7 @@ export function CharacterCreateFormPage({ draftId }: CharacterCreateFormPageProp
           style={[styles.backButton, saving ? styles.backButtonDisabled : undefined]}
           accessibilityLabel={t('character.detailPage.back')}
         >
-          <Text style={styles.backButtonText}>‹</Text>
+          <Image source={{ uri: IconBack }} style={{ width: 36, height: 36 }} />
         </Pressable>
         <Text style={styles.pageTitle} numberOfLines={1}>{pageTitle}</Text>
         <View style={styles.headerRight}>
@@ -108,13 +112,7 @@ const styles = StyleSheet.create({
   backButtonDisabled: {
     opacity: 0.5,
   },
-  backButtonText: {
-    fontSize: 32,
-    fontWeight: '300',
-    color: '#000000',
-    marginTop: -2,
-  },
-  pageTitle: {
+pageTitle: {
     maxWidth: '60%',
     fontSize: 20,
     fontWeight: '900',

@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { cdnImage } from '@/shared/lib/cdn'
+
+const IconBack = cdnImage('assets/icon-back.png')
 
 type FullscreenPageProps = {
   children: ReactNode
@@ -45,7 +49,7 @@ type BackButtonProps = {
 export function BackButton({ onPress }: BackButtonProps) {
   return (
     <Pressable style={styles.backButton} onPress={onPress} accessibilityLabel="Back">
-      <Text style={styles.backChevronText}>‹</Text>
+      <Image source={{ uri: IconBack }} style={{ width: 36, height: 36 }} />
     </Pressable>
   )
 }
@@ -78,10 +82,5 @@ const styles = StyleSheet.create({
     width: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  backChevronText: {
-    fontSize: 38,
-    fontWeight: '300',
-    color: '#000000',
   },
 })

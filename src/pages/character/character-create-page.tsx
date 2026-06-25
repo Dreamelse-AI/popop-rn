@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { cdnImage } from '@/shared/lib/cdn'
 
-const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconBack = cdnImage('assets/icon-back.png')
 
 type CharacterCreatePageProps = {
   onClose: () => void

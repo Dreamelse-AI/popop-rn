@@ -9,7 +9,7 @@ import { cdnImage } from '@/shared/lib/cdn'
 import { useCharacterSearch } from '@/features/character/hooks/use-character-search'
 import type { CharacterSearchItem } from '@/features/character/types'
 
-const IconBack = cdnImage('assets/character/add-character/characterAddCreate-back.png')
+const IconBack = cdnImage('assets/icon-back.png')
 const IconSearch = cdnImage('assets/character/add-character/icon-search.png')
 
 type CharacterSearchPageProps = {

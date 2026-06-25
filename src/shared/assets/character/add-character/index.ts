@@ -1,6 +1,6 @@
 import { cdnImage } from '@/shared/lib/cdn';
 
-const iconBack = cdnImage('assets/character/add-character/icon-back.png');
+const iconBack = cdnImage('assets/icon-back.png');
 const iconSearch = cdnImage('assets/character/add-character/icon-search.png');
 const characterAddCreateBack = cdnImage('assets/character/add-character/characterAddCreate-back.png');
 const characterAddCreateCheck = cdnImage('assets/character/add-character/characterAddCreate-check.png');
