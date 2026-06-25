@@ -165,7 +165,7 @@ export function PostDynamicComposePage({
               disabled={uploading}
               style={[styles.uploadPlaceholder, uploading && styles.uploadPlaceholderDisabled]}
             >
-              <DefaultImageIcon width={148} height={88} style={{ opacity: 0.35 }} />
+              <PopImage uri={DefaultImageIcon} style={{ width: 148, height: 88, opacity: 0.35 }} />
               <Text style={styles.uploadPlaceholderText}>
                 {uploading
                   ? t('character.createPage.imageUploading')
