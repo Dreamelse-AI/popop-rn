@@ -18,16 +18,25 @@ import { markReturnToCharacterTab } from './drawer-return-flag'
 
 type MessagesPageProps = {
   openDrawerOnMount?: boolean
+  openDrawerToken?: number
   isActive?: boolean
 }
 
 export function MessagesPage({
   openDrawerOnMount = false,
+  openDrawerToken = 0,
   isActive = true,
 }: MessagesPageProps) {
   const { t } = useTranslation()
   const hasToken = useAuthStore(s => Boolean(s.token))
   const [drawerOpen, setDrawerOpen] = useState(openDrawerOnMount)
+
+  // openDrawerToken 自增时（如从角色落地页返回匹配入口）打开角色抽屉
+  useEffect(() => {
+    if (openDrawerToken > 0) {
+      setDrawerOpen(true)
+    }
+  }, [openDrawerToken])
   const {
     items: characterListItems,
     conversations,

@@ -35,6 +35,7 @@ type LoginState = {
   profileInstructions: string
   profileAvatarPreview: string
   loading: boolean
+  sendingCode: boolean
   regionLoading: boolean
   error: string | null
   toast: string | null
@@ -82,6 +83,7 @@ export function useLogin(navigation: UseLoginNavigation) {
     profileInstructions: '',
     profileAvatarPreview: '',
     loading: false,
+    sendingCode: false,
     regionLoading: true,
     error: null,
     toast: null,
@@ -446,15 +448,15 @@ export function useLogin(navigation: UseLoginNavigation) {
       return
     }
 
-    update({ loading: true, error: null })
+    update({ loading: true, sendingCode: true, error: null })
     try {
       await authApi.sendCode({ email })
       lastSentEmailRef.current = email
       countdown.start()
-      update({ loading: false, step: 'code' })
+      update({ loading: false, sendingCode: false, step: 'code' })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to send code. Please try again.'
-      update({ loading: false, error: msg })
+      update({ loading: false, sendingCode: false, error: msg })
     }
   }, [state.email, isValidEmail, update, countdown])
 

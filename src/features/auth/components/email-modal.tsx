@@ -106,7 +106,7 @@ export function EmailModal({ loginHook }: EmailModalProps) {
                 style={[styles.sendCodeButton, !canSendCode && styles.sendCodeButtonDisabled]}
               >
                 <Text style={styles.sendCodeText}>
-                  {state.loading && state.step === 'email'
+                  {state.sendingCode
                     ? t('email.sending')
                     : countdown.isActive
                       ? `${countdown.remaining}s`

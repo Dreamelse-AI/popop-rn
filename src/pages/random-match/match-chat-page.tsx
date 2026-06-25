@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, type ComponentType } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
+import { useEffect, useState, useCallback, useRef, type ComponentType } from 'react'
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +39,12 @@ function resolveTemplate(emotion?: string): MatchTemplate {
   if (emotion === 'shy') return 'shy'
   if (emotion === 'emo') return 'emo'
   return 'default'
+}
+
+/** 取消息可展示文本：优先语音转写文本 voice.text，再退回普通文本 text.text。
+ *  用于语音生成失败（voice.url 为空）但返回了 text 时的降级展示。 */
+function getMessageDisplayText(message: PhoneMessageOutput): string {
+  return message.voice?.text?.trim() || message.text?.text?.trim() || ''
 }
 
 const GENDER_OPTIONS = [
@@ -99,9 +105,13 @@ export function MatchChatPage({
   const [imageUploading, setImageUploading] = useState(false)
   const [sentImageUrl, setSentImageUrl] = useState('')
   const [showFriendInvite, setShowFriendInvite] = useState(false)
+  const [isAddingFriend, setIsAddingFriend] = useState(false)
+  const [friendRequestSent, setFriendRequestSent] = useState(false)
 
   const voiceRecorder = useMatchVoiceRecorder()
   const randomMatchCost = useChargePointDisplay('random_match')
+  const myInputScrollRef = useRef<ScrollView>(null)
+  const myInputRef = useRef<TextInput>(null)
 
   const currentGenderLabel = (() => {
     const option = GENDER_OPTIONS.find(o => o.value === genderFilter)
@@ -115,7 +125,7 @@ export function MatchChatPage({
   useEffect(() => {
     const greeting = greetingMessages?.[0]
     if (greeting) {
-      setCharacterMessage(greeting.text?.text ?? '')
+      setCharacterMessage(getMessageDisplayText(greeting))
       if (greeting.emotion) {
         setTemplate(resolveTemplate(greeting.emotion))
       }
@@ -128,8 +138,6 @@ export function MatchChatPage({
     if ((!value && !imageUrl) || isSending || !chatSessionId) return
     setIsSending(true)
     setIsTyping(true)
-    setInputText('')
-    setSentImageUrl('')
 
     const messages: PhoneMessageInput[] = []
     if (imageUrl) {
@@ -145,20 +153,19 @@ export function MatchChatPage({
     try {
       const resp = await runPaidAction(
         () => sendMessageToAnonymousCharacter({ chat_session_id: chatSessionId, messages }),
-        {
-          source: 'anonymous_chat_send',
-          onInsufficientBalance: () => {
-            setInputText(value)
-            setSentImageUrl(imageUrl)
-          },
-        },
+        { source: 'anonymous_chat_send' },
       )
+      // 余额不足（resp === null）：已弹充值窗，己方输入与对方文案都保持原样，不清除
       if (resp === null) return
+
+      // 成功后再清空己方输入与对方旧消息，用新回复替换
+      setInputText('')
+      setSentImageUrl('')
       const replies = resp.character_messages ?? []
       setCharacterMessage('')
-      const lastTextReply = [...replies].reverse().find(m => m.text?.text)
-      if (lastTextReply?.text?.text) {
-        setCharacterMessage(lastTextReply.text.text)
+      const lastTextReply = [...replies].reverse().find(m => getMessageDisplayText(m))
+      if (lastTextReply) {
+        setCharacterMessage(getMessageDisplayText(lastTextReply))
       }
       const lastEmotion = [...replies].reverse().find(m => m.emotion)?.emotion
       if (lastEmotion) setTemplate(resolveTemplate(lastEmotion))
@@ -166,8 +173,7 @@ export function MatchChatPage({
         setShowFriendInvite(true)
       }
     } catch (error) {
-      setInputText(value)
-      setSentImageUrl(imageUrl)
+      // 失败：己方输入与对方文案保持原样，不清除
       if (error instanceof ApiError && error.message.trim()) {
         showGlobalToast(error.message.trim())
       } else {
@@ -201,23 +207,40 @@ export function MatchChatPage({
     }
   }, [handleSendImage, imageUploading, t])
 
-  const handleAddFriend = useCallback(async () => {
+  const handleAddFriend = useCallback(async (fromOpponentButton = false) => {
     if (!chatSessionId) return
+    if (fromOpponentButton && (friendRequestSent || isAddingFriend)) return
+
+    if (fromOpponentButton) {
+      setFriendRequestSent(true)
+    }
+    setIsAddingFriend(true)
     try {
       const resp = await addFriendFromAnonymousChat({ chat_session_id: chatSessionId })
       if (resp.accepted) {
-        showGlobalToast(t('randomMatch.friendAccepted', '对方接受了好友邀请'))
+        showGlobalToast(t('randomMatch.friendAccepted', '你们已成为好友'))
         if (resp.character_id) {
-          navigation.replace('CharacterDetail', { characterId: resp.character_id })
+          navigation.replace('CharacterDetail', {
+            characterId: resp.character_id,
+            closeTo: 'characterDrawer',
+          })
         }
-      } else {
-        showGlobalToast(resp.message || t('randomMatch.friendRejected', '对方拒绝了你的好友邀请'))
-        if (resp.message) setCharacterMessage(resp.message)
+        return
       }
+      if (fromOpponentButton) {
+        setFriendRequestSent(false)
+      }
+      showGlobalToast(resp.message || t('randomMatch.friendRejected', '对方拒绝了你的好友邀请'))
+      if (resp.message) setCharacterMessage(resp.message)
     } catch (err) {
+      if (fromOpponentButton) {
+        setFriendRequestSent(false)
+      }
       showGlobalToast(t('randomMatch.addFriendFailed', '加好友失败'))
+    } finally {
+      setIsAddingFriend(false)
     }
-  }, [chatSessionId, navigation, t])
+  }, [chatSessionId, friendRequestSent, isAddingFriend, navigation, t])
 
   const handleAcceptFriendInvite = useCallback(async () => {
     setShowFriendInvite(false)
@@ -259,13 +282,18 @@ export function MatchChatPage({
   const style = MATCH_TEMPLATES[template]
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => setShowExitConfirm(true)} style={styles.headerButton}>
-          <Image source={{ uri: IconClose }} style={{width: 36, height: 36}} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('randomMatch.title')}</Text>
+        <View style={styles.headerLeft}>
+          <Pressable onPress={() => setShowExitConfirm(true)} style={styles.headerButton}>
+            <Image source={{ uri: IconClose }} style={{width: 36, height: 36}} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('randomMatch.title')}</Text>
+        </View>
         <View style={styles.headerRight}>
           <Pressable
             onPress={() => setGenderMenuOpen(!genderMenuOpen)}
@@ -288,20 +316,26 @@ export function MatchChatPage({
 
       {/* Gender dropdown */}
       {genderMenuOpen && (
-        <View style={styles.genderDropdown}>
-          {GENDER_OPTIONS.map(opt => (
-            <Pressable
-              key={opt.labelKey}
-              onPress={() => handleSelectGender(opt.value)}
-              style={styles.genderOption}
-            >
-              <Text style={styles.genderEmoji}>{opt.emoji}</Text>
-              <Text style={[styles.genderOptionText, genderFilter === opt.value && styles.genderOptionTextSelected]}>
-                {t(opt.labelKey)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <>
+          <Pressable
+            style={styles.genderBackdrop}
+            onPress={() => setGenderMenuOpen(false)}
+          />
+          <View style={styles.genderDropdown}>
+            {GENDER_OPTIONS.map(opt => (
+              <Pressable
+                key={opt.labelKey}
+                onPress={() => handleSelectGender(opt.value)}
+                style={styles.genderOption}
+              >
+                <Text style={styles.genderEmoji}>{opt.emoji}</Text>
+                <Text style={[styles.genderOptionText, genderFilter === opt.value && styles.genderOptionTextSelected]}>
+                  {t(opt.labelKey)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
       )}
 
       {/* Cards */}
@@ -314,7 +348,12 @@ export function MatchChatPage({
               {anonymousTags.map(tag => `#${tag}`).join(' ')}
             </Text>
           )}
-          <View style={styles.messageArea}>
+          <ScrollView
+            style={styles.messageArea}
+            contentContainerStyle={styles.messageAreaContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {isTyping ? (
               <Text style={styles.typingText}>{t('randomMatch.typing')}</Text>
             ) : (
@@ -322,17 +361,28 @@ export function MatchChatPage({
                 {characterMessage}
               </Text>
             )}
-          </View>
+          </ScrollView>
           <View style={styles.characterCardBottom}>
             {style.emojiLabel ? (
               <Text style={[styles.emojiLabel, { color: style.emojiColor }]}>{style.emojiLabel}</Text>
             ) : <View />}
-            <Pressable style={styles.addFriendButton} onPress={() => void handleAddFriend()}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M12 6a1.5 1.5 0 011.5 1.5v3h3a1.5 1.5 0 010 3h-3v3a1.5 1.5 0 01-3 0v-3h-3a1.5 1.5 0 010-3h3v-3A1.5 1.5 0 0112 6z" fill="white" />
-              </Svg>
-              <Text style={styles.addFriendText}>{t('randomMatch.addFriend')}</Text>
-            </Pressable>
+            {friendRequestSent ? (
+              <View style={styles.friendPendingButton}>
+                <ActivityIndicator size="small" color="#ffffff" />
+                <Text style={styles.addFriendText}>{t('randomMatch.friendRequestPending', '对方考虑中...')}</Text>
+              </View>
+            ) : (
+              <Pressable
+                style={[styles.addFriendButton, isAddingFriend && styles.addFriendButtonDisabled]}
+                onPress={() => void handleAddFriend(true)}
+                disabled={isAddingFriend}
+              >
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 6a1.5 1.5 0 011.5 1.5v3h3a1.5 1.5 0 010 3h-3v3a1.5 1.5 0 01-3 0v-3h-3a1.5 1.5 0 010-3h3v-3A1.5 1.5 0 0112 6z" fill="white" />
+                </Svg>
+                <Text style={styles.addFriendText}>{t('randomMatch.addFriend')}</Text>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -341,17 +391,28 @@ export function MatchChatPage({
           {sentImageUrl ? (
             <PopImage uri={sentImageUrl} style={styles.sentImageOverlay} contentFit="cover" />
           ) : null}
-          <View style={styles.myInputArea}>
-            <TextInput
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder={sentImageUrl ? '' : t('randomMatch.chatPlaceholder')}
-              placeholderTextColor="rgba(0,0,0,0.2)"
-              style={styles.myInput}
-              multiline
-              editable={!isSending}
-            />
-          </View>
+          <ScrollView
+            ref={myInputScrollRef}
+            style={styles.myInputArea}
+            contentContainerStyle={styles.myInputAreaContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+            onContentSizeChange={() => myInputScrollRef.current?.scrollToEnd({ animated: false })}
+          >
+            <Pressable style={styles.myInputPressable} onPress={() => myInputRef.current?.focus()}>
+              <TextInput
+                ref={myInputRef}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={sentImageUrl ? '' : t('randomMatch.chatPlaceholder')}
+                placeholderTextColor="rgba(0,0,0,0.2)"
+                style={styles.myInput}
+                multiline
+                scrollEnabled={false}
+                editable={!isSending}
+              />
+            </Pressable>
+          </ScrollView>
           <View style={styles.myCardBottom}>
             <Pressable
               style={styles.photoButton}
@@ -437,7 +498,7 @@ export function MatchChatPage({
           </View>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -459,14 +520,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Black Han Sans',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#000000',
   },
   headerRight: {
@@ -516,6 +577,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
   },
+  genderBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 49,
+  },
   genderDropdown: {
     position: 'absolute',
     right: 12,
@@ -561,6 +630,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     overflow: 'hidden',
+    alignItems: 'center',
   },
   templateOverlayCover: {
     ...StyleSheet.absoluteFill,
@@ -576,12 +646,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Black Han Sans',
     opacity: 0.3,
+    textAlign: 'center',
   },
   messageArea: {
     flex: 1,
+    alignSelf: 'stretch',
+  },
+  messageAreaContent: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   typingText: {
     fontSize: 14,
@@ -593,6 +669,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   characterCardBottom: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -608,6 +685,19 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     backgroundColor: '#000000',
     paddingLeft: 6,
+    paddingRight: 12,
+  },
+  addFriendButtonDisabled: {
+    opacity: 0.6,
+  },
+  friendPendingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 32,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingLeft: 8,
     paddingRight: 12,
   },
   addFriendText: {
@@ -629,8 +719,16 @@ const styles = StyleSheet.create({
   },
   myInputArea: {
     flex: 1,
+  },
+  myInputAreaContent: {
+    flexGrow: 1,
+  },
+  myInputPressable: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
   },
   myInput: {
     width: '100%',
