@@ -30,6 +30,7 @@ type CreationCharacterCardProps = {
   onDelete?: () => void;
   onPublish?: () => void;
   onPostDynamic?: () => void;
+  onCardClick?: () => void;
   publishing?: boolean;
   deleting?: boolean;
   rejected?: boolean;
@@ -112,18 +113,21 @@ function PublishedCharacterCard({
   onEdit,
   onDelete,
   onPostDynamic,
+  onCardClick,
   deleting,
 }: {
   displayName: string;
   onEdit?: () => void;
   onDelete?: () => void;
   onPostDynamic?: () => void;
+  onCardClick?: () => void;
   deleting?: boolean;
 }) {
   const { t } = useTranslation();
 
   return (
     <>
+      <Pressable onPress={onCardClick} style={StyleSheet.absoluteFill} accessibilityLabel={displayName} />
       <View style={publishedStyles.topRow}>
         <Text style={publishedStyles.nameText} numberOfLines={1}>{displayName}</Text>
         <Pressable
@@ -166,6 +170,7 @@ export function CreationCharacterCard({
   onDelete,
   onPublish,
   onPostDynamic,
+  onCardClick,
   publishing = false,
   deleting = false,
   rejected = false,
@@ -199,6 +204,7 @@ export function CreationCharacterCard({
           onEdit={onEdit}
           onDelete={onDelete}
           onPostDynamic={onPostDynamic}
+          onCardClick={onCardClick}
           deleting={deleting}
         />
       ) : (
