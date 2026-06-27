@@ -31,7 +31,7 @@ import {
 } from '@/features/chat/lib/chat-background-store'
 import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
 import { cdnImage } from '@/shared/lib/cdn'
-import { PageHeaderBar } from '@/shared/ui/fullscreen-page'
+import { PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 
 import { PopImage } from '@/shared/ui/pop-image'
 import { Toast, useToast } from '@/shared/ui/toast'
@@ -192,13 +192,7 @@ export function ChatBackgroundPage({
     >
       <View style={styles.page}>
         <PageHeaderBar>
-          <Pressable
-            onPress={onBack}
-            style={styles.backButton}
-            accessibilityLabel={t('chatBackgroundPage.back')}
-          >
-            <Image source={{ uri: dialogPageStyleSettingsAssets.back }} style={{width: 36, height: 36}} />
-          </Pressable>
+          <BackButton onPress={onBack} />
           <Text style={styles.title}>{t('chatBackgroundPage.title')}</Text>
         </PageHeaderBar>
 
@@ -262,16 +256,6 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: '#f6f6f6',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 16,
-    top: '50%',
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -18,
   },
   title: {
     fontSize: 20,

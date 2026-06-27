@@ -7,7 +7,7 @@ const blackVector = cdnImage('assets/dialog/dialog-page-style-settings/dialogPag
 const close = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-close.png');
 const deleteIcon = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-delete.png');
 const downArrow = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-downArrow.png');
-const greyBack = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-greyBack.png');
+const greyBack = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-greyBack.svg');
 const selected = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-selected.png');
 const union = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-union.png');
 
