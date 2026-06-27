@@ -61,7 +61,6 @@
     "rechargeNow": "지금 충전",
     "rechargeDollarNow": "$ {{amount}} 지금 충전",
     "rechargeAmountNow": "{{amount}} 지금 충전",
-    "rechargeAgreementTitle": "서비스 이용약관",
     "rechargeAgreement": "<terms>{{title}}</terms>을 읽고 동의합니다",
     "loadingPackages": "패키지를 불러오는 중...",
     "loadPackagesFailed": "충전 패키지를 불러오지 못했습니다. 다시 시도해 주세요.",
@@ -368,6 +367,15 @@
       "creating": "만드는 중…",
       "goChatLoading": "채팅 준비 중…",
       "goChatFailed": "채팅을 열 수 없습니다. 잠시 후 다시 시도해 주세요.",
+      "validation": {
+        "nameRequired": "캐릭터 이름을 입력해 주세요",
+        "tagsRequired": "캐릭터 태그를 선택해 주세요",
+        "speciesRequired": "종족을 선택해 주세요",
+        "genderRequired": "성별을 선택해 주세요",
+        "voiceRequired": "음성을 선택해 주세요",
+        "introductionRequired": "캐릭터 소개를 입력해 주세요",
+        "personalityRequired": "성격 설명을 입력해 주세요"
+      },
       "loading": "로딩 중…",
       "loadFailed": "불러오기에 실패했습니다. 나중에 다시 시도해 주세요.",
       "retry": "재시도",

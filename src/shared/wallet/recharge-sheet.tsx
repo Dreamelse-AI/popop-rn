@@ -11,7 +11,9 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import type { RechargePackageItem, TermsInfo } from '@/generated/arca_apiComponents'
+import type { RechargePackageItem } from '@/generated/arca_apiComponents'
+import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
+import { getAccountRegion } from '@/shared/api/account-region-store'
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { FullscreenPage, PageHeaderBar, BackButton } from '@/shared/ui/fullscreen-page'
 
@@ -35,30 +37,9 @@ type RechargeSheetProps = {
   presentation?: 'sheet' | 'fullscreen'
 }
 
-const RECHARGE_TERMS_TYPES = new Set([
-  'recharge',
-  'recharge_agreement',
-  'recharge_terms',
-  'payment',
-  'top_up',
-  'top_up_terms',
-  'topup',
-  'topup_terms',
-  'payment_terms',
-])
-
-const RECHARGE_TERMS_TITLE_KEYWORDS = [
-  'recharge',
-  'top-up',
-  'top up',
-  'topup',
-  'payment',
-  '充值',
-  '충전',
-  '결제',
-  'チャージ',
-  '支払い',
-]
+function normalizeTermsType(type: string): string {
+  return type.trim().toLowerCase().replace(/[-\s]+/g, '_')
+}
 
 function chunkPackages<T>(items: T[], size: number): T[][] {
   const rows: T[][] = []
@@ -66,32 +47,6 @@ function chunkPackages<T>(items: T[], size: number): T[][] {
     rows.push(items.slice(i, i + size))
   }
   return rows
-}
-
-function normalizeTermsType(type: string): string {
-  return type.trim().toLowerCase().replace(/[-\s]+/g, '_')
-}
-
-function isRechargeTermsTitle(title: string): boolean {
-  const normalized = title.trim().toLowerCase()
-  return RECHARGE_TERMS_TITLE_KEYWORDS.some(keyword => normalized.includes(keyword))
-}
-
-function findRechargeTerms(termsList: TermsInfo[]): TermsInfo | undefined {
-  return termsList.find(term => {
-    const type = normalizeTermsType(term.type)
-    return (
-      RECHARGE_TERMS_TYPES.has(type) ||
-      type.includes('recharge') ||
-      type.includes('top_up') ||
-      type.includes('topup') ||
-      isRechargeTermsTitle(term.title)
-    )
-  })
-}
-
-function findFallbackTermsLink(termsList: TermsInfo[]): string | undefined {
-  return termsList.find(term => term.link.trim())?.link.trim() || undefined
 }
 
 function formatPackageAmount(pkg: RechargePackageItem): string {
@@ -150,10 +105,9 @@ function RechargeTerms({
   link,
 }: {
   title: string
-  link?: string
+  link: string
 }) {
   const openTerms = () => {
-    if (!link) return
     void Linking.openURL(link)
   }
 
@@ -164,11 +118,7 @@ function RechargeTerms({
           i18nKey="wallet.rechargeAgreement"
           values={{ title }}
           components={{
-            terms: link ? (
-              <Text style={styles.termsLink} onPress={openTerms} />
-            ) : (
-              <Text style={styles.termsBold} />
-            ),
+            terms: <Text style={styles.termsLink} onPress={openTerms} />,
           }}
         />
       </Text>
@@ -194,9 +144,14 @@ export function RechargeSheet({
 }: RechargeSheetProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const termsList: TermsInfo[] = []
+  const { termsList } = useAppTerms(getAccountRegion())
   const totalTokens = useWalletStore(s => s.totalTokens)
   const freeTokens = useWalletStore(s => s.freeTokens)
+
+  const userAgreement = useMemo(
+    () => termsList.find(term => normalizeTermsType(term.type) === 'user_agreement' && term.link.trim()),
+    [termsList],
+  )
 
   const selectedPackage = useMemo(
     () => packages.find(pkg => pkg.package_id === selectedPackageId) ?? null,
@@ -204,10 +159,6 @@ export function RechargeSheet({
   )
 
   const packageRows = useMemo(() => chunkPackages(packages, 3), [packages])
-
-  const rechargeTerms = useMemo(() => findRechargeTerms(termsList), [termsList])
-  const rechargeTermsTitle = t('wallet.rechargeAgreementTitle')
-  const rechargeTermsLink = rechargeTerms?.link.trim() || findFallbackTermsLink(termsList)
 
   const handleContinue = () => {
     if (!selectedPackage || isPurchasing) return
@@ -290,9 +241,9 @@ export function RechargeSheet({
     </View>
   )
 
-  const termsNode = (
-    <RechargeTerms title={rechargeTermsTitle} link={rechargeTermsLink} />
-  )
+  const termsNode = userAgreement ? (
+    <RechargeTerms title={userAgreement.title} link={userAgreement.link.trim()} />
+  ) : null
 
   if (presentation === 'fullscreen') {
     if (!open) return null
@@ -492,10 +443,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   termsLink: {
-    fontWeight: '500',
-    color: '#000000',
-  },
-  termsBold: {
     fontWeight: '500',
     color: '#000000',
   },

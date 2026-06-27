@@ -77,10 +77,7 @@ export function AddCharacterPage({ onClose, onSelectCharacter, onOpenSearch }: A
     setGoChatLoading(true)
     try {
       const characterId = await goChatRef.current(controller.signal)
-      if (!characterId) {
-        showGlobalToast(t('character.creation.goChatFailed'))
-        return
-      }
+      if (!characterId) return
       navigation.navigate('CharacterChat', { characterId })
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return

@@ -61,7 +61,6 @@
     "rechargeNow": "立即充值",
     "rechargeDollarNow": "立即充值 ${{amount}}",
     "rechargeAmountNow": "立即充值 {{amount}}",
-    "rechargeAgreementTitle": "用户服务条款",
     "rechargeAgreement": "已阅读并同意<terms>{{title}}</terms>",
     "loadingPackages": "正在加载套餐...",
     "loadPackagesFailed": "充值套餐加载失败，请稍后重试",
@@ -368,6 +367,15 @@
       "creating": "创建中…",
       "goChatLoading": "准备聊天中…",
       "goChatFailed": "进入聊天失败，请稍后重试",
+      "validation": {
+        "nameRequired": "请输入角色名称",
+        "tagsRequired": "请选择角色标签",
+        "speciesRequired": "请选择物种",
+        "genderRequired": "请选择性别",
+        "voiceRequired": "请选择音色",
+        "introductionRequired": "请输入角色简介",
+        "personalityRequired": "请输入性格描述"
+      },
       "loading": "加载中…",
       "loadFailed": "加载失败，请稍后重试",
       "retry": "重试",
