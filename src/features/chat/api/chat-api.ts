@@ -66,4 +66,4 @@ export function listCharacterScheduleByDay(
   return real.listCharacterScheduleByDay(req);
 }
 
-export const USE_MOCK = false;
+export { USE_MOCK } from './use-mock';

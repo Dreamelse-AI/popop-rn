@@ -64,14 +64,14 @@ let pageConfigPromise: Promise<GetCharacterPageConfigResp> | null = null;
 export async function fetchCharacterPageConfig(): Promise<GetCharacterPageConfigResp> {
   if (!pageConfigPromise) {
     pageConfigPromise = (USE_CHARACTER_CREATION_MOCK
-      ? mock.getCharacterPageConfig()
+      ? (mock.getCharacterPageConfig() as Promise<GetCharacterPageConfigResp>)
       : getCharacterPageConfig()
     ).catch((error) => {
       pageConfigPromise = null;
       throw error;
     });
   }
-  return pageConfigPromise;
+  return pageConfigPromise!;
 }
 
 export function resetCharacterPageConfigCache() {

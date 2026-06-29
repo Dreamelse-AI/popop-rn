@@ -30,12 +30,14 @@ function mapImagesFromApi(
   if (!images?.length) return [];
   return images.map((img, index) => {
     const payload = img as UserUploadImagePayload;
+    const media = payload.media;
     return {
       id: `img_${index}`,
-      url: payload.url,
+      url: media?.url ?? '',
       source: payload.image_type === 'aigc' ? 'aigc' : 'upload',
       isMain: payload.is_main_pic === true,
       tags: readImageTags(payload),
+      storageObject: media,
     };
   });
 }
@@ -44,10 +46,16 @@ export function mapImagesToApi(images: CreationFormImage[]): CharacterCreateForm
   if (!images.length) return undefined;
   return images.map((img) => {
     const tags = normalizeAppearanceImageTags(img.tags);
+    const media = img.storageObject ?? {
+      bucket_name: '',
+      object_key: '',
+      object_type: 'image',
+      url: img.url,
+    };
     const payload: UserUploadImagePayload = {
       name: '',
       image_type: img.source,
-      url: img.url,
+      media,
       is_main_pic: img.isMain,
       tags: tags.length ? tags : undefined,
     };
@@ -87,7 +95,9 @@ export function apiFormToDraftState(
     anonymousTags: form.anonymous_tags ?? [],
     visibility: normalizeVisibility(form.visibility),
     images: mapImagesFromApi(form.images),
-    openingPrologue: form.opening_prologue ?? [],
+    openingPrologue: (form.opening_prologue ?? []).map((item) =>
+      typeof item === 'string' ? item : item.text ?? '',
+    ),
     customizedSettings,
     landingPageUrl: form.landing_page_url?.trim() ?? '',
     landingPagePrompt: form.landing_page_style?.user_prompt?.trim() ?? '',
@@ -172,7 +182,9 @@ export function draftStateToApiForm(state: CharacterDraftFormState): CharacterCr
     images: mapImagesToApi(state.images),
     opening_prologue: (() => {
       const lines = state.openingPrologue.map((line) => line.trim()).filter(Boolean);
-      return lines.length ? lines : undefined;
+      return lines.length
+        ? lines.map((text) => ({ text, output_type: 'text' as const }))
+        : undefined;
     })(),
     customized_settings,
     landing_page_url: (state.landingPageUrl ?? '').trim() || undefined,
@@ -291,7 +303,12 @@ export function mapCharacterDetailToCreateForm(
       images.push({
         name: appearance.appearance_name ?? '',
         image_type: 'upload',
-        url,
+        media: {
+          bucket_name: '',
+          object_key: '',
+          object_type: 'image',
+          url,
+        },
         is_main_pic:
           appearance.in_use ||
           appearance.is_default ||
@@ -309,7 +326,12 @@ export function mapCharacterDetailToCreateForm(
     images.unshift({
       name: 'splash',
       image_type: 'upload',
-      url: splashUrl,
+      media: {
+        bucket_name: '',
+        object_key: '',
+        object_type: 'image',
+        url: splashUrl,
+      },
       is_main_pic: true,
     });
     for (let index = 1; index < images.length; index += 1) {

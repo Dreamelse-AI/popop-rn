@@ -25,8 +25,19 @@ function formatBalance(balance: number): string {
   if (balance >= 1_000_000)
     return `${(balance / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
   if (balance >= 1_000)
-    return `${(balance / 1_000).toFixed(0)}K`
-  return balance.toLocaleString()
+    return `${(balance / 1_000).toFixed(1).replace(/\.0$/, '')}K`
+  return String(balance)
+}
+
+/** 拆分数字部分和单位部分，用于分开渲染不同字号 */
+function splitBalanceParts(balance: number): { num: string; unit: string } {
+  if (balance >= 1_000_000_000)
+    return { num: (balance / 1_000_000_000).toFixed(1).replace(/\.0$/, ''), unit: 'B' }
+  if (balance >= 1_000_000)
+    return { num: (balance / 1_000_000).toFixed(1).replace(/\.0$/, ''), unit: 'M' }
+  if (balance >= 1_000)
+    return { num: (balance / 1_000).toFixed(1).replace(/\.0$/, ''), unit: 'K' }
+  return { num: String(balance), unit: '' }
 }
 
 function formatCountdown(remainSec: number): string {
@@ -91,15 +102,21 @@ export function WalletBalanceCard({ onRecharge, compact = false }: WalletBalance
 
   const totalBalance = totalTokens ?? (paidTokens ?? 0) + (grantProgress.giftBalance ?? 0)
   const showGrantCountdown = grantProgress.canGrantMore && grantProgress.countdown
+  const balanceParts = splitBalanceParts(totalBalance)
 
   return (
     <View style={[styles.card, compact && styles.cardCompact]}>
       <View style={[styles.balanceRow, compact && styles.balanceRowCompact]}>
         <View style={styles.balanceLeft}>
           <Text style={[styles.iceEmoji, compact && styles.iceEmojiCompact]}>🧊</Text>
-          <Text style={[styles.paidBalance, compact && styles.paidBalanceCompact]}>{formatBalance(totalBalance)}</Text>
+          <Text style={[styles.paidBalance, compact && styles.paidBalanceCompact]}>
+            {balanceParts.num}
+            {balanceParts.unit ? (
+              <Text style={[styles.balanceUnit, compact && styles.balanceUnitCompact]}>{balanceParts.unit}</Text>
+            ) : null}
+          </Text>
           <View style={[styles.giftBadge, compact && styles.giftBadgeCompact]}>
-            <Text style={[styles.giftBadgeText, compact && styles.giftBadgeTextCompact]}>+ {grantProgress.giftBalance}</Text>
+            <Text style={[styles.giftBadgeText, compact && styles.giftBadgeTextCompact]}>+ {formatBalance(grantProgress.giftBalance)}</Text>
             <Text style={[styles.giftBadgeEmoji, compact && styles.giftBadgeEmojiCompact]}>🧊</Text>
           </View>
         </View>
@@ -128,8 +145,8 @@ export function WalletBalanceCard({ onRecharge, compact = false }: WalletBalance
                 : ''}
             </Text>
             <Text style={styles.progressText}>
-              {grantProgress.giftBalance}
-              <Text style={styles.progressMuted}>/{grantProgress.cap}</Text> 🧊
+              {formatBalance(grantProgress.giftBalance)}
+              <Text style={styles.progressMuted}>/{formatBalance(grantProgress.cap)}</Text> 🧊
             </Text>
           </View>
         </View>
@@ -173,6 +190,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '900',
     color: '#000000',
+  },
+  balanceUnit: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  balanceUnitCompact: {
+    fontSize: 14,
   },
   giftBadge: {
     flexDirection: 'row',

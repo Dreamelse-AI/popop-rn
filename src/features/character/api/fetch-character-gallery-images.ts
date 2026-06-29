@@ -10,7 +10,7 @@ export async function fetchCharacterGalleryImages(characterId: string): Promise<
   if (USE_CHARACTER_CREATION_MOCK) {
     const form = await mock.getPublishedCharacterCreateForm(characterId);
     return (form.images ?? [])
-      .map((img) => img.url?.trim())
+      .map((img) => img.media?.url?.trim())
       .filter((url): url is string => Boolean(url));
   }
 

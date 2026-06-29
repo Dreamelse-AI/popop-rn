@@ -1,5 +1,5 @@
 import { auditImage } from '@/generated';
-import type { AuditImageResp } from '@/generated/arca_apiComponents';
+import type { AuditImageResp, StorageObject } from '@/generated/arca_apiComponents';
 
 import { uploadPersonaAvatarToTos } from '@/features/chat/lib/tos-upload';
 
@@ -15,7 +15,7 @@ export class PersonaAvatarAuditError extends Error {
   }
 }
 
-export async function uploadPersonaAvatar(fileUri: string): Promise<string> {
+export async function uploadPersonaAvatar(fileUri: string): Promise<StorageObject> {
   const upload = await uploadPersonaAvatarToTos(fileUri);
   const audit = await auditImage({ audit_url: upload.url });
 
@@ -23,5 +23,5 @@ export async function uploadPersonaAvatar(fileUri: string): Promise<string> {
     throw new PersonaAvatarAuditError(audit?.msg);
   }
 
-  return upload.url;
+  return upload.storageObject;
 }

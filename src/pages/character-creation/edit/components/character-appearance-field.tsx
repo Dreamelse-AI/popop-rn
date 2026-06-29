@@ -83,13 +83,14 @@ export function CharacterAppearanceField({
     try {
       const uploaded: CreationFormImage[] = [];
       for (const asset of picked) {
-        const url = await uploadCharacterAppearanceImage(asset.uri);
+        const result = await uploadCharacterAppearanceImage(asset.uri);
         uploaded.push({
           id: randomUUID(),
-          url,
+          url: result.url,
           source: 'upload',
           isMain: false,
           tags: [],
+          storageObject: result.storageObject,
         });
       }
 

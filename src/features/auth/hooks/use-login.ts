@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { userPersonaApi } from '@/features/user-persona/api'
 import { syncMeProfileFromPersona } from '@/features/user-persona/lib/me-profile-store'
 import { PersonaAvatarAuditError, uploadPersonaAvatar } from '@/features/user-persona/lib/persona-avatar-upload'
+import type { StorageObject } from '@/generated/arca_apiComponents'
 
 import { applyAuthResponse, applyAuthTokenOnly, clearPendingAuthToken } from '../apply-auth-response'
 import { authApi } from '../auth-api'
@@ -328,7 +329,7 @@ export function useLogin(navigation: UseLoginNavigation) {
     try {
       applyAuthTokenOnly(authRes)
 
-      let avatarUrl: string | undefined
+      let avatarUrl: StorageObject | undefined
       const avatarUri = profileAvatarUriRef.current
       if (avatarUri) {
         avatarUrl = await uploadPersonaAvatar(avatarUri)

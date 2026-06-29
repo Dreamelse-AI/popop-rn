@@ -1,16 +1,20 @@
 import { MOCK_CREATION_LATENCY_MS, USE_CHARACTER_CREATION_MOCK } from '@/features/character-creation/config';
 import { createPost } from '@/generated/arca_api';
-import type { Media } from '@/generated/arca_apiComponents';
+import type { StorageObject, UserUploadImage } from '@/generated/arca_apiComponents';
 
 export type PublishCharacterPostParams = {
   characterId: string;
   content: string;
-  imageUrls: string[];
+  images: StorageObject[];
   bgmMusicKey?: string | null;
 };
 
-function toImageMedia(url: string, id: string): Media {
-  return { id, url, media_type: 'image' };
+function toUserUploadImage(storageObject: StorageObject): UserUploadImage {
+  return {
+    name: '',
+    image_type: 'upload',
+    media: storageObject,
+  };
 }
 
 async function mockPublishCharacterPost(): Promise<string> {
@@ -31,10 +35,9 @@ export async function publishCharacterPost(params: PublishCharacterPostParams): 
     throw new Error('characterId is required to publish character post');
   }
 
-  const images = params.imageUrls
-    .map((url) => url.trim())
-    .filter(Boolean)
-    .map((url, index) => toImageMedia(url, `post-image-${index}`));
+  const images = params.images
+    .filter((img) => img.url || img.object_key)
+    .map(toUserUploadImage);
 
   const content = params.content.trim();
   const bgmMusicKey = params.bgmMusicKey?.trim();

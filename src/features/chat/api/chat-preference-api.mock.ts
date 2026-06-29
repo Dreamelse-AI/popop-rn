@@ -29,7 +29,6 @@ function createDefaultPreference(): GetChatPreferenceResp {
       is_custom: false,
       background_url: '',
       bubble_key: '',
-      user_prompt: '',
     },
   };
 }
@@ -53,7 +52,6 @@ export async function getChatPreferenceMock(characterId: string): Promise<GetCha
       current: {
         ...pref.current,
         is_custom: true,
-        user_prompt: userPrompt,
       },
     };
   }
@@ -71,21 +69,11 @@ export async function setChatPreferenceMock(
   const nextModelId = req.model_id ?? pref.current.model_id;
   const nextTemperature =
     req.temperature >= 0 ? req.temperature : pref.current.temperature;
-  const nextUserPrompt =
-    req.user_prompt !== undefined
-      ? req.user_prompt
-      : (mockUserPromptByCharacter.get(req.character_id) ?? '');
-
-  if (req.user_prompt !== undefined) {
-    mockUserPromptByCharacter.set(req.character_id, req.user_prompt);
-  }
 
   pref.current = {
     ...pref.current,
     model_id: nextModelId,
     temperature: nextTemperature,
-    is_custom: Boolean(nextUserPrompt.trim()),
-    user_prompt: nextUserPrompt,
     background_url: req.clear_background
       ? ''
       : (req.background_url ?? pref.current.background_url),

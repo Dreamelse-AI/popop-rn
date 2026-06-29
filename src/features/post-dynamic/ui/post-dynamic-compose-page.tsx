@@ -21,6 +21,8 @@ import { FullscreenPage, PageHeaderBar } from '@/shared/ui/fullscreen-page'
 import { Image } from 'expo-image'
 import { PopImage } from '@/shared/ui/pop-image'
 
+import type { StorageObject } from '@/generated/arca_apiComponents'
+
 import { PostDynamicImagePickerSheet } from './post-dynamic-image-picker-sheet'
 
 const MAX_DYNAMIC_IMAGES = 9
@@ -28,7 +30,7 @@ const MAX_TEXT_LENGTH = 500
 
 export type PostDynamicComposePayload = {
   text: string
-  imageUrls: string[]
+  images: StorageObject[]
   musicKey: string | null
 }
 
@@ -39,7 +41,7 @@ type PostDynamicComposePageProps = {
   onClose: () => void
   onPublish?: (payload: PostDynamicComposePayload) => void | Promise<void>
   publishing?: boolean
-  onSystemAlbumUpload?: (uris: string[]) => Promise<string[]>
+  onSystemAlbumUpload?: (uris: string[]) => Promise<StorageObject[]>
   /** 父级已处理顶部安全区时设为 false，避免重复留白 */
   includeSafeAreaTop?: boolean
 }
@@ -58,6 +60,7 @@ export function PostDynamicComposePage({
   const insets = useSafeAreaInsets()
   const [text, setText] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [imageObjects, setImageObjects] = useState<StorageObject[]>([])
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false)
   const [aiFlowOpen, setAiFlowOpen] = useState(false)
@@ -72,6 +75,7 @@ export function PostDynamicComposePage({
   const resetForm = useCallback(() => {
     setText('')
     setImageUrls([])
+    setImageObjects([])
     setImagePickerOpen(false)
     setGalleryPickerOpen(false)
     setAiFlowOpen(false)
@@ -86,12 +90,18 @@ export function PostDynamicComposePage({
     onClose()
   }, [onClose, resetForm])
 
-  const appendImages = useCallback((urls: string[]) => {
+  const appendImages = useCallback((urls: string[], objects?: StorageObject[]) => {
     if (!urls.length) return
     setImageUrls((prev) => {
       const room = MAX_DYNAMIC_IMAGES - prev.length
       return room > 0 ? [...prev, ...urls.slice(0, room)] : prev
     })
+    if (objects?.length) {
+      setImageObjects((prev) => {
+        const room = MAX_DYNAMIC_IMAGES - prev.length
+        return room > 0 ? [...prev, ...objects.slice(0, room)] : prev
+      })
+    }
   }, [])
 
   const handleDeviceAlbumConfirm = useCallback(
@@ -100,8 +110,13 @@ export function PostDynamicComposePage({
 
       setUploading(true)
       try {
-        const urls = onSystemAlbumUpload ? await onSystemAlbumUpload(uris) : uris
-        appendImages(urls)
+        if (onSystemAlbumUpload) {
+          const objects = await onSystemAlbumUpload(uris)
+          const urls = objects.map((obj) => obj.url ?? '').filter(Boolean)
+          appendImages(urls, objects)
+        } else {
+          appendImages(uris)
+        }
       } finally {
         setUploading(false)
       }
@@ -114,7 +129,7 @@ export function PostDynamicComposePage({
     try {
       await onPublish({
         text: text.trim(),
-        imageUrls,
+        images: imageObjects,
         musicKey,
       })
       resetForm()
@@ -183,7 +198,10 @@ export function PostDynamicComposePage({
                       contentFit="cover"
                     />
                     <Pressable
-                      onPress={() => setImageUrls((prev) => prev.filter((_, i) => i !== index))}
+                      onPress={() => {
+                        setImageUrls((prev) => prev.filter((_, i) => i !== index))
+                        setImageObjects((prev) => prev.filter((_, i) => i !== index))
+                      }}
                       style={styles.imageDeleteButton}
                       accessibilityLabel={t('character.createPage.imageDelete')}
                     >

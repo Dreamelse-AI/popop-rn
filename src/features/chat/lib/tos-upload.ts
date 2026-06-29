@@ -1,15 +1,46 @@
 import { getTosUploadCredential } from '@/generated'
-import type { GetTosUploadCredentialResp } from '@/generated/arca_apiComponents'
-import * as Crypto from 'expo-crypto'
+import type { GetTosUploadCredentialResp, StorageObject } from '@/generated/arca_apiComponents'
 import { File } from 'expo-file-system'
 
 import { randomUUID } from '@/shared/lib/random-uuid'
 
-import { hmacSha256Bytes } from './hmac-sha256'
-
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
 
-const PRESIGNED_URL_EXPIRES_SECONDS = 604800 // 7 days
+/** STS AssumeRole 合法区间 900–3600s */
+const TOS_CREDENTIAL_EXPIRES_SECONDS = 3600
+
+/** 公有 CDN 域名 */
+const PUBLIC_CDN_HOST = 'cdn-prod-i18n-public.popop.ai'
+
+const CREDENTIAL_REFRESH_BUFFER_MS = 60_000
+
+let cachedCredential: { credential: GetTosUploadCredentialResp; expiresAt: number } | null = null
+let credentialInflight: Promise<GetTosUploadCredentialResp> | null = null
+
+async function acquireCredential(expiresIn: number): Promise<GetTosUploadCredentialResp> {
+  if (cachedCredential && Date.now() < cachedCredential.expiresAt) {
+    return cachedCredential.credential
+  }
+
+  if (credentialInflight) return credentialInflight
+
+  credentialInflight = getTosUploadCredential({
+    expires_in: expiresIn,
+    use_public: true,
+  }).then(cred => {
+    cachedCredential = {
+      credential: cred,
+      expiresAt: Date.now() + expiresIn * 1000 - CREDENTIAL_REFRESH_BUFFER_MS,
+    }
+    credentialInflight = null
+    return cred
+  }).catch(err => {
+    credentialInflight = null
+    throw err
+  })
+
+  return credentialInflight
+}
 
 export function resolveTosAssetUrl(url: string): string {
   return normalizeAssetUrl(url)
@@ -30,36 +61,6 @@ export function resolveChatImageDisplayUrl(url: string): string {
   return normalizeAssetUrl(url)
 }
 
-function toHex(bytes: Uint8Array): string {
-  return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')
-}
-
-async function sha256(data: string): Promise<string> {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data)
-}
-
-async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
-  return hmacSha256Bytes(key, message)
-}
-
-/** 阿里云 OSS 签名：OSS4-HMAC-SHA256 */
-async function getOssSigningKey(
-  secretKey: string,
-  dateStamp: string,
-  region: string,
-): Promise<Uint8Array> {
-  const kDate = await hmacSha256Bytes(`aliyun_v4${secretKey}`, dateStamp)
-  const kRegion = await hmacSha256Bytes(kDate, region)
-  const kService = await hmacSha256Bytes(kRegion, 'oss')
-  return hmacSha256Bytes(kService, 'aliyun_v4_request')
-}
-
-function encodeRfc3986(value: string): string {
-  return encodeURIComponent(value).replace(/[!'()*]/g, char =>
-    `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-  )
-}
-
 function getExtensionFromUri(uri: string): string {
   const match = uri.match(/\.(\w+)$/)
   const ext = match?.[1]?.toLowerCase()
@@ -75,175 +76,9 @@ function buildObjectKey(uri: string, prefix: string): string {
   return `${prefix}/${Date.now()}-${randomUUID()}.${ext}`
 }
 
-/** 后端返回的 endpoint 格式：https://oss-ap-northeast-1.aliyuncs.com */
-function normalizeOssEndpointHost(endpoint: string): string {
-  return endpoint
-    .replace(/^https?:\/\//, '')
-    .replace(/\/$/, '')
-}
-
-function buildOssHost(credential: GetTosUploadCredentialResp): string {
-  const endpoint = normalizeOssEndpointHost(credential.endpoint)
-  return `${credential.bucket}.${endpoint}`
-}
-
-function resolveOssSigningRegion(credential: GetTosUploadCredentialResp): string {
-  return credential.region
-}
-
-function buildCanonicalQueryString(params: Record<string, string>): string {
-  return Object.keys(params)
-    .sort()
-    .map(key => {
-      const value = params[key]!
-      // 阿里云 OSS V4: 空值参数不带等号
-      return value === '' ? encodeRfc3986(key) : `${encodeRfc3986(key)}=${encodeRfc3986(value)}`
-    })
-    .join('&')
-}
-
-/**
- * 阿里云 OSS 预签名 URL：签名在 query 中，无需 Authorization 头，
- * 降低 CORS 预检复杂度。
- */
-async function signPresignedPutUrl(
-  credential: GetTosUploadCredentialResp,
-  objectKey: string,
-  contentType: string,
-  expiresIn = PRESIGNED_URL_EXPIRES_SECONDS,
-): Promise<string> {
-  const host = buildOssHost(credential)
-  const now = new Date()
-  const requestDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
-  const dateStamp = requestDate.slice(0, 8)
-  const signingRegion = resolveOssSigningRegion(credential)
-  const credentialScope = `${dateStamp}/${signingRegion}/oss/aliyun_v4_request`
-  // 实际请求的 URI（不含 bucket）
-  const requestUri = `/${objectKey.split('/').map(encodeRfc3986).join('/')}`
-  // 签名用的 Canonical URI（需要包含 bucket 前缀）
-  const canonicalUri = `/${credential.bucket}${requestUri}`
-
-  const queryParams: Record<string, string> = {
-    'x-oss-signature-version': 'OSS4-HMAC-SHA256',
-    'x-oss-credential': `${credential.access_key_id}/${credentialScope}`,
-    'x-oss-date': requestDate,
-    'x-oss-expires': String(expiresIn),
-    'x-oss-signed-headers': 'content-type',
-    'x-oss-security-token': credential.session_token,
-  }
-
-  const canonicalQueryString = buildCanonicalQueryString(queryParams)
-  // Canonical Request 格式：
-  // HTTP Verb + \n + Canonical URI + \n + Canonical Query String + \n +
-  // Canonical Headers + \n + Signed Headers + \n + Hashed Payload
-  const canonicalHeaders = `content-type:${contentType}\n`
-  const canonicalRequest = [
-    'PUT',
-    canonicalUri,
-    canonicalQueryString,
-    canonicalHeaders,
-    '',
-    'UNSIGNED-PAYLOAD',
-  ].join('\n')
-  const stringToSign = [
-    'OSS4-HMAC-SHA256',
-    requestDate,
-    credentialScope,
-    await sha256(canonicalRequest),
-  ].join('\n')
-  const signingKey = await getOssSigningKey(
-    credential.secret_access_key,
-    dateStamp,
-    signingRegion,
-  )
-  const signature = toHex(await hmacSha256(signingKey, stringToSign))
-  const signedQuery = `${canonicalQueryString}&x-oss-signature=${signature}`
-
-  // URL 使用 requestUri（不含 bucket），签名使用 canonicalUri（含 bucket）
-  return `https://${host}${requestUri}?${signedQuery}`
-}
-
-/**
- * 生成预签名 GET URL，用于访问私有 bucket 中的对象
- * 阿里云 OSS V4 签名格式参考 ali-oss SDK signatureUrlV4 实现
- */
-async function signPresignedGetUrl(
-  credential: GetTosUploadCredentialResp,
-  objectKey: string,
-  expiresIn = PRESIGNED_URL_EXPIRES_SECONDS,
-): Promise<string> {
-  const host = buildOssHost(credential)
-  const now = new Date()
-  const requestDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
-  const dateStamp = requestDate.slice(0, 8)
-  const signingRegion = resolveOssSigningRegion(credential)
-  const credentialScope = `${dateStamp}/${signingRegion}/oss/aliyun_v4_request`
-  // Canonical URI: /bucketName/objectKey（签名用）
-  const canonicalUri = `/${credential.bucket}/${objectKey.split('/').map(encodeRfc3986).join('/')}`
-  // Request URI: /objectKey（实际请求用，因为 bucket 已经在 host 中）
-  const requestUri = `/${objectKey.split('/').map(encodeRfc3986).join('/')}`
-
-  // 构建查询参数（不包含 x-oss-additional-headers，因为 GET 不签 header）
-  const queryParams: Record<string, string> = {
-    'x-oss-credential': `${credential.access_key_id}/${credentialScope}`,
-    'x-oss-date': requestDate,
-    'x-oss-expires': String(expiresIn),
-    'x-oss-security-token': credential.session_token,
-    'x-oss-signature-version': 'OSS4-HMAC-SHA256',
-  }
-
-  const canonicalQueryString = buildCanonicalQueryString(queryParams)
-
-  // Canonical Request 格式（6 部分，用 \n 分隔）：
-  // 1. HTTP Verb
-  // 2. Canonical URI
-  // 3. Canonical Query String
-  // 4. Canonical Headers（GET 不签 header 时为空，但需要换行）
-  // 5. Additional Headers（GET 不签 header 时为空）
-  // 6. Hashed Payload
-  const canonicalRequest = [
-    'GET',
-    canonicalUri,
-    canonicalQueryString,
-    '', // Canonical Headers（空）
-    '', // Additional Headers（空）
-    'UNSIGNED-PAYLOAD',
-  ].join('\n')
-
-  const canonicalRequestHash = await sha256(canonicalRequest)
-  const stringToSign = [
-    'OSS4-HMAC-SHA256',
-    requestDate,
-    credentialScope,
-    canonicalRequestHash,
-  ].join('\n')
-
-  const signingKey = await getOssSigningKey(
-    credential.secret_access_key,
-    dateStamp,
-    signingRegion,
-  )
-  const signature = toHex(await hmacSha256(signingKey, stringToSign))
-
-  // 最终 URL 使用 requestUri（不含 bucket）
-  const signedQuery = `${canonicalQueryString}&x-oss-signature=${signature}`
-  return `https://${host}${requestUri}?${signedQuery}`
-}
-
-export type TosUploadOptions = {
-  prefix?: string
-  expiresIn?: number
-}
-
-export type TosImageUploadResult = {
-  url: string
-  bucket: string
-  objectKey: string
-}
-
-// RN：用 expo-file-system 读取本地相册 URI，避免 fetch(file://) 在 iOS 上不稳定
-async function readUploadBody(fileUri: string): Promise<Uint8Array> {
-  return new File(fileUri).bytes()
+function buildCdnUrl(objectKey: string): string {
+  const path = objectKey.split('/').map(encodeURIComponent).join('/')
+  return `https://${PUBLIC_CDN_HOST}/${path}`
 }
 
 function getContentTypeFromUri(uri: string): string {
@@ -264,53 +99,106 @@ function getContentTypeFromUri(uri: string): string {
   return mimeMap[ext] ?? 'application/octet-stream'
 }
 
+export type TosUploadOptions = {
+  prefix?: string
+  expiresIn?: number
+  objectType?: string
+}
+
+export type TosImageUploadResult = {
+  url: string
+  bucket: string
+  objectKey: string
+  storageObject: StorageObject
+}
+
+async function readUploadBody(fileUri: string): Promise<Uint8Array> {
+  return new File(fileUri).bytes()
+}
+
+function getOSSClient(config: {
+  accessKeyId: string
+  accessKeySecret: string
+  stsToken: string
+  bucket: string
+  endpoint: string
+  secure: boolean
+}) {
+  // @ts-expect-error ali-oss has no type declarations
+  const OSS = require('ali-oss')
+  return new OSS(config)
+}
+
+/**
+ * 上传文件至公有 OSS bucket（ali-oss SDK 处理签名）。
+ *
+ * 流程：
+ * 1. 请求 tos_credential（use_public=true）获取 STS 临时凭证（同一有效期内复用）
+ * 2. ali-oss SDK 上传（内部处理签名）
+ * 3. 拼接公有 CDN URL 作为访问地址
+ */
 async function uploadToTos(
   fileUri: string,
-  { prefix = 'chat-backgrounds', expiresIn }: TosUploadOptions = {},
+  { prefix = 'popop-fe-user-upload/images', expiresIn, objectType = 'image' }: TosUploadOptions = {},
 ): Promise<TosImageUploadResult> {
-  const credential = await getTosUploadCredential(expiresIn ? { expires_in: expiresIn } : {})
+  const credential = await acquireCredential(expiresIn ?? TOS_CREDENTIAL_EXPIRES_SECONDS)
   const objectKey = buildObjectKey(fileUri, prefix)
   const contentType = getContentTypeFromUri(fileUri)
-  const presignedUrl = await signPresignedPutUrl(credential, objectKey, contentType)
+
+  const client = getOSSClient({
+    accessKeyId: credential.access_key_id,
+    accessKeySecret: credential.secret_access_key,
+    stsToken: credential.session_token,
+    bucket: credential.bucket,
+    endpoint: credential.endpoint,
+    secure: true,
+  })
+
   const fileBytes = await readUploadBody(fileUri)
   const uploadBody = fileBytes.buffer.slice(
     fileBytes.byteOffset,
     fileBytes.byteOffset + fileBytes.byteLength,
   ) as ArrayBuffer
 
-  const uploadResponse = await fetch(presignedUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType,
-    },
-    body: uploadBody,
-  })
-
-  if (!uploadResponse.ok) {
-    const detail = await uploadResponse.text().catch(() => '')
-    throw new Error(`OSS upload failed with status ${uploadResponse.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`)
+  let result: { res?: { headers?: Record<string, string> } }
+  try {
+    result = await client.put(objectKey, new Blob([uploadBody], { type: contentType }), {
+      headers: { 'Content-Type': contentType },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`OSS upload failed: ${message}`)
   }
 
-  // 私有 bucket 需要生成预签名 URL 才能访问
-  const signedGetUrl = await signPresignedGetUrl(credential, objectKey)
+  const cdnUrl = buildCdnUrl(objectKey)
+  const requestId = result.res?.headers?.['x-oss-request-id'] as string | undefined
+
+  const storageObject: StorageObject = {
+    bucket_name: credential.bucket,
+    object_key: objectKey,
+    object_type: objectType,
+    url: cdnUrl,
+    request_id: requestId,
+  }
 
   return {
-    url: signedGetUrl,
+    url: cdnUrl,
     bucket: credential.bucket,
     objectKey,
+    storageObject,
   }
 }
 
 export async function uploadImageToTosWithMeta(
   fileUri: string,
 ): Promise<TosImageUploadResult> {
-  return uploadToTos(fileUri, { prefix: 'chat-backgrounds' })
+  return uploadToTos(fileUri, { prefix: 'popop-fe-user-upload/images', objectType: 'image' })
 }
 
 export async function uploadPersonaAvatarToTos(
   fileUri: string,
 ): Promise<TosImageUploadResult> {
-  return uploadToTos(fileUri, { prefix: 'user-persona-avatars' })
+  return uploadToTos(fileUri, { prefix: 'popop-fe-user-upload/images', objectType: 'image' })
 }
 
 export async function uploadImageToTos(fileUri: string): Promise<string> {
@@ -318,12 +206,16 @@ export async function uploadImageToTos(fileUri: string): Promise<string> {
   return result.url
 }
 
+export async function uploadAudioToTosWithMeta(fileUri: string): Promise<TosImageUploadResult> {
+  return uploadToTos(fileUri, { prefix: 'popop-fe-user-upload/voice', objectType: 'audio' })
+}
+
 export async function uploadAudioToTos(fileUri: string): Promise<string> {
-  const result = await uploadToTos(fileUri, { prefix: 'chat-voice' })
+  const result = await uploadAudioToTosWithMeta(fileUri)
   return result.url
 }
 
 export async function uploadAiGenImageToTos(fileUri: string): Promise<string> {
-  const result = await uploadToTos(fileUri, { prefix: 'ai-gen-images', expiresIn: PRESIGNED_URL_EXPIRES_SECONDS })
+  const result = await uploadToTos(fileUri, { prefix: 'popop-fe-user-upload/images', objectType: 'image' })
   return result.url
 }

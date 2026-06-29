@@ -14,6 +14,7 @@ export type CreationFormImage = {
   source: 'aigc' | 'upload';
   isMain: boolean;
   tags: string[];
+  storageObject?: import('@/generated/arca_apiComponents').StorageObject;
 };
 
 export type CharacterDraftFormState = {

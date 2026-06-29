@@ -96,7 +96,8 @@ export function CreationPostDynamicSheet({
   )
 
   const handleSystemAlbumUpload = useCallback(async (uris: string[]) => {
-    return Promise.all(uris.map((uri) => uploadCharacterAppearanceImage(uri)))
+    const results = await Promise.all(uris.map((uri) => uploadCharacterAppearanceImage(uri)))
+    return results.map((r) => r.storageObject)
   }, [])
 
   const handlePublish = useCallback(
@@ -106,7 +107,7 @@ export function CreationPostDynamicSheet({
         await publishCharacterPost({
           characterId,
           content: payload.text,
-          imageUrls: payload.imageUrls,
+          images: payload.images,
           bgmMusicKey: payload.musicKey,
         })
         setComposeOpen(false)

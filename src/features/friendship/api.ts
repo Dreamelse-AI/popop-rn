@@ -8,12 +8,10 @@ import {
   updateFriendSaveVersion,
 } from '@/generated';
 
-import { USE_MOCK as USE_CHAT_MOCK } from '@/features/chat/api/chat-api';
+import { USE_MOCK } from '@/features/chat/api/use-mock';
 
 import * as mock from '@/features/friendship/lib/friendship-api.mock';
 import { applyReFriendHandoff } from '@/features/friendship/lib/re-friend-handoff-bridge';
-
-const USE_MOCK = USE_CHAT_MOCK;
 
 export const friendshipApi = {
   listFriends: (limit = 50) => listFriendship({ limit }),

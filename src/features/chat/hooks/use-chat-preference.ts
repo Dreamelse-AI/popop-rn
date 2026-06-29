@@ -83,10 +83,6 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       const activeModelId = resp.current.model_id || resp.options.default_model_id;
       setSelectedModelId(activeModelId);
 
-      if (resp.current.user_prompt) {
-        setCharacterUserPrompt(characterSaveIdRef.current, resp.current.user_prompt);
-      }
-
       if (activeModelId) {
         const existing = getChatModelSessionConfig(characterSaveIdRef.current, activeModelId);
         if (!existing) {

@@ -98,8 +98,8 @@ export function CharacterAiImageSheet({
     setReferenceUploading(true);
 
     try {
-      const url = await uploadCharacterAppearanceImage(asset.uri);
-      setReferenceImageUrl(url);
+      const result = await uploadCharacterAppearanceImage(asset.uri);
+      setReferenceImageUrl(result.url);
     } catch {
       setReferencePreviewUrl(null);
       setReferenceImageUrl(null);

@@ -16,7 +16,7 @@ type AddFriendRespExtended = Partial<AddFriendResp> & {
 
 import { randomUUID } from '@/shared/lib/random-uuid';
 
-import { USE_MOCK as USE_CHAT_MOCK } from '@/features/chat/api/chat-api';
+import { USE_MOCK as USE_CHAT_MOCK } from '@/features/chat/api/use-mock';
 import { MOCK_CREATION_LATENCY_MS } from '@/features/character-creation/config';
 import { pollSubmitIfNeeded } from '@/features/character-creation/lib/poll-async-task';
 import * as mock from '@/features/friendship/lib/friendship-api.mock';

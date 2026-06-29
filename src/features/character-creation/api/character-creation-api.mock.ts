@@ -54,7 +54,7 @@ const mockDrafts: MockDraftRecord[] = [
         {
           name: 'main',
           image_type: 'aigc',
-          url: MOCK_COVER,
+          media: { bucket_name: '', object_key: '', object_type: 'image', url: MOCK_COVER },
           is_main_pic: true,
         },
       ],
@@ -67,8 +67,8 @@ const mockDrafts: MockDraftRecord[] = [
 
 function pickCoverMedia(form: CharacterCreateForm): Media | undefined {
   const image = form.images?.find(img => img.is_main_pic) ?? form.images?.[0];
-  if (!image?.url) return undefined;
-  return { id: 'cover', url: image.url, media_type: 'image' };
+  if (!image?.media?.url) return undefined;
+  return { id: 'cover', url: image.media.url, media_type: 'image' };
 }
 
 function toDraftListItem(draft: MockDraftRecord): CharacterDraftItem {
@@ -178,7 +178,7 @@ export async function saveCharacterDraft(
         images: form.images?.length
           ? form.images
           : cover
-            ? [{ name: 'main', image_type: 'aigc' as const, url: cover.url, is_main_pic: true }]
+            ? [{ name: 'main', image_type: 'aigc' as const, media: { bucket_name: '', object_key: '', object_type: 'image', url: cover.url }, is_main_pic: true }]
             : undefined,
         landing_page_url: form.landing_page_url,
       };
@@ -223,7 +223,7 @@ export function finalizeMockSubmitDraft(draftId: string): string {
     basic_info: {
       character_id: characterId,
       name: draft.character_create_form.name ?? '',
-      image: cover ? { id: 'main', url: cover.url, media_type: 'image' } : undefined,
+      image: cover ? { id: 'main', url: cover.media?.url ?? '', media_type: 'image' } : undefined,
       like_count: 0,
     },
     character_status: { character_state: 'idle' },
@@ -259,7 +259,7 @@ export async function getPublishedCharacterCreateForm(
   return {
     name: published.basic_info.name ?? '',
     images: cover
-      ? [{ name: 'main', image_type: 'aigc' as const, url: cover.url, is_main_pic: true }]
+      ? [{ name: 'main', image_type: 'aigc' as const, media: { bucket_name: '', object_key: '', object_type: 'image', url: cover.url }, is_main_pic: true }]
       : undefined,
   };
 }
@@ -287,6 +287,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: MOCK_STYLE_COVER,
       media_type: 'image',
     },
+    language: 'zh',
   },
   {
     style_key: '25d',
@@ -296,6 +297,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: 'https://images.unsplash.com/photo-1613376023733-0a7331a38194?w=200&h=200&fit=crop',
       media_type: 'image',
     },
+    language: 'zh',
   },
   {
     style_key: 'real',
@@ -305,6 +307,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop',
       media_type: 'image',
     },
+    language: 'zh',
   },
   {
     style_key: 'anime',
@@ -314,6 +317,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: 'https://images.unsplash.com/photo-1612036781132-97479b2d2a2a?w=200&h=200&fit=crop',
       media_type: 'image',
     },
+    language: 'zh',
   },
   {
     style_key: 'chibi',
@@ -323,6 +327,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop',
       media_type: 'image',
     },
+    language: 'zh',
   },
   {
     style_key: 'pixel',
@@ -332,6 +337,7 @@ const MOCK_PAGE_CONFIG_STYLES = [
       url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&h=200&fit=crop',
       media_type: 'image',
     },
+    language: 'zh',
   },
 ];
 
@@ -382,24 +388,28 @@ export async function getCharacterPageConfig() {
         voice_name: '그는 언제나',
         voice_tags: [{ tag_key: 'male', tag_icon: '', tag_name: '男性' }],
         sample: { id: 's1', url: '', media_type: 'audio' },
+        language: 'ko',
       },
       {
         voice_id: 'mock-voice-male-2',
         voice_name: '정말 피곤하시겠어요',
         voice_tags: [{ tag_key: 'male', tag_icon: '', tag_name: '男性' }],
         sample: { id: 's2', url: '', media_type: 'audio' },
+        language: 'ko',
       },
       {
         voice_id: 'mock-voice-female-1',
         voice_name: '친구 추가',
         voice_tags: [{ tag_key: 'female', tag_icon: '', tag_name: '女性' }],
         sample: { id: 's3', url: '', media_type: 'audio' },
+        language: 'ko',
       },
       {
         voice_id: 'mock-voice-other-1',
         voice_name: 'ENFP',
         voice_tags: [{ tag_key: 'other', tag_icon: '', tag_name: '其他' }],
         sample: { id: 's4', url: '', media_type: 'audio' },
+        language: 'ko',
       },
     ],
     appearance_styles: MOCK_PAGE_CONFIG_STYLES,

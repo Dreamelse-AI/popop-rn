@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as ImagePicker from 'expo-image-picker'
 
+import type { StorageObject } from '@/generated/arca_apiComponents'
 import type { UserPersonaItem } from '@/generated'
 
 import { userPersonaApi } from '../api'
@@ -138,7 +139,7 @@ export function useUserPersona(
     if (!form.name.trim()) return { ok: false }
     setSaving(true)
     try {
-      let avatarUrl: string | undefined
+      let avatarUrl: StorageObject | undefined
       const avatarUri = avatarUriRef.current
       if (avatarUri) {
         setAvatarUploading(true)

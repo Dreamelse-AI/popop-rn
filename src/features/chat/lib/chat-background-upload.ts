@@ -1,5 +1,5 @@
 import { auditImage, getImageMainColor } from '@/generated'
-import type { AuditImageResp, TOSObject } from '@/generated/arca_apiComponents'
+import type { AuditImageResp } from '@/generated/arca_apiComponents'
 
 import { USE_MOCK } from '../api/chat-api'
 
@@ -23,15 +23,8 @@ function isAuditPassed(audit: AuditImageResp | null | undefined): boolean {
 }
 
 async function fetchImageMainColor(upload: TosImageUploadResult): Promise<string | undefined> {
-  const image: TOSObject = {
-    bucket_name: upload.bucket,
-    object_key: upload.objectKey,
-    object_type: 'image',
-    url: upload.url,
-  }
-
   try {
-    const resp = await getImageMainColor({ image })
+    const resp = await getImageMainColor({ image: upload.storageObject })
     return resp.bkg_main_color || undefined
   } catch {
     return undefined

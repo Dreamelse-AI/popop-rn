@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { hasAuthToken } from '@/features/auth/auth-store'
+import type { StorageObject } from '@/generated/arca_apiComponents'
 import type { UserPersonaItem } from '@/generated'
 
 import { userPersonaApi } from '../api'
@@ -12,7 +13,7 @@ type CreatePersonaInput = {
   name: string
   gender: PersonaGender
   profile: string
-  avatarResourceId?: string
+  avatarStorageObject?: StorageObject
   isDefault?: boolean
 }
 
@@ -21,7 +22,7 @@ type UpdatePersonaInput = {
   name: string
   gender: PersonaGender
   profile: string
-  avatarResourceId?: string
+  avatarStorageObject?: StorageObject
 }
 
 type UseUserPersonaListOptions = {
@@ -68,7 +69,7 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
       if (!characterId) return false
       try {
         await userPersonaApi.apply({
-          character_id: characterId,
+          character_save_id: characterId,
           persona_id: personaId,
         })
         setAppliedPersonaId(characterId, personaId)
@@ -87,7 +88,7 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
         name: input.name,
         gender: input.gender,
         profile: input.profile,
-        avatar_url: input.avatarResourceId,
+        avatar_url: input.avatarStorageObject,
       })
       setItems(prev => {
         const next = resp.persona.is_current
@@ -109,7 +110,7 @@ export function useUserPersonaList({ enabled = true, characterId }: UseUserPerso
         name: input.name,
         gender: input.gender,
         profile: input.profile,
-        avatar_url: input.avatarResourceId,
+        avatar_url: input.avatarStorageObject,
       })
       setItems(prev => prev.map(item => (item.persona_id === resp.persona.persona_id ? resp.persona : item)))
       return resp.persona
