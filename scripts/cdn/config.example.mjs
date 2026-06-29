@@ -14,6 +14,10 @@ export default {
       dir: '../../src/shared/assets',
       ossPath: 'assets/',
     },
+    {
+      dir: '../../src/shared/assets-png',
+      ossPath: 'assets/',
+    },
   ],
   imageExtensions: ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico'],
 };

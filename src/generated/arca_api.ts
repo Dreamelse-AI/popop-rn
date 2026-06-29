@@ -613,6 +613,14 @@ export function guestGetFeedTags() {
  * @description 
  * @param req
  */
+export function mobileASR(req: components.ASRReq) {
+	return arcaWebapi.post<components.ASRResp>(`/file/asr_recognize`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
 export function getImageMainColor(req: components.GetImageMainColorReq) {
 	return arcaWebapi.post<components.GetImageMainColorResp>(`/file/image_main_color`, req)
 }
@@ -647,6 +655,14 @@ export function addFriend(req: components.AddFriendReq) {
  */
 export function listFriendship(req: components.ListFriendshipReq) {
 	return arcaWebapi.post<components.ListFriendshipResp>(`/friendship/list`, req)
+}
+
+/**
+ * @description 
+ * @param req
+ */
+export function listPinnedFriendship(req: components.ListPinnedFriendshipReq) {
+	return arcaWebapi.post<components.ListFriendshipResp>(`/friendship/list_pinned`, req)
 }
 
 /**
