@@ -4,10 +4,12 @@ type UseAutoPlayOptions = {
   totalSlides: number
   duration?: number
   initialIndex?: number
+  /** 外部暂停信号：为 true 时定时器不会启动 */
+  externalPaused?: boolean
   onComplete: () => void
 }
 
-export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, onComplete }: UseAutoPlayOptions) {
+export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, externalPaused = false, onComplete }: UseAutoPlayOptions) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -16,6 +18,7 @@ export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, on
   const rafRef = useRef(0)
   const startTimeRef = useRef(0)
   const elapsedBeforePauseRef = useRef(0)
+  const runningRef = useRef(false)
   const currentIndexRef = useRef(initialIndex)
   const isPausedRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
@@ -27,6 +30,7 @@ export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, on
   const startTimer = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
     startTimeRef.current = Date.now()
+    runningRef.current = true
 
     const loop = () => {
       const elapsed = Date.now() - startTimeRef.current + elapsedBeforePauseRef.current
@@ -36,11 +40,14 @@ export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, on
       if (pct >= 1) {
         const idx = currentIndexRef.current
         if (idx < totalSlides - 1) {
+          // 自动进入下一条：计时器已不再运行，复位 runningRef，避免随后的 pause() 误累加旧时间
+          runningRef.current = false
           elapsedBeforePauseRef.current = 0
           setProgress(0)
           setCurrentIndex(idx + 1)
         } else {
           setProgress(1)
+          runningRef.current = false
           onCompleteRef.current()
         }
         return
@@ -52,14 +59,25 @@ export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, on
   }, [duration, totalSlides])
 
   useEffect(() => {
-    if (isPaused || totalSlides === 0) return
+    if (isPaused || externalPaused || totalSlides === 0) {
+      cancelAnimationFrame(rafRef.current)
+      if (runningRef.current) {
+        elapsedBeforePauseRef.current += Date.now() - startTimeRef.current
+        runningRef.current = false
+      }
+      return
+    }
     startTimer()
     return () => cancelAnimationFrame(rafRef.current)
-  }, [currentIndex, isPaused, totalSlides, startTimer, restartTick])
+  }, [currentIndex, isPaused, externalPaused, totalSlides, startTimer, restartTick])
 
   const pause = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
-    elapsedBeforePauseRef.current += Date.now() - startTimeRef.current
+    // 仅在计时器真正运行时累加已用时间，避免未启动就 pause 累加错误的巨大值导致计时错乱
+    if (runningRef.current) {
+      elapsedBeforePauseRef.current += Date.now() - startTimeRef.current
+      runningRef.current = false
+    }
     setIsPaused(true)
   }, [])
 
@@ -70,6 +88,7 @@ export function useAutoPlay({ totalSlides, duration = 5000, initialIndex = 0, on
   const goTo = useCallback((index: number) => {
     cancelAnimationFrame(rafRef.current)
     elapsedBeforePauseRef.current = 0
+    runningRef.current = false
     setProgress(0)
     setCurrentIndex(index)
     currentIndexRef.current = index

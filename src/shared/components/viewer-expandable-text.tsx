@@ -17,6 +17,8 @@ type ViewerExpandableTextProps = {
   collapseLabel?: string
   labelColor?: string
   onExpandChange?: (expanded: boolean) => void
+  /** 外部控制收起（为 true 时强制收起） */
+  forceCollapsed?: boolean
 }
 
 type Phase = 'measure' | 'search' | 'done'
@@ -29,6 +31,7 @@ export function ViewerExpandableText({
   collapseLabel = '收起全文',
   labelColor = 'rgba(255,255,255,0.5)',
   onExpandChange,
+  forceCollapsed = false,
 }: ViewerExpandableTextProps) {
   const [expanded, setExpanded] = useState(false)
   const [needsTruncation, setNeedsTruncation] = useState(false)
@@ -49,6 +52,25 @@ export function ViewerExpandableText({
     lo.current = 0
     hi.current = 0
   }, [text])
+
+  // 外部强制收起
+  useEffect(() => {
+    if (forceCollapsed && expanded) {
+      setExpanded(false)
+    }
+  }, [forceCollapsed, expanded])
+
+  // Fallback: if onTextLayout doesn't fire within 300ms, show full text
+  useEffect(() => {
+    if (ready) return
+    const timer = setTimeout(() => {
+      if (!ready) {
+        setReady(true)
+        setCurrentPhase('done')
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [text, ready])
 
   const handleFullMeasure = useCallback(
     (e: NativeSyntheticEvent<TextLayoutEventData>) => {
