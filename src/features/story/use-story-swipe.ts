@@ -53,7 +53,6 @@ export function useStorySwipe({
       onSwipeRight()
       didSwipe.current = true
     } else if (!movedRef.current) {
-      // 未发生明显位移 → 视为点击
       onTap?.()
     }
     setOffsetX(0)
