@@ -35,9 +35,11 @@ export function ChatHeader({
             <Text style={styles.name} numberOfLines={1}>{name}</Text>
           </Pressable>
 
-          <View style={styles.akaBadge}>
-            <Text style={styles.akaText} numberOfLines={1}>{characterAka}</Text>
-          </View>
+          {characterAka ? (
+            <View style={styles.akaBadge}>
+              <Text style={styles.akaText} numberOfLines={1}>{characterAka}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 

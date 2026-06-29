@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { View, StyleSheet, ActivityIndicator } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
 import { FeedPostViewer, formatCharacterProfilePostTime, mapPostDetail } from '@/features/post'
 import type { PostDetailView } from '@/features/post'
@@ -19,6 +20,7 @@ type CharacterChatPageProps = {
 }
 
 export function CharacterChatPage({ characterId, onBack, onOpenProfile }: CharacterChatPageProps) {
+  const { t } = useTranslation()
   const [boundaryKey, setBoundaryKey] = useState(0)
   const [postDetail, setPostDetail] = useState<PostDetailView | null>(null)
 
@@ -80,7 +82,7 @@ export function CharacterChatPage({ characterId, onBack, onOpenProfile }: Charac
           characterAvatar={postDetail.characterAvatar}
           characterId={postDetail.characterId}
           content={postDetail.content}
-          timeAgo={formatCharacterProfilePostTime(postDetail.publishedAtMs)}
+          timeAgo={formatCharacterProfilePostTime(postDetail.publishedAtMs, t)}
           musicName={postDetail.bgmName}
           isLiked={postDetail.isLiked}
           postId={postDetail.postId}

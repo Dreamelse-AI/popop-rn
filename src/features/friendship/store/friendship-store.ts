@@ -4,11 +4,6 @@ import type { FriendshipBasicInfo } from '@/generated';
 
 import { apiClient } from '@/shared/api/api-client';
 import { friendshipApi } from '../api';
-import {
-  applyLocalPinnedAt,
-  clearLocalPinnedAt,
-  setLocalPinnedAt,
-} from '../lib/local-pinned-at';
 import { markLocallyRemovedFriend } from '../lib/removed-friend-tracker';
 
 function sortFriends(friends: FriendshipBasicInfo[]): FriendshipBasicInfo[] {
@@ -62,7 +57,7 @@ export const useFriendshipStore = create<FriendshipStore>((set, get) => ({
       const resp = await friendshipApi.listFriends();
       if (nextRequestId !== get().requestId) return;
       set({
-        friends: sortFriends(applyLocalPinnedAt(resp.friends)),
+        friends: sortFriends(resp.friends),
         loading: false,
       });
     } catch (e) {
@@ -73,14 +68,30 @@ export const useFriendshipStore = create<FriendshipStore>((set, get) => ({
   },
 
   pinFriend: async (characterId: string) => {
+    const snapshot = get().friends;
     const pinnedAt = Date.now();
-    setLocalPinnedAt(characterId, pinnedAt);
-    set({ friends: patchPinnedAt(get().friends, characterId, pinnedAt) });
+    set({ friends: patchPinnedAt(snapshot, characterId, pinnedAt) });
+
+    try {
+      await friendshipApi.pinCharacter(characterId);
+    } catch (e) {
+      set({ friends: snapshot });
+      console.error('[friendshipStore] pin failed:', e);
+      throw e;
+    }
   },
 
   unpinFriend: async (characterId: string) => {
-    setLocalPinnedAt(characterId, 0);
-    set({ friends: patchPinnedAt(get().friends, characterId, 0) });
+    const snapshot = get().friends;
+    set({ friends: patchPinnedAt(snapshot, characterId, 0) });
+
+    try {
+      await friendshipApi.unpinCharacter(characterId);
+    } catch (e) {
+      set({ friends: snapshot });
+      console.error('[friendshipStore] unpin failed:', e);
+      throw e;
+    }
   },
 
   removeFriends: async (characterIds: string[]) => {
@@ -97,7 +108,6 @@ export const useFriendshipStore = create<FriendshipStore>((set, get) => ({
       const hadChatHistory =
         (friend.latest_messages?.length ?? 0) > 0 || (friend.unread_count ?? 0) > 0;
       markLocallyRemovedFriend(friend.character_id, hadChatHistory);
-      clearLocalPinnedAt(friend.character_id);
     }
 
     try {

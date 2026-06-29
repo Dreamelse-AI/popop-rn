@@ -2,6 +2,8 @@ import { useState, type RefObject } from 'react'
 import {
   View,
   Text,
+  Pressable,
+  Keyboard,
   StyleSheet,
   type FlatList,
   type LayoutChangeEvent,
@@ -20,7 +22,7 @@ import { PopImage } from '@/shared/ui/pop-image'
 
 import { ChatEmojiBottomSheet } from './chat-emoji-bottom-sheet'
 import { ChatHeader } from './chat-header'
-import { ChatInputBar, VoiceRecordingBanner } from './chat-input-bar'
+import { ChatInputBar, VoiceRecordingBanner, type ChatComposerInputMode } from './chat-input-bar'
 import { ChatMessageContextMenu } from './chat-message-context-menu'
 import { ChatMessageList } from './chat-message-list'
 import { ChatCharacterVersionSyncDialog } from './chat-character-version-sync-dialog'
@@ -70,6 +72,7 @@ export type CharacterChatScreenProps = {
   onImagePress?: (url: string) => void
   onFailedMessagePress?: (message: ChatMessage) => void
   onShareCardPress?: (message: Extract<ChatMessage, { type: 'share_card' }>) => void
+  onLinkCardPress?: (message: Extract<ChatMessage, { type: 'link_card' }>) => void
   rollbackMenuOpen?: boolean
   rollbackCanCopy?: boolean
   rollbackCanRollback?: boolean
@@ -130,6 +133,7 @@ export function CharacterChatScreen({
   onImagePress,
   onFailedMessagePress,
   onShareCardPress,
+  onLinkCardPress,
   rollbackMenuOpen = false,
   rollbackCanCopy = false,
   rollbackCanRollback = false,
@@ -148,6 +152,7 @@ export function CharacterChatScreen({
 }: CharacterChatScreenProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [composerFocused, setComposerFocused] = useState(false)
+  const [composerInputMode, setComposerInputMode] = useState<ChatComposerInputMode>('text')
   const { config, pageBackground, bubbleStyle, applyConfig } = useChatAtmosphere(character.id)
 
   const isVoiceActive =
@@ -156,6 +161,16 @@ export function CharacterChatScreen({
     voiceRecorderPhase === 'processing' ||
     voiceIsCancelled ||
     voicePressTooShort
+
+  const dismissComposerOverlay = showEmojiPanel || composerFocused
+
+  const handleDismissComposer = () => {
+    if (showEmojiPanel) onEmojiPanelClose()
+    if (composerFocused) {
+      Keyboard.dismiss()
+      setComposerFocused(false)
+    }
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: pageBackground.baseColor }]}>
@@ -209,11 +224,19 @@ export function CharacterChatScreen({
               onImagePress={onImagePress}
               onFailedMessagePress={onFailedMessagePress}
               onShareCardPress={onShareCardPress}
+              onLinkCardPress={onLinkCardPress}
               onScroll={onScroll}
               onContentSizeChange={onContentSizeChange}
               onLayout={onLayout}
               onScrollToIndexFailed={onScrollToIndexFailed}
             />
+            {dismissComposerOverlay && (
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={handleDismissComposer}
+                accessibilityLabel="收起输入"
+              />
+            )}
           </>
         )}
       </View>
@@ -234,6 +257,8 @@ export function CharacterChatScreen({
         <ChatInputBar
           onFocusChange={setComposerFocused}
           composerExpanded={composerFocused && !showEmojiPanel}
+          inputMode={composerInputMode}
+          onInputModeChange={setComposerInputMode}
           onSendText={onSendText}
           onPlusPress={() => {
             if (showEmojiPanel) onEmojiPanelClose()

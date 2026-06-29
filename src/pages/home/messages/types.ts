@@ -13,6 +13,8 @@ export type MessageConversation = {
   preview: string;
   time: string;
   unread?: boolean;
+  /** latest_messages 中存在角色未读消息（用于置顶头像预览气泡展示判定） */
+  hasUnreadMessage?: boolean;
 };
 
 export type MessageSceneCharacter = {

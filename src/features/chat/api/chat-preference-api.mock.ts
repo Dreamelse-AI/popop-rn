@@ -5,12 +5,13 @@ import type {
 } from '@/generated/arca_apiComponents';
 
 const mockPreferenceByCharacter = new Map<string, GetChatPreferenceResp>();
+const mockUserPromptByCharacter = new Map<string, string>();
 
 const MOCK_MODELS = [
-  { model_id: 'juice', name: 'Strawberry Milkshake' },
-  { model_id: 'shake', name: 'Classic Shake' },
-  { model_id: 'cocktail', name: 'Summer Cocktail' },
-  { model_id: 'bubble-tea', name: 'Bubble Tea' },
+  { model_id: 'juice', name: 'Strawberry Milkshake', price: 20 },
+  { model_id: 'shake', name: 'Classic Shake', price: 15 },
+  { model_id: 'cocktail', name: 'Summer Cocktail', price: 25 },
+  { model_id: 'bubble-tea', name: 'Bubble Tea', price: 18 },
 ] as const;
 
 function createDefaultPreference(): GetChatPreferenceResp {
@@ -28,6 +29,7 @@ function createDefaultPreference(): GetChatPreferenceResp {
       is_custom: false,
       background_url: '',
       bubble_key: '',
+      user_prompt: '',
     },
   };
 }
@@ -43,7 +45,19 @@ export async function getChatPreferenceMock(characterId: string): Promise<GetCha
   await new Promise<void>(resolve => {
     setTimeout(resolve, 200);
   });
-  return getOrCreatePreference(characterId);
+  const pref = getOrCreatePreference(characterId);
+  const userPrompt = mockUserPromptByCharacter.get(characterId) ?? '';
+  if (userPrompt) {
+    return {
+      ...pref,
+      current: {
+        ...pref.current,
+        is_custom: true,
+        user_prompt: userPrompt,
+      },
+    };
+  }
+  return pref;
 }
 
 export async function setChatPreferenceMock(
@@ -57,11 +71,21 @@ export async function setChatPreferenceMock(
   const nextModelId = req.model_id ?? pref.current.model_id;
   const nextTemperature =
     req.temperature >= 0 ? req.temperature : pref.current.temperature;
+  const nextUserPrompt =
+    req.user_prompt !== undefined
+      ? req.user_prompt
+      : (mockUserPromptByCharacter.get(req.character_id) ?? '');
+
+  if (req.user_prompt !== undefined) {
+    mockUserPromptByCharacter.set(req.character_id, req.user_prompt);
+  }
 
   pref.current = {
     ...pref.current,
     model_id: nextModelId,
     temperature: nextTemperature,
+    is_custom: Boolean(nextUserPrompt.trim()),
+    user_prompt: nextUserPrompt,
     background_url: req.clear_background
       ? ''
       : (req.background_url ?? pref.current.background_url),

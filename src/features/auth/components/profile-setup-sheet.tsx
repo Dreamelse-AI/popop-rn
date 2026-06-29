@@ -6,7 +6,7 @@ import { authAssets } from '@/shared/assets/auth'
 import { PopImage } from '@/shared/ui/pop-image'
 import type { ProfileGender } from '../auth-types'
 import { AuthBottomSheet } from './auth-bottom-sheet'
-import { SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
+import { SheetFooterButton } from '@/shared/ui/sheet-primitives'
 
 const IconRequiredMark = cdnImage('assets/auth/required-mark.png')
 
@@ -76,7 +76,7 @@ export function ProfileSetupSheet({
       open={open}
       onClose={onClose}
       showLogo={false}
-      header={<SheetHeader title={t('profile.title')} />}
+      showCloseButton={false}
       footer={
         <View>
           <Text style={styles.hintText}>{t('profile.hint')}</Text>
@@ -85,11 +85,16 @@ export function ProfileSetupSheet({
             onPress={onSubmit}
             disabled={!canSubmit || loading}
             loading={loading}
+            textColor="#f0da9c"
           />
         </View>
       }
     >
       <View style={styles.content}>
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>{t('profile.title')}</Text>
+        </View>
+
         <View style={styles.avatarSection}>
           <Pressable
             onPress={onAvatarChange}
@@ -123,14 +128,19 @@ export function ProfileSetupSheet({
           <FieldLabel label={t('profile.genderLabel')} required />
           <View style={styles.genderRow}>
             <GenderOption
+              label={t('profile.female')}
+              selected={values.gender === 'female'}
+              onSelect={() => onGenderChange('female')}
+            />
+            <GenderOption
               label={t('profile.male')}
               selected={values.gender === 'male'}
               onSelect={() => onGenderChange('male')}
             />
             <GenderOption
-              label={t('profile.female')}
-              selected={values.gender === 'female'}
-              onSelect={() => onGenderChange('female')}
+              label={t('profile.other')}
+              selected={values.gender === 'other'}
+              onSelect={() => onGenderChange('other')}
             />
           </View>
         </View>
@@ -158,6 +168,18 @@ export function ProfileSetupSheet({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 12,
+  },
+  titleSection: {
+    paddingTop: 24,
+    paddingBottom: 12,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 25,
+    textAlign: 'center',
+    color: '#000000',
   },
   avatarSection: {
     alignItems: 'center',
@@ -219,7 +241,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 60,
     borderRadius: 20,
-    borderWidth: 1,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -227,9 +248,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   genderSelected: {
-    borderColor: 'rgba(0,0,0,0.2)',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   genderUnselected: {
+    borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
   },
   genderText: {

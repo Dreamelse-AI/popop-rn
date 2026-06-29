@@ -13,7 +13,6 @@ import { MessagesConversationList } from './messages-conversation-list'
 import { MessagesEmptyState } from './messages-empty-state'
 import { MessagesHeader } from './messages-header'
 import { MessagesPinnedRow } from './messages-pinned-row'
-import { MessagesSceneBanner } from './messages-scene-banner'
 import { markReturnToCharacterTab } from './drawer-return-flag'
 
 type MessagesPageProps = {
@@ -40,7 +39,6 @@ export function MessagesPage({
   const {
     items: characterListItems,
     conversations,
-    scene,
     loading,
     error,
     pinFriend,
@@ -56,16 +54,20 @@ export function MessagesPage({
 
   const pinnedCharacters = useMemo(
     () => {
-      const previewById = new Map(conversations.map(item => [item.id, item.preview]))
+      const conversationById = new Map(conversations.map(item => [item.id, item]))
       return characterListItems
         .filter(item => item.pinned)
-        .map(item => ({
-          id: item.id,
-          name: item.name,
-          avatar: item.avatar,
-          unread: item.unread,
-          preview: previewById.get(item.id) ?? '',
-        }))
+        .map(item => {
+          const conversation = conversationById.get(item.id)
+          return {
+            id: item.id,
+            name: item.name,
+            avatar: item.avatar,
+            unread: item.unread,
+            preview: conversation?.preview ?? '',
+            hasUnreadMessage: conversation?.hasUnreadMessage ?? false,
+          }
+        })
     },
     [characterListItems, conversations],
   )
@@ -79,6 +81,12 @@ export function MessagesPage({
     () => conversations.filter(item => !pinnedCharacterIds.includes(item.id)),
     [conversations, pinnedCharacterIds],
   )
+
+  const unpinnedCharacterCount = useMemo(
+    () => characterListItems.filter(item => !item.pinned).length,
+    [characterListItems],
+  )
+  const showPinOption = unpinnedCharacterCount > 1
 
   const handlePin = useCallback(
     async (characterId: string) => {
@@ -143,7 +151,6 @@ export function MessagesPage({
         </View>
       ) : hasConversations ? (
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <MessagesSceneBanner scene={scene} />
           <MessagesPinnedRow
             items={pinnedCharacters}
             onSelect={handleSelectConversation}
@@ -152,6 +159,7 @@ export function MessagesPage({
           />
           <MessagesConversationList
             items={listConversations}
+            showPinOption={showPinOption}
             onPin={handlePin}
             onEndRelation={handleEndRelation}
             onSelect={handleSelectConversation}

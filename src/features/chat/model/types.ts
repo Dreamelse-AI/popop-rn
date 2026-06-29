@@ -62,6 +62,20 @@ export type ChatMessage =
       serverMessageId?: string;
       cursor?: string;
       status?: 'pending' | 'failed';
+    }
+  | {
+      id: string;
+      type: 'link_card';
+      sender: 'user' | 'character';
+      title: string;
+      description: string;
+      url: string;
+      unread?: boolean;
+      clicked?: boolean;
+      at: number;
+      serverMessageId?: string;
+      cursor?: string;
+      status?: 'pending' | 'failed';
     };
 
 export type OutboundPhase = 'idle' | 'queuing' | 'awaitingApi' | 'playingReply';

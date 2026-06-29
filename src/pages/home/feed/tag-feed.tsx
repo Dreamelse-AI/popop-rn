@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '@/app/navigation'
 
@@ -80,6 +81,7 @@ function FeedLayoutList({
 }
 
 export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
+  const { t } = useTranslation()
   const { toast, showToast } = useToast()
   const storyBarRef = useRef<StoryBarSectionRef>(null)
   const {
@@ -214,7 +216,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
           postId: detail.postId || post.postId,
           impressionId: post.impressionId,
           content: detail.content || post.content,
-          timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString()),
+          timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString(), t),
           isLiked: post.isLiked,
         })
         setPostDetailOpen(true)
@@ -228,7 +230,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
         postClickPendingRef.current = false
       }
     },
-    [showToast],
+    [showToast, t],
   )
 
   const handleStoryImageClick = useCallback(
@@ -244,7 +246,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
             characterId: detail.characterId || character.id,
             postId: detail.postId,
             content: detail.content,
-            timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString()),
+            timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString(), t),
             isLiked: detail.isLiked,
           })
           setPostDetailOpen(true)
@@ -266,7 +268,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
           characterId: character.id,
           postId: latest.postId,
           content: latest.content,
-          timeAgo: formatPostTime(new Date(latest.publishedAtMs).toISOString()),
+          timeAgo: formatPostTime(new Date(latest.publishedAtMs).toISOString(), t),
           isLiked: latest.isLiked,
         })
         setPostDetailOpen(true)
@@ -276,7 +278,7 @@ export const TagFeed = forwardRef<TagFeedRef>(function TagFeed(_props, ref) {
         }
       }
     },
-    [],
+    [t],
   )
 
   const handlePostDetailClose = useCallback(() => {

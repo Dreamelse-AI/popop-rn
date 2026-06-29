@@ -73,6 +73,7 @@ interface ChatSessionState {
   markFollowUpConsumed: () => void;
   markVoiceRead: (messageId: string) => void;
   revealVoiceTranscript: (messageId: string) => void;
+  markMessageClicked: (messageId: string) => void;
   removeMessageById: (messageId: string) => void;
 }
 
@@ -234,6 +235,15 @@ export const useChatSessionStore = create<ChatSessionState>(set => ({
       messages: state.messages.map(message =>
         message.id === messageId && message.type === 'voice'
           ? { ...message, transcriptRevealed: true }
+          : message,
+      ),
+    })),
+
+  markMessageClicked: messageId =>
+    set(state => ({
+      messages: state.messages.map(message =>
+        message.id === messageId && message.type === 'link_card'
+          ? { ...message, clicked: true, unread: false }
           : message,
       ),
     })),

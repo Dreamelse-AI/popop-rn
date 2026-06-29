@@ -21,6 +21,8 @@ type MessagesRowMenuProps = {
   onPin?: () => void
   onUnpin?: () => void
   onEndRelation?: () => void
+  /** 会话仅剩一个可置顶角色时隐藏置顶项 */
+  hidePin?: boolean
 }
 
 const MENU_WIDTH = 160
@@ -55,6 +57,7 @@ export function MessagesRowMenu({
   onPin,
   onUnpin,
   onEndRelation,
+  hidePin = false,
 }: MessagesRowMenuProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
@@ -97,13 +100,17 @@ export function MessagesRowMenu({
             </>
           ) : (
             <>
-              <Pressable style={styles.menuItem} onPress={() => { onPin?.(); onClose() }}>
-                <Image source={{ uri: IconPin }} style={{width: 24, height: 24}} />
-                <Text style={styles.menuItemText}>{t('messageMenu.pin')}</Text>
-              </Pressable>
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-              </View>
+              {!hidePin && (
+                <>
+                  <Pressable style={styles.menuItem} onPress={() => { onPin?.(); onClose() }}>
+                    <Image source={{ uri: IconPin }} style={{width: 24, height: 24}} />
+                    <Text style={styles.menuItemText}>{t('messageMenu.pin')}</Text>
+                  </Pressable>
+                  <View style={styles.dividerContainer}>
+                    <View style={styles.divider} />
+                  </View>
+                </>
+              )}
               <Pressable style={styles.menuItem} onPress={() => { onEndRelation?.(); onClose() }}>
                 <Image source={{ uri: IconDeleteCharacter }} style={{width: 24, height: 24}} />
                 <Text style={styles.menuItemTextDanger}>{t('messageMenu.endRelation')}</Text>

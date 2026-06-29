@@ -30,6 +30,8 @@ export function extractMessageCopyText(message: ChatMessage): string {
       return message.description;
     case 'image':
       return message.url;
+    case 'link_card':
+      return message.title || message.description || message.url;
     default:
       return '';
   }

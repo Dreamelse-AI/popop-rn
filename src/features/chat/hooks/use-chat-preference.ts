@@ -5,20 +5,22 @@ import type { ChatModelOption } from '@/generated/arca_apiComponents';
 
 import { useFriendshipStore } from '@/features/friendship/store/friendship-store';
 
-import { chatPreferenceApi } from '../api/chat-preference-api';
+import { buildSetChatPreferenceReq, chatPreferenceApi } from '../api/chat-preference-api';
 import {
-  clampTemperatureLevel,
+  clampTemperature,
   COLLAPSED_MODEL_COUNT,
   CUSTOM_INSTRUCTIONS_MAX_LENGTH,
-  DEFAULT_TEMPERATURE_LEVEL,
+  DEFAULT_TEMPERATURE,
   toChatModelDisplay,
   type ChatModelDisplay,
 } from '../lib/chat-model-display';
 import {
+  getCharacterUserPrompt,
   getChatModelSessionConfig,
   migratePendingSessionConfig,
   pendingCharacterSaveId,
   resolveModelConfig,
+  setCharacterUserPrompt,
   setChatModelSessionConfig,
 } from '../lib/chat-model-session-store';
 import type { ChatModeCustomSettings } from '../ui/chat-mode-custom-sheet';
@@ -43,12 +45,12 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
   const [error, setError] = useState(false);
   const [models, setModels] = useState<ChatModelOption[]>([]);
   const [selectedModelId, setSelectedModelId] = useState('');
-  const [defaultTemperatureLevel, setDefaultTemperatureLevel] = useState(DEFAULT_TEMPERATURE_LEVEL);
+  const [defaultTemperatureLevel, setDefaultTemperatureLevel] = useState(DEFAULT_TEMPERATURE);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const characterSaveIdRef = useRef<string>(pendingCharacterSaveId(characterId));
-  const defaultTemperatureRef = useRef(DEFAULT_TEMPERATURE_LEVEL);
+  const defaultTemperatureRef = useRef(DEFAULT_TEMPERATURE);
 
   const displayModels = useMemo(
     () => models.map(model => toChatModelDisplay(model, t)),
@@ -71,8 +73,8 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       characterSaveIdRef.current = saveId;
       const resp = await chatPreferenceApi.get(saveId);
 
-      const temperatureDefault = clampTemperatureLevel(
-        resp.options.temperature_default ?? DEFAULT_TEMPERATURE_LEVEL,
+      const temperatureDefault = clampTemperature(
+        resp.options.temperature_default ?? DEFAULT_TEMPERATURE,
       );
       defaultTemperatureRef.current = temperatureDefault;
       setDefaultTemperatureLevel(temperatureDefault);
@@ -81,12 +83,16 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       const activeModelId = resp.current.model_id || resp.options.default_model_id;
       setSelectedModelId(activeModelId);
 
+      if (resp.current.user_prompt) {
+        setCharacterUserPrompt(characterSaveIdRef.current, resp.current.user_prompt);
+      }
+
       if (activeModelId) {
         const existing = getChatModelSessionConfig(characterSaveIdRef.current, activeModelId);
         if (!existing) {
           setChatModelSessionConfig(characterSaveIdRef.current, activeModelId, {
-            temperatureLevel: clampTemperatureLevel(resp.current.temperature),
-            customInstructions: '',
+            temperatureLevel: clampTemperature(resp.current.temperature),
+            customInstructions: getCharacterUserPrompt(characterSaveIdRef.current),
           });
         }
       }
@@ -121,7 +127,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       const defaults = { temperatureLevel: defaultTemperatureRef.current };
       const config = resolveModelConfig(saveId, modelId, defaults);
       return {
-        temperatureLevel: clampTemperatureLevel(config.temperatureLevel),
+        temperatureLevel: clampTemperature(config.temperatureLevel),
         customInstructions: config.customInstructions.slice(0, CUSTOM_INSTRUCTIONS_MAX_LENGTH),
       };
     },
@@ -132,7 +138,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
     async (modelId: string, settings: ChatModeCustomSettings) => {
       const saveId = characterSaveIdRef.current;
       const normalized: ChatModeCustomSettings = {
-        temperatureLevel: clampTemperatureLevel(settings.temperatureLevel),
+        temperatureLevel: clampTemperature(settings.temperatureLevel),
         customInstructions: settings.customInstructions.slice(0, CUSTOM_INSTRUCTIONS_MAX_LENGTH),
       };
 
@@ -141,20 +147,23 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         customInstructions: normalized.customInstructions,
       });
 
-      if (modelId !== selectedModelId) {
-        onApplied?.();
-        return true;
-      }
-
       setSaving(true);
       try {
-        const resp = await chatPreferenceApi.set({
-          character_id: characterId,
-          model_id: modelId,
-          temperature: normalized.temperatureLevel,
-        });
+        const resp = await chatPreferenceApi.set(
+          buildSetChatPreferenceReq({
+            characterId,
+            modelId,
+            temperatureLevel: normalized.temperatureLevel,
+            customInstructions: normalized.customInstructions,
+          }),
+        );
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
+        setChatModelSessionConfig(characterSaveIdRef.current, resp.model_id, {
+          temperatureLevel: clampTemperature(resp.temperature),
+          customInstructions: normalized.customInstructions,
+        });
+        setCharacterUserPrompt(characterSaveIdRef.current, normalized.customInstructions);
         onApplied?.();
         return true;
       } catch (e) {
@@ -164,7 +173,7 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
         setSaving(false);
       }
     },
-    [characterId, onApplied, selectedModelId, updateSaveId],
+    [characterId, onApplied, updateSaveId],
   );
 
   const selectModel = useCallback(
@@ -183,17 +192,21 @@ export function useChatPreference({ characterId, enabled, onApplied }: UseChatPr
       const targetSettings = getModelSettings(model.modelId);
       setSaving(true);
       try {
-        const resp = await chatPreferenceApi.set({
-          character_id: characterId,
-          model_id: model.modelId,
-          temperature: targetSettings.temperatureLevel,
-        });
+        const resp = await chatPreferenceApi.set(
+          buildSetChatPreferenceReq({
+            characterId,
+            modelId: model.modelId,
+            temperatureLevel: targetSettings.temperatureLevel,
+            customInstructions: targetSettings.customInstructions,
+          }),
+        );
         updateSaveId(resp.character_save_id);
         setSelectedModelId(resp.model_id);
         setChatModelSessionConfig(characterSaveIdRef.current, model.modelId, {
-          temperatureLevel: clampTemperatureLevel(resp.temperature),
+          temperatureLevel: clampTemperature(resp.temperature),
           customInstructions: targetSettings.customInstructions,
         });
+        setCharacterUserPrompt(characterSaveIdRef.current, targetSettings.customInstructions);
         onApplied?.();
         return true;
       } catch (e) {

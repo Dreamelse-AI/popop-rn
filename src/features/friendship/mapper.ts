@@ -1,40 +1,17 @@
 import {
   formatPhoneMessagePreview,
+  hasUnreadLatestPhoneMessage,
   pickLatestPhoneMessage,
+  resolveLatestPhoneMessageDisplayTime,
 } from '@/features/chat/lib/phone-message-adapter';
+import { resolveLastActiveDisplayTime } from '@/features/chat/lib/timestamp-format';
 import type { FriendshipBasicInfo, ListFriendshipResp } from '@/generated';
-import { toEpochMs } from '@/shared/lib/epoch-ms';
 
 import type {
   CharacterListItem,
   MessageConversation,
   MessageScene,
 } from '@/pages/home/messages/types';
-
-function formatConversationTime(timestamp?: number): string {
-  const lastActiveAtMs = timestamp ? toEpochMs(timestamp) : undefined;
-  if (!lastActiveAtMs) return '';
-
-  const date = new Date(lastActiveAtMs);
-  if (Number.isNaN(date.getTime())) return '';
-
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, '0');
-  const isSameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  if (isSameDay) {
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getMonth() + 1}/${date.getDate()}`;
-  }
-
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
-}
 
 export function mapFriendshipToCharacterListItem(friend: FriendshipBasicInfo): CharacterListItem {
   return {
@@ -54,8 +31,11 @@ export function mapFriendshipToConversation(friend: FriendshipBasicInfo): Messag
     name: friend.name ?? friend.aka ?? '',
     avatar: friend.avatar?.url ?? '',
     preview: latestMessage ? formatPhoneMessagePreview(latestMessage) : '',
-    time: formatConversationTime(friend.last_active_at),
+    time:
+      resolveLatestPhoneMessageDisplayTime(friend.latest_messages) ||
+      resolveLastActiveDisplayTime(friend),
     unread: (friend.unread_count ?? 0) > 0,
+    hasUnreadMessage: hasUnreadLatestPhoneMessage(friend.latest_messages),
   };
 }
 

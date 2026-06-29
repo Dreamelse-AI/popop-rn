@@ -7,6 +7,8 @@ import { MessagesRowMenu, type MessagesRowMenuAnchor } from './messages-row-menu
 
 type MessagesConversationListProps = {
   items: MessageConversation[]
+  /** 未置顶会话仅剩一条时不展示置顶项 */
+  showPinOption?: boolean
   onPin: (conversationId: string) => void | Promise<void>
   onEndRelation: (conversationId: string) => void | Promise<void>
   onSelect: (conversationId: string) => void
@@ -19,6 +21,7 @@ type MenuState = {
 
 export function MessagesConversationList({
   items,
+  showPinOption = true,
   onPin,
   onEndRelation,
   onSelect,
@@ -57,6 +60,7 @@ export function MessagesConversationList({
         onClose={() => setMenuState(null)}
         onPin={handlePin}
         onEndRelation={handleEndRelation}
+        hidePin={!showPinOption}
       />
     </View>
   )

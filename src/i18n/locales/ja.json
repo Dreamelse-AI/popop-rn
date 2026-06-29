@@ -44,7 +44,7 @@
     "instructionsLabel": "カスタム指示",
     "instructionsPlaceholder": "設定を入力してください...",
     "hint": "「キャラクター - チャット - サイドバー設定」でいつでも変更できます。",
-    "submit": "チャットへ",
+    "submit": "新しい友達に会いに行く",
     "loading": "保存中...",
     "avatarUpload": "タップしてアバターをアップロード",
     "avatarAuditFailed": "画像審査に通りませんでした。別の写真を選んでください。",
@@ -120,6 +120,7 @@
     "talk": "話す",
     "recommended": "おすすめコンテンツ",
     "viewAll": "すべて見る",
+    "expandAll": "すべて表示",
     "moreCharacters": "もっと見る",
     "characterDeleted": "キャラクターは削除されました",
     "postDeleted": "投稿は削除されました"
@@ -142,7 +143,11 @@
     "commentFailed": "送信失敗",
     "inputPlaceholder": "何か言ってみて...",
     "expandText": "もっと見る",
-    "collapseText": "閉じる"
+    "collapseText": "閉じる",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
+    "daysAgo": "{{count}}日前"
   },
   "messages": {
     "randomMatch": "ランダムマッチ",
@@ -488,6 +493,8 @@
   "chatModeCustomSheet": {
     "title": "ユーザー定義設定",
     "open": "モードのカスタム設定を開く",
+    "selectModel": "モデルを選択",
+    "dialogueLabel": "モデル対話",
     "instructionsLabel": "ユーザー定義指示",
     "instructionsPlaceholder": "入力スタイルは想定されるモデル応答です...",
     "confirm": "確認",

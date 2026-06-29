@@ -438,6 +438,7 @@ export interface ChatMessage {
 export interface ChatModelOption {
 	model_id: string
 	name: string
+	price: number
 }
 
 export interface ChatPreferenceCurrent {
@@ -446,6 +447,7 @@ export interface ChatPreferenceCurrent {
 	is_custom: boolean
 	background_url: string
 	bubble_key: string
+	user_prompt: string // 用户自定义提示词（未设置则空串）
 }
 
 export interface ChatPreferenceOptions {
