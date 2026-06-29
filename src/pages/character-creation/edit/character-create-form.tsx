@@ -10,6 +10,8 @@ import { useLandingPageBeautify } from '@/features/character-creation/hooks/use-
 import type { CharacterEditMode } from '@/features/character-creation/lib/character-edit-mode';
 import { resolveDraftStorageId } from '@/features/character-creation/lib/draft-local-store';
 import { submitCreateFormAndGoChat } from '@/features/character-creation/lib/submit-create-form-and-go-chat';
+import { validateCreationForm } from '@/features/character-creation/lib/validate-creation-form';
+import { showGlobalToast } from '@/shared/wallet';
 import { useSectionScrollSpy } from '@/features/character-creation/hooks/use-section-scroll-spy';
 import type { CharacterDraftFormState, CreationFormSection } from '@/features/character-creation/types/form';
 import { CREATION_FORM_SECTIONS } from '@/features/character-creation/types/form';
@@ -125,12 +127,20 @@ export function CharacterCreateForm({
   useEffect(() => {
     if (!previewRef) return;
     previewRef.current = () => {
+      const current = formRef.current;
+      if (current) {
+        const validationError = validateCreationForm(current);
+        if (validationError) {
+          showGlobalToast(t(validationError));
+          return;
+        }
+      }
       void beautify.openPreview();
     };
     return () => {
       previewRef.current = null;
     };
-  }, [beautify.openPreview, previewRef]);
+  }, [beautify.openPreview, previewRef, t]);
 
   useEffect(() => {
     if (!goChatRef) return;
@@ -142,6 +152,11 @@ export function CharacterCreateForm({
     goChatRef.current = async (signal?: AbortSignal) => {
       const current = formRef.current;
       if (!current) return null;
+      const validationError = validateCreationForm(current);
+      if (validationError) {
+        showGlobalToast(t(validationError));
+        return null;
+      }
       return submitCreateFormAndGoChat(current, signal);
     };
     return () => {

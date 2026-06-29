@@ -60,6 +60,13 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
     [navigation],
   );
 
+  const handleCardClick = useCallback(
+    (item: CreationCharacterItem) => {
+      navigation.navigate('CharacterDetail', { characterId: item.id, source: 'creation' });
+    },
+    [navigation],
+  );
+
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
     await deleteItem(deleteTarget);
@@ -136,6 +143,7 @@ export function CharacterCreationTab({ isActive = true, onNavigateToFeed }: Char
                     onEdit={() => handleEdit(item)}
                     onDelete={() => setDeleteTarget(item)}
                     onPostDynamic={() => setDynamicTarget(item)}
+                    onCardClick={() => handleCardClick(item)}
                     deleting={deletingId === item.id}
                   />
                 ))}

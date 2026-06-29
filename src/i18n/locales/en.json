@@ -61,7 +61,6 @@
     "rechargeNow": "Recharge Now",
     "rechargeDollarNow": "Recharge ${{amount}} Now",
     "rechargeAmountNow": "Recharge {{amount}} Now",
-    "rechargeAgreementTitle": "Terms of Service",
     "rechargeAgreement": "I have read and agree to the <terms>{{title}}</terms>",
     "loadingPackages": "Loading packages...",
     "loadPackagesFailed": "Could not load recharge packages. Please try again.",
@@ -373,6 +372,15 @@
       "creating": "Creating…",
       "goChatLoading": "Preparing chat…",
       "goChatFailed": "Could not open chat. Please try again.",
+      "validation": {
+        "nameRequired": "Please enter a character name",
+        "tagsRequired": "Please select character tags",
+        "speciesRequired": "Please select a species",
+        "genderRequired": "Please select a gender",
+        "voiceRequired": "Please select a voice",
+        "introductionRequired": "Please enter a character introduction",
+        "personalityRequired": "Please enter a personality description"
+      },
       "loading": "Loading…",
       "loadFailed": "Failed to load. Please try again later.",
       "retry": "Retry",
