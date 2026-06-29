@@ -21,7 +21,6 @@ export {
   isHeadlineCharacterUnread,
   sortStoryHeadlineItems,
 } from './headline-read';
-export type { HeadlineReadSnapshot } from './headline-read';
 export { useStoryHeadline } from './use-story-headline';
 
 export { StoryBarSection } from './components/story-bar-section';
