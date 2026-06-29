@@ -124,7 +124,6 @@ function getOSSClient(config: {
   endpoint: string
   secure: boolean
 }) {
-  // @ts-expect-error ali-oss has no type declarations
   const OSS = require('ali-oss')
   return new OSS(config)
 }
