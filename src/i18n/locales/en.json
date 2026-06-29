@@ -44,7 +44,7 @@
     "instructionsLabel": "Custom Instructions",
     "instructionsPlaceholder": "Enter your settings...",
     "hint": "You can change this anytime in Character - Chat - Sidebar Settings.",
-    "submit": "Go to Chat",
+    "submit": "Meet new friends",
     "loading": "Saving...",
     "avatarUpload": "Tap to upload avatar",
     "avatarAuditFailed": "Image audit failed. Please choose another photo.",
@@ -121,6 +121,7 @@
     "talk": "Talk",
     "recommended": "Recommended",
     "viewAll": "View All",
+    "expandAll": "Show more",
     "moreCharacters": "More Characters",
     "characterDeleted": "This character has been deleted",
     "postDeleted": "This post has been deleted"
@@ -143,7 +144,11 @@
     "commentFailed": "Failed to send",
     "inputPlaceholder": "Say something...",
     "expandText": "Read more",
-    "collapseText": "Show less"
+    "collapseText": "Show less",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
   },
   "messages": {
     "randomMatch": "Random Match",
@@ -480,6 +485,8 @@
   "chatModeCustomSheet": {
     "title": "Custom Settings",
     "open": "Open mode custom settings",
+    "selectModel": "Select model",
+    "dialogueLabel": "Model dialogue",
     "instructionsLabel": "Custom Instructions",
     "instructionsPlaceholder": "Input style is the expected model response...",
     "confirm": "Confirm",

@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import Svg, { Circle, Path } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { EmojiItem, ListEmojiPanelResp } from '@/generated/arca_apiComponents'
@@ -54,8 +53,7 @@ export function ChatEmojiBottomSheet({
   useEffect(() => {
     if (!open || tabs.length === 0) return
     if (!tabs.some(tab => tab.id === activeTabId)) {
-      const firstPack = tabs.find(tab => tab.kind === 'pack')
-      setActiveTabId(firstPack?.id ?? tabs[0]?.id ?? '')
+      setActiveTabId(tabs[0]?.id ?? '')
     }
   }, [activeTabId, open, tabs])
 
@@ -72,7 +70,7 @@ export function ChatEmojiBottomSheet({
   if (!open) return null
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) ?? tabs[0]
-  const activeEmojis = panel && activeTab ? resolveEmojiPanelTabEmojis(activeTab, panel) : []
+  const activeEmojis = activeTab ? resolveEmojiPanelTabEmojis(activeTab) : []
   const showSkeleton = loading && !panel
   const isEmpty = panel ? isEmojiPanelEmpty(panel) : false
 
@@ -82,7 +80,6 @@ export function ChatEmojiBottomSheet({
         {tabs.length > 0 && (
           <EmojiPanelTabBar
             tabs={tabs}
-            panel={panel}
             activeTabId={activeTabId}
             scrollRef={tabScrollRef}
             onSelect={setActiveTabId}
@@ -102,7 +99,7 @@ export function ChatEmojiBottomSheet({
             ) : fetchFailed && !panel ? (
               <EmojiPanelError onRetry={onRetry} />
             ) : !activeTab || activeEmojis.length === 0 ? (
-              <EmojiPanelEmpty kind={activeTab?.kind ?? 'recent'} isEmpty={isEmpty} />
+              <EmojiPanelEmpty isEmpty={isEmpty} />
             ) : (
               <EmojiGrid emojis={activeEmojis} onSelect={onSelect} />
             )}
@@ -124,7 +121,6 @@ export function ChatEmojiBottomSheet({
 
 type EmojiPanelTabBarProps = {
   tabs: EmojiPanelTab[]
-  panel: ListEmojiPanelResp | null
   activeTabId: string
   scrollRef: React.RefObject<ScrollView | null>
   onSelect: (tabId: string) => void
@@ -132,7 +128,6 @@ type EmojiPanelTabBarProps = {
 
 function EmojiPanelTabBar({
   tabs,
-  panel,
   activeTabId,
   scrollRef,
   onSelect,
@@ -149,7 +144,7 @@ function EmojiPanelTabBar({
         contentContainerStyle={styles.tabBarContent}
       >
         {tabs.map(tab => {
-          const emojis = panel ? resolveEmojiPanelTabEmojis(tab, panel) : []
+          const emojis = resolveEmojiPanelTabEmojis(tab)
           const active = tab.id === activeTabId
 
           return (
@@ -190,10 +185,7 @@ function EmojiPanelTabIcon({
   tab: EmojiPanelTab
   emojis: EmojiItem[]
 }) {
-  const iconUrl =
-    tab.kind === 'pack'
-      ? tab.coverUrl || emojis[0]?.media.url
-      : emojis[0]?.media.url
+  const iconUrl = tab.coverUrl || emojis[0]?.media.url
 
   if (iconUrl) {
     return (
@@ -205,54 +197,7 @@ function EmojiPanelTabIcon({
     )
   }
 
-  if (tab.kind === 'recent') {
-    return <RecentTabIcon />
-  }
-
-  if (tab.kind === 'my') {
-    return <MyTabIcon />
-  }
-
   return <Text style={styles.tabFallbackLabel}>{tab.label.slice(0, 2)}</Text>
-}
-
-function RecentTabIcon() {
-  return (
-    <Svg
-      width={EMOJI_PANEL.tabIconMaxWidthPx}
-      height={EMOJI_PANEL.tabIconMaxHeightPx}
-      viewBox="0 0 48 48"
-    >
-      <Circle cx="24" cy="24" r="14" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={2} />
-      <Path
-        d="M24 16v8l5 3"
-        fill="none"
-        stroke="rgba(0,0,0,0.35)"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  )
-}
-
-function MyTabIcon() {
-  return (
-    <Svg
-      width={EMOJI_PANEL.tabIconMaxWidthPx}
-      height={EMOJI_PANEL.tabIconMaxHeightPx}
-      viewBox="0 0 48 48"
-    >
-      <Circle cx="24" cy="18" r="6" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={2} />
-      <Path
-        d="M12 38c0-6.6 5.4-10 12-10s12 3.4 12 10"
-        fill="none"
-        stroke="rgba(0,0,0,0.35)"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  )
 }
 
 function EmojiGrid({
@@ -301,21 +246,8 @@ function EmojiPanelError({ onRetry }: { onRetry?: () => void }) {
   )
 }
 
-function EmojiPanelEmpty({
-  kind,
-  isEmpty,
-}: {
-  kind: EmojiPanelTab['kind']
-  isEmpty: boolean
-}) {
-  const message =
-    kind === 'recent'
-      ? '暂无最近使用的表情'
-      : kind === 'my'
-        ? '暂无上传的表情'
-        : isEmpty
-          ? '暂无表情'
-          : '该分组暂无表情'
+function EmojiPanelEmpty({ isEmpty }: { isEmpty: boolean }) {
+  const message = isEmpty ? '暂无表情' : '该分组暂无表情'
 
   return (
     <View style={styles.emptyContainer}>

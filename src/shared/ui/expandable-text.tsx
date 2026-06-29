@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
-  Pressable,
   StyleSheet,
   type TextStyle,
   type StyleProp,
@@ -20,6 +19,8 @@ type ExpandableTextProps = {
   onExpandChange?: (expanded: boolean) => void
 }
 
+type Phase = 'measure' | 'search' | 'done'
+
 export function ExpandableText({
   children,
   style,
@@ -29,24 +30,96 @@ export function ExpandableText({
   labelColor = 'rgba(0,0,0,0.5)',
   onExpandChange,
 }: ExpandableTextProps) {
+  const text = children
   const [expanded, setExpanded] = useState(false)
   const [needsTruncation, setNeedsTruncation] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [cutIndex, setCutIndex] = useState(0)
+  const [currentPhase, setCurrentPhase] = useState<Phase>('measure')
   const measured = useRef(false)
+  const lo = useRef(0)
+  const hi = useRef(0)
 
   useEffect(() => {
     setExpanded(false)
     setNeedsTruncation(false)
+    setReady(false)
+    setCutIndex(0)
+    setCurrentPhase('measure')
     measured.current = false
-  }, [children])
+    lo.current = 0
+    hi.current = 0
+  }, [text])
 
-  const handleTextLayout = useCallback(
+  const handleFullMeasure = useCallback(
     (e: NativeSyntheticEvent<TextLayoutEventData>) => {
       if (measured.current) return
-      const { lines } = e.nativeEvent
-      if (lines.length > numberOfLines) {
-        setNeedsTruncation(true)
-      }
       measured.current = true
+      const { lines } = e.nativeEvent
+      if (lines.length <= numberOfLines) {
+        setNeedsTruncation(false)
+        setReady(true)
+        setCurrentPhase('done')
+        return
+      }
+      setNeedsTruncation(true)
+
+      let endOffset = 0
+      for (let i = 0; i < numberOfLines; i++) {
+        const lt: string = (lines[i] as { text?: string }).text ?? ''
+        if (!lt) {
+          endOffset++
+          continue
+        }
+        const idx = text.indexOf(lt, endOffset)
+        if (idx >= 0) {
+          endOffset = idx + lt.length
+        } else {
+          endOffset += lt.length
+        }
+        while (endOffset < text.length && (text[endOffset] === '\n' || text[endOffset] === '\r')) {
+          endOffset++
+        }
+      }
+
+      const searchEnd = Math.min(endOffset, text.length)
+      const labelSpace = expandLabel.length + 2
+      const searchStart = Math.max(0, searchEnd - labelSpace * 2)
+
+      lo.current = searchStart
+      hi.current = searchEnd
+      const mid = Math.floor((searchStart + searchEnd) / 2)
+      setCutIndex(mid)
+      setCurrentPhase('search')
+    },
+    [numberOfLines, expandLabel, text],
+  )
+
+  const handleSearchMeasure = useCallback(
+    (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+      const { lines } = e.nativeEvent
+
+      if (hi.current - lo.current <= 1) {
+        setCutIndex(lo.current)
+        setReady(true)
+        setCurrentPhase('done')
+        return
+      }
+
+      const mid = Math.floor((lo.current + hi.current) / 2)
+      if (lines.length > numberOfLines) {
+        hi.current = mid
+      } else {
+        lo.current = mid
+      }
+
+      if (hi.current - lo.current <= 1) {
+        setCutIndex(lo.current)
+        setReady(true)
+        setCurrentPhase('done')
+      } else {
+        setCutIndex(Math.floor((lo.current + hi.current) / 2))
+      }
     },
     [numberOfLines],
   )
@@ -63,34 +136,48 @@ export function ExpandableText({
 
   if (expanded) {
     return (
-      <View>
-        <Text style={style}>
-          {children}
-          {collapseLabel ? (
-            <Text style={{ color: labelColor }} onPress={handleCollapse}>
-              {'  '}{collapseLabel}
-            </Text>
-          ) : null}
-        </Text>
-      </View>
+      <Text style={style}>
+        {text}
+        {collapseLabel ? (
+          <Text style={{ color: labelColor }} onPress={handleCollapse}>
+            {'  '}{collapseLabel}
+          </Text>
+        ) : null}
+      </Text>
     )
+  }
+
+  if (ready && needsTruncation) {
+    const display = text.slice(0, cutIndex).trimEnd()
+    return (
+      <Text style={style}>
+        {display}
+        <Text style={{ color: labelColor }} onPress={handleExpand}>
+          {'  '}{expandLabel}
+        </Text>
+      </Text>
+    )
+  }
+
+  if (ready && !needsTruncation) {
+    return <Text style={style}>{text}</Text>
   }
 
   return (
     <View style={styles.container}>
-      <Text style={[style, styles.measureText]} onTextLayout={handleTextLayout}>
-        {children}
-      </Text>
-      <Text style={style} numberOfLines={numberOfLines}>
-        {children}
-      </Text>
-      {needsTruncation && (
-        <Pressable style={styles.expandButton} onPress={handleExpand}>
-          <Text style={[styles.expandLabel, { color: labelColor }]}>
-            {expandLabel}
-          </Text>
-        </Pressable>
+      {currentPhase === 'measure' && (
+        <Text style={[style, styles.measureText]} onTextLayout={handleFullMeasure}>
+          {text}
+        </Text>
       )}
+      {currentPhase === 'search' && (
+        <Text style={[style, styles.measureText]} onTextLayout={handleSearchMeasure}>
+          {text.slice(0, cutIndex).trimEnd()}{'  '}{expandLabel}
+        </Text>
+      )}
+      <Text style={[style, { opacity: 0 }]} numberOfLines={numberOfLines}>
+        {text}
+      </Text>
     </View>
   )
 }
@@ -105,15 +192,5 @@ const styles = StyleSheet.create({
     right: 0,
     opacity: 0,
     pointerEvents: 'none',
-  },
-  expandButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    paddingLeft: 4,
-  },
-  expandLabel: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 })

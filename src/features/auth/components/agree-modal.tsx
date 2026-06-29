@@ -12,7 +12,7 @@ type AgreeModalProps = {
   loginHook: ReturnType<typeof useLogin>
 }
 
-function AgreementCheckIcon({ checked }: { checked: boolean }) {
+function AgreementCheckIcon({ checked, locked }: { checked: boolean; locked?: boolean }) {
   if (!checked) {
     return (
       <View style={styles.checkIconWrapper}>
@@ -23,8 +23,8 @@ function AgreementCheckIcon({ checked }: { checked: boolean }) {
 
   return (
     <View style={styles.checkIconWrapper}>
-      <View style={styles.checkIconChecked}>
-        <Svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+      <View style={[styles.checkIconChecked, locked && styles.checkIconLocked]}>
+        <Svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={locked ? 2.5 : 3}>
           <Path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </Svg>
       </View>
@@ -34,18 +34,20 @@ function AgreementCheckIcon({ checked }: { checked: boolean }) {
 
 type AgreementRowProps = {
   checked: boolean
+  locked?: boolean
   label: string
   href?: string
   showChevron?: boolean
+  toggleable?: boolean
   onToggle: () => void
 }
 
-function AgreementRow({ checked, label, href, showChevron = false, onToggle }: AgreementRowProps) {
+function AgreementRow({ checked, locked = false, label, href, showChevron = false, toggleable = true, onToggle }: AgreementRowProps) {
   const hasChevron = !!href || showChevron
 
   return (
-    <Pressable onPress={onToggle} style={styles.rowContainer}>
-      <AgreementCheckIcon checked={checked} />
+    <Pressable onPress={toggleable ? onToggle : undefined} disabled={!toggleable} style={styles.rowContainer}>
+      <AgreementCheckIcon checked={checked} locked={locked} />
       <Text style={styles.rowLabel}>{label}</Text>
       {hasChevron && (
         href ? (
@@ -85,10 +87,12 @@ export function AgreeModal({ loginHook }: AgreeModalProps) {
   const renderRow = (term: TermsInfo) => (
     <AgreementRow
       key={term.terms_id}
-      checked={!!state.agreementChecks[term.terms_id]}
+      checked={term.required || !!state.agreementChecks[term.terms_id]}
+      locked={term.required}
       label={term.title}
       href={term.link || undefined}
       showChevron={!term.link}
+      toggleable={!term.required}
       onToggle={() => toggleAgreement(term.terms_id)}
     />
   )
@@ -208,6 +212,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  checkIconLocked: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   submitButton: {
     height: 60,

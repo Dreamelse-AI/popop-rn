@@ -116,6 +116,9 @@ export function ChatSettingsDrawer({
   const [pageStyleSheetOpen, setPageStyleSheetOpen] = useState(false)
   const [modeCustomSheetOpen, setModeCustomSheetOpen] = useState(false)
   const [modeCustomTargetId, setModeCustomTargetId] = useState<string | null>(null)
+  const [modeCustomInitialSettings, setModeCustomInitialSettings] = useState(
+    DEFAULT_CHAT_MODE_CUSTOM_SETTINGS,
+  )
   const [appliedPersona, setAppliedPersona] = useState<ChatPersonaView | null>(null)
   const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current
   const backdropAnim = useRef(new Animated.Value(0)).current
@@ -125,9 +128,15 @@ export function ChatSettingsDrawer({
     enabled: open,
     onApplied: () => showGlobalToast(t('chatSettings.changeApplied')),
   })
-  const modeCustomInitialSettings = modeCustomTargetId
-    ? chatPreference.getModelSettings(modeCustomTargetId)
-    : DEFAULT_CHAT_MODE_CUSTOM_SETTINGS
+
+  const openModeCustomSheet = useCallback(
+    (modelId: string) => {
+      setModeCustomTargetId(modelId)
+      setModeCustomInitialSettings(chatPreference.getModelSettings(modelId))
+      setModeCustomSheetOpen(true)
+    },
+    [chatPreference],
+  )
 
   useEffect(() => {
     if (open) return
@@ -263,10 +272,7 @@ export function ChatSettingsDrawer({
                         disabled={chatPreference.saving}
                         onSelect={() => void chatPreference.selectModel(mode)}
                         customSettingsLabel={t('chatModeCustomSheet.open')}
-                        onCustomSettings={() => {
-                          setModeCustomTargetId(mode.modelId)
-                          setModeCustomSheetOpen(true)
-                        }}
+                        onCustomSettings={() => openModeCustomSheet(mode.modelId)}
                       />
                     ))}
                   </View>
@@ -340,9 +346,19 @@ export function ChatSettingsDrawer({
 
       <ChatModeCustomSheet
         open={modeCustomSheetOpen}
+        model={
+          modeCustomTargetId
+            ? (chatPreference.models.find(item => item.modelId === modeCustomTargetId) ?? null)
+            : null
+        }
+        models={chatPreference.models}
         initialSettings={modeCustomInitialSettings}
         embedded
         onClose={() => setModeCustomSheetOpen(false)}
+        onModelChange={modelId => {
+          setModeCustomTargetId(modelId)
+          setModeCustomInitialSettings(chatPreference.getModelSettings(modelId))
+        }}
         onConfirm={settings => {
           if (!modeCustomTargetId) {
             setModeCustomSheetOpen(false)

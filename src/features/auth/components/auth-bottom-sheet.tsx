@@ -26,6 +26,7 @@ type AuthBottomSheetProps = {
   logoPeek?: boolean
   fitContent?: boolean
   fullHeight?: boolean
+  showCloseButton?: boolean
   sheetBackgroundColor?: string
   footerStyle?: StyleProp<ViewStyle>
   onClosed?: () => void
@@ -75,6 +76,7 @@ export function AuthBottomSheet({
   logoPeek = false,
   fitContent = false,
   fullHeight = false,
+  showCloseButton = true,
   sheetBackgroundColor,
   footerStyle,
   onClosed,
@@ -97,6 +99,7 @@ export function AuthBottomSheet({
       footer={footer}
       fitContent={fitContent}
       fullHeight={fullHeight}
+      showCloseButton={showCloseButton}
       sheetOverflowVisible={logoPeek}
       backgroundColor={sheetBackgroundColor}
       footerStyle={footerStyle}

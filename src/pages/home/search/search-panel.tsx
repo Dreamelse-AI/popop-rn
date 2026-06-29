@@ -130,14 +130,14 @@ export function SearchPanel({ open, onClose }: SearchPanelProps) {
         postId: detail.postId || item.id,
         impressionId: item.impressionId,
         content: detail.content || item.body,
-        timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString()),
+        timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString(), t),
         isLiked: detail.isLiked,
       })
       setPostDetailOpen(true)
     } catch (e) {
       console.error('[SearchPanel] load post detail failed:', e)
     }
-  }, [])
+  }, [t])
 
   const handleGridItemClick = useCallback(async (item: DiscoverGridItem) => {
     if (item.entityType === 'character') {
@@ -154,7 +154,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps) {
           postId: detail.postId || item.entityId,
           impressionId: item.impressionId,
           content: detail.content,
-          timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString()),
+          timeAgo: formatPostTime(new Date(detail.publishedAtMs).toISOString(), t),
           isLiked: detail.isLiked,
         })
         setPostDetailOpen(true)
@@ -162,7 +162,7 @@ export function SearchPanel({ open, onClose }: SearchPanelProps) {
         console.error('[SearchPanel] load grid post detail failed:', e)
       }
     }
-  }, [navigation])
+  }, [navigation, t])
 
   const handleChatAvatarClick = useCallback((item: SearchChatItem) => {
     navigation.navigate('CharacterDetail', { characterId: item.id, source: 'feed', impressionId: item.impressionId })

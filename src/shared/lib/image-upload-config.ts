@@ -9,7 +9,7 @@ export type ImageUploadScene =
 
 /** 各场景允许一次选择的图片数量上限 */
 export const IMAGE_UPLOAD_LIMITS: Record<ImageUploadScene, number> = {
-  chat: 9,
+  chat: 1,
   chatBackground: 1,
   randomMatchChat: 1,
   postDynamic: 9,

@@ -34,17 +34,17 @@
     "continue": "继续"
   },
   "profile": {
-    "title": "我的聊天资料",
+    "title": "我的个人聊天资料",
     "nameLabel": "姓名",
     "namePlaceholder": "输入角色名称",
     "genderLabel": "性别",
-    "male": "男",
-    "female": "女",
-    "other": "其他",
+    "male": "男性",
+    "female": "女性",
+    "other": "未知",
     "instructionsLabel": "自定义指令",
     "instructionsPlaceholder": "输入您的设置...",
     "hint": "您可以随时在「角色 - 聊天 - 侧边栏设置」中更改。",
-    "submit": "开始聊天",
+    "submit": "去认识新朋友！",
     "loading": "保存中...",
     "avatarUpload": "点击上传头像",
     "avatarAuditFailed": "图片审核未通过，请换一张试试",
@@ -121,6 +121,7 @@
     "talk": "对话",
     "recommended": "推荐内容",
     "viewAll": "查看全部",
+    "expandAll": "展开全部",
     "moreCharacters": "更多角色",
     "characterDeleted": "角色已被删除",
     "postDeleted": "帖子已被删除"
@@ -143,7 +144,11 @@
     "commentFailed": "发送失败",
     "inputPlaceholder": "说点什么...",
     "expandText": "展开全文",
-    "collapseText": "收起"
+    "collapseText": "收起",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前"
   },
   "messages": {
     "randomMatch": "随机匹配",
@@ -480,6 +485,8 @@
   "chatModeCustomSheet": {
     "title": "用户自定义设置",
     "open": "打开模式自定义设置",
+    "selectModel": "选择模型",
+    "dialogueLabel": "模型对话",
     "instructionsLabel": "用户自定义指令",
     "instructionsPlaceholder": "输入风格是预期的模型响应...",
     "confirm": "确认",

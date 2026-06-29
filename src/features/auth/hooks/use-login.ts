@@ -12,7 +12,8 @@ import { useGoogleLogin, LOGIN_CANCELLED } from './use-google-login'
 import { useAppleLogin } from './use-apple-login'
 import { startOAuthCodeLogin } from './oauth-code-login'
 import type { AccountRegion, AuthProvider, AuthResponse, ProfileGender } from '../auth-types'
-import { canSubmitTerms, getRequiredTerms } from '../lib/app-terms'
+import { canSubmitTerms } from '../lib/app-terms'
+import { submitAgreementAfterAuth } from '../lib/terms-agreement'
 import { PROVIDER_LABELS, getLoginMethodsByRegion } from '../region-config'
 import { getAccountRegion, setAccountRegion } from '@/shared/api/account-region-store'
 import { sessionStore } from '@/shared/session-store'
@@ -56,6 +57,7 @@ export function useLogin(navigation: UseLoginNavigation) {
   const pendingAfterAgreeCloseRef = useRef<(() => void) | null>(null)
   const pendingAfterEmailCloseRef = useRef<(() => void) | null>(null)
   const pendingAuthRef = useRef<AuthResponse | null>(null)
+  const agreedTermsChecksRef = useRef<Partial<Record<string, boolean>>>({})
   const profileAvatarUriRef = useRef<string | null>(null)
   const profileSetupSessionRef = useRef(0)
   const lastSentEmailRef = useRef<string | null>(null)
@@ -123,6 +125,7 @@ export function useLogin(navigation: UseLoginNavigation) {
           if (prev.region === region) {
             return { ...prev, regionLoading: false }
           }
+          agreedTermsChecksRef.current = {}
           return {
             ...prev,
             region,
@@ -175,11 +178,8 @@ export function useLogin(navigation: UseLoginNavigation) {
   }, [])
 
   const buildPrefilledAgreementChecks = useCallback(() => {
-    if (!state.agreed) return {}
-    return Object.fromEntries(
-      getRequiredTerms(termsList).map(term => [term.terms_id, true]),
-    )
-  }, [state.agreed, termsList])
+    return Object.fromEntries(termsList.map(term => [term.terms_id, true]))
+  }, [termsList])
 
   const openAgreeModal = useCallback((onConfirm: () => void, mode: 'email' | 'provider' = 'email') => {
     pendingActionRef.current = onConfirm
@@ -221,6 +221,8 @@ export function useLogin(navigation: UseLoginNavigation) {
   }, [state.agreed, termsError, openAgreeModal])
 
   const toggleAgreement = useCallback((termsId: string) => {
+    const term = termsList.find(item => item.terms_id === termsId)
+    if (term?.required) return
     setState(prev => ({
       ...prev,
       agreementChecks: {
@@ -228,7 +230,7 @@ export function useLogin(navigation: UseLoginNavigation) {
         [termsId]: !prev.agreementChecks[termsId],
       },
     }))
-  }, [])
+  }, [termsList])
 
   const closeAgreeModal = useCallback(() => {
     pendingActionRef.current = null
@@ -241,6 +243,11 @@ export function useLogin(navigation: UseLoginNavigation) {
     pendingAfterAgreeCloseRef.current = null
     pending?.()
   }, [])
+
+  const syncAgreedTerms = useCallback(async (authRes: AuthResponse) => {
+    if (termsList.length === 0) return
+    await submitAgreementAfterAuth(authRes, termsList, agreedTermsChecksRef.current)
+  }, [termsList])
 
   const closeProfileSetupModal = useCallback(() => {
     bumpProfileSetupSession()
@@ -283,9 +290,19 @@ export function useLogin(navigation: UseLoginNavigation) {
   const submitAgreeAndLogin = useCallback(() => {
     if (!canSubmitAgreements) return
 
+    const confirmedChecks: Partial<Record<string, boolean>> = { ...state.agreementChecks }
+    for (const term of termsList) {
+      if (term.required) confirmedChecks[term.terms_id] = true
+    }
+    agreedTermsChecksRef.current = confirmedChecks
+
     if (pendingAuthRef.current) {
-      update({ agreed: true, showAgreeModal: false })
-      pendingAfterAgreeCloseRef.current = () => openProfileSetupModal()
+      const authRes = pendingAuthRef.current
+      update({ agreed: true, showAgreeModal: false, loading: true })
+      void syncAgreedTerms(authRes).finally(() => {
+        update({ loading: false })
+        pendingAfterAgreeCloseRef.current = () => openProfileSetupModal()
+      })
       return
     }
 
@@ -298,7 +315,7 @@ export function useLogin(navigation: UseLoginNavigation) {
       // 等条款弹窗关闭动画结束后再打开下一个弹窗，避免 RN 多 Modal 叠层冲突
       pendingAfterAgreeCloseRef.current = pending
     }
-  }, [canSubmitAgreements, update, openProfileSetupModal])
+  }, [canSubmitAgreements, state.agreementChecks, termsList, update, syncAgreedTerms, openProfileSetupModal])
 
   const submitProfileSetup = useCallback(async () => {
     if (!canSubmitProfile || state.loading) return
@@ -410,6 +427,8 @@ export function useLogin(navigation: UseLoginNavigation) {
 
   const handleNewUserFlow = useCallback(
     async (res: AuthResponse) => {
+      await syncAgreedTerms(res)
+
       if (res.is_new) {
         beginProfileSetupForAuth(res)
         return
@@ -432,7 +451,7 @@ export function useLogin(navigation: UseLoginNavigation) {
       applyAuthResponse(res)
       navigation.replace('Home')
     },
-    [beginProfileSetupForAuth, navigation, update],
+    [beginProfileSetupForAuth, navigation, update, syncAgreedTerms],
   )
 
   const sendCode = useCallback(async () => {

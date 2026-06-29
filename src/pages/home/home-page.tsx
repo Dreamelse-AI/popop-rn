@@ -66,21 +66,19 @@ export function HomePage() {
     return outcome
   }, [showToast])
 
-  const scrollFeedToTopAndRefresh = useCallback(async () => {
-    scrollFeedToTop()
-    await runFeedRefresh()
-  }, [runFeedRefresh, scrollFeedToTop])
-
-  const handlePullRefresh = useCallback(async () => {
-    await runFeedRefresh()
-  }, [runFeedRefresh])
-
   const isFeedTab = bottomTab === 'home'
 
-  const { refreshControl } = usePullToRefresh({
+  const { refreshControl, triggerRefresh } = usePullToRefresh({
     enabled: isFeedTab && !searchOpen,
-    onRefresh: handlePullRefresh,
+    onRefresh: async () => {
+      await runFeedRefresh()
+    },
   })
+
+  const scrollFeedToTopAndRefresh = useCallback(async () => {
+    scrollFeedToTop()
+    await triggerRefresh()
+  }, [scrollFeedToTop, triggerRefresh])
 
   useEffect(() => {
     const coins = takePendingNewUserReward()

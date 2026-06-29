@@ -10,6 +10,8 @@ type UsePullToRefreshResult = {
   pullDistance: number
   refreshing: boolean
   refreshControl: React.ReactElement<RefreshControlProps> | undefined
+  /** 程序触发刷新（如点击底部 tab），复用下拉刷新的 spinner 状态 */
+  triggerRefresh: () => Promise<void>
 }
 
 export function usePullToRefresh({ enabled = true, onRefresh }: UsePullToRefreshOptions): UsePullToRefreshResult {
@@ -34,7 +36,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }: UsePullToRefresh
     />
   ) : undefined
 
-  return { pullDistance: refreshing ? 72 : 0, refreshing, refreshControl }
+  return { pullDistance: refreshing ? 72 : 0, refreshing, refreshControl, triggerRefresh: handleRefresh }
 }
 
 type PullToRefreshIndicatorProps = {

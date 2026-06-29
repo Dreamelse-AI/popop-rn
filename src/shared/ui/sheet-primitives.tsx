@@ -92,9 +92,10 @@ type SheetFooterButtonProps = {
   onPress: () => void
   disabled?: boolean
   loading?: boolean
+  textColor?: string
 }
 
-export function SheetFooterButton({ label, onPress, disabled, loading }: SheetFooterButtonProps) {
+export function SheetFooterButton({ label, onPress, disabled, loading, textColor }: SheetFooterButtonProps) {
   const isDisabled = disabled || loading
 
   return (
@@ -104,9 +105,9 @@ export function SheetFooterButton({ label, onPress, disabled, loading }: SheetFo
       style={[styles.confirmButton, isDisabled && styles.confirmButtonDisabled]}
     >
       {loading ? (
-        <ActivityIndicator color={SHEET.confirm.textColor} />
+        <ActivityIndicator color={textColor ?? SHEET.confirm.textColor} />
       ) : (
-        <Text style={styles.confirmText}>{label}</Text>
+        <Text style={[styles.confirmText, textColor ? { color: textColor } : null]}>{label}</Text>
       )}
     </Pressable>
   )

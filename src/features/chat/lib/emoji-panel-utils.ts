@@ -1,9 +1,12 @@
 import type { EmojiItem, EmojiPack, ListEmojiPanelResp } from '@/generated/arca_apiComponents';
 
-export type EmojiPanelTab =
-  | { kind: 'recent'; id: 'recent'; label: string }
-  | { kind: 'my'; id: 'my'; label: string }
-  | { kind: 'pack'; id: string; label: string; coverUrl?: string; pack: EmojiPack };
+export type EmojiPanelTab = {
+  kind: 'pack'
+  id: string
+  label: string
+  coverUrl?: string
+  pack: EmojiPack
+}
 
 export function flattenEmojiPanel(panel: ListEmojiPanelResp): EmojiItem[] {
   const seen = new Set<string>();
@@ -40,26 +43,11 @@ export function buildEmojiPanelTabs(panel: ListEmojiPanelResp): EmojiPanelTab[] 
     });
   }
 
-  tabs.push(
-    { kind: 'recent', id: 'recent', label: '最近' },
-    { kind: 'my', id: 'my', label: '我的' },
-  );
-
   return tabs;
 }
 
-export function resolveEmojiPanelTabEmojis(
-  tab: EmojiPanelTab,
-  panel: ListEmojiPanelResp,
-): EmojiItem[] {
-  switch (tab.kind) {
-    case 'recent':
-      return panel.recent ?? [];
-    case 'my':
-      return panel.my_emojis ?? [];
-    case 'pack':
-      return tab.pack.emojis ?? [];
-  }
+export function resolveEmojiPanelTabEmojis(tab: EmojiPanelTab): EmojiItem[] {
+  return tab.pack.emojis ?? [];
 }
 
 export function isEmojiPanelEmpty(panel: ListEmojiPanelResp): boolean {

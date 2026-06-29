@@ -91,26 +91,28 @@ export function useFeed(): UseFeedResult {
     ) => {
       const session = getFeedRankingSession();
       const pendingInserts = peekPendingInserts();
-      let appliedPostIds: string[] = [];
 
-      setItems(prev => {
-        const leadingItems = replace ? [] : prev;
-        const batch = buildFeedBatch({
-          stream,
-          characters,
-          session,
-          isNewUser,
-          requestIndex,
-          pendingInserts,
-          leadingItems,
-        });
-        appliedPostIds = batch.appliedPostIds;
-
-        const merged = replace ? batch.items : appendUniqueItems(prev, batch.items);
-        return sanitizeAdjacentCharacterRows(merged);
+      // buildFeedBatch 有副作用（markPromoShown 等会写入 session），必须在 setItems 更新函数之外只执行一次。
+      // 否则 StrictMode / 并发渲染下更新函数被重复调用时，promo 会被会话去重过滤掉，
+      // 导致「仅 promo」批次第二次计算返回空列表。
+      const prev = itemsRef.current;
+      const leadingItems = replace ? [] : prev;
+      const batch = buildFeedBatch({
+        stream,
+        characters,
+        session,
+        isNewUser,
+        requestIndex,
+        pendingInserts,
+        leadingItems,
       });
 
-      for (const postId of appliedPostIds) {
+      const merged = replace ? batch.items : appendUniqueItems(prev, batch.items);
+      const next = sanitizeAdjacentCharacterRows(merged);
+      itemsRef.current = next;
+      setItems(next);
+
+      for (const postId of batch.appliedPostIds) {
         removePendingInsert(postId);
       }
 

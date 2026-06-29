@@ -20,6 +20,8 @@ const IconKeyboard = cdnImage('assets/dialog/dialog-keyboard.png')
 import type { VoiceCancelZone, VoiceRecorderPhase } from '../hooks/use-voice-recorder'
 import { useKeyboardInset } from './hooks/use-keyboard-inset'
 
+export type ChatComposerInputMode = 'text' | 'voice'
+
 type ChatInputBarProps = {
   onFocusChange?: (focused: boolean) => void
   onSendText?: (text: string) => void
@@ -27,6 +29,8 @@ type ChatInputBarProps = {
   onSendEmojiPress?: () => void
   onEmojiPanelClose?: () => void
   composerExpanded?: boolean
+  inputMode?: ChatComposerInputMode
+  onInputModeChange?: (mode: ChatComposerInputMode) => void
   showEmojiPanel?: boolean
   draft?: string
   onDraftChange?: (value: string) => void
@@ -44,6 +48,8 @@ export function ChatInputBar({
   onSendEmojiPress,
   onEmojiPanelClose,
   composerExpanded,
+  inputMode = 'text',
+  onInputModeChange,
   showEmojiPanel = false,
   draft,
   onDraftChange,
@@ -61,18 +67,17 @@ export function ChatInputBar({
   const textInputRef = useRef<TextInput>(null)
   const pendingComposerOpenRef = useRef(false)
   const keyboardInset = useKeyboardInset(keyboardExpanded || inputFocused)
-
-  const setComposerExpanded = useCallback(
-    (next: boolean) => {
-      setKeyboardExpanded(next)
-      onFocusChange?.(next)
-    },
-    [onFocusChange],
-  )
+  const isVoiceMode = inputMode === 'voice'
 
   useEffect(() => {
     if (draft !== undefined) setText(draft)
   }, [draft])
+
+  useEffect(() => {
+    if (isVoiceMode) {
+      setKeyboardExpanded(false)
+    }
+  }, [isVoiceMode])
 
   useEffect(() => {
     if (showEmojiPanel && inputFocused && !pendingComposerOpenRef.current) {
@@ -81,24 +86,71 @@ export function ChatInputBar({
     }
   }, [showEmojiPanel, inputFocused])
 
-  const activateComposer = useCallback(() => {
-    setComposerExpanded(true)
+  const collapseKeyboard = useCallback(() => {
+    setKeyboardExpanded(false)
+    setInputFocused(false)
+    textInputRef.current?.blur()
+    onFocusChange?.(false)
+  }, [onFocusChange])
+
+  const focusTextInput = useCallback(() => {
     requestAnimationFrame(() => textInputRef.current?.focus())
-  }, [setComposerExpanded])
+  }, [])
+
+  const activateTextComposer = useCallback(
+    (options?: { autoFocus?: boolean }) => {
+      onInputModeChange?.('text')
+      if (options?.autoFocus) {
+        setKeyboardExpanded(true)
+        onFocusChange?.(true)
+        focusTextInput()
+      }
+    },
+    [focusTextInput, onFocusChange, onInputModeChange],
+  )
+
+  const switchToVoiceMode = useCallback(() => {
+    onInputModeChange?.('voice')
+    collapseKeyboard()
+  }, [collapseKeyboard, onInputModeChange])
+
+  const switchToTextMode = useCallback(() => {
+    activateTextComposer({ autoFocus: true })
+  }, [activateTextComposer])
+
+  const handleModeToggle = useCallback(() => {
+    if (isVoiceMode) {
+      switchToTextMode()
+      return
+    }
+    switchToVoiceMode()
+  }, [isVoiceMode, switchToTextMode, switchToVoiceMode])
+
+  const requestTextInputFocus = useCallback(() => {
+    activateTextComposer()
+    if (showEmojiPanel) {
+      pendingComposerOpenRef.current = true
+      onEmojiPanelClose?.()
+      return
+    }
+    activateTextComposer({ autoFocus: true })
+  }, [activateTextComposer, onEmojiPanelClose, showEmojiPanel])
 
   useEffect(() => {
     if (showEmojiPanel || !pendingComposerOpenRef.current) return
     pendingComposerOpenRef.current = false
-    setComposerExpanded(true)
-  }, [showEmojiPanel, setComposerExpanded])
+    activateTextComposer({ autoFocus: true })
+  }, [showEmojiPanel, activateTextComposer])
 
   useEffect(() => {
-    if (composerExpanded === false && keyboardExpanded) {
-      setComposerExpanded(false)
-      setInputFocused(false)
-      textInputRef.current?.blur()
+    if (composerExpanded === undefined) return
+    if (composerExpanded) {
+      if (inputMode === 'text') activateTextComposer({ autoFocus: true })
+      return
     }
-  }, [composerExpanded, keyboardExpanded, setComposerExpanded])
+    if (showEmojiPanel) return
+    if (keyboardExpanded) collapseKeyboard()
+  }, [activateTextComposer, collapseKeyboard, composerExpanded, inputMode, keyboardExpanded, showEmojiPanel])
 
   const updateText = useCallback(
     (value: string) => {
@@ -108,28 +160,14 @@ export function ChatInputBar({
     [onDraftChange],
   )
 
-  const closeComposer = useCallback(() => {
-    setComposerExpanded(false)
-    setInputFocused(false)
-    textInputRef.current?.blur()
-  }, [setComposerExpanded])
-
-  const openKeyboardComposer = useCallback(() => {
-    if (showEmojiPanel) {
-      pendingComposerOpenRef.current = true
-      onEmojiPanelClose?.()
-      return
-    }
-    setComposerExpanded(true)
-  }, [showEmojiPanel, onEmojiPanelClose, setComposerExpanded])
-
   const handleSend = useCallback(() => {
     const value = text.trim()
     if (!value) return
     onSendText?.(value)
     updateText('')
-    closeComposer()
-  }, [text, onSendText, updateText, closeComposer])
+    onInputModeChange?.('text')
+    collapseKeyboard()
+  }, [text, onSendText, updateText, onInputModeChange, collapseKeyboard])
 
   const handleEmojiPress = useCallback(() => {
     if (inputFocused) {
@@ -151,7 +189,6 @@ export function ChatInputBar({
     disabled: isVoiceActive && voiceRecorderPhase === 'processing',
   }
 
-  const preview = text.trim()
   const bottomPadding =
     keyboardInset > 0
       ? Math.max(8, keyboardInset)
@@ -161,126 +198,88 @@ export function ChatInputBar({
           ? 12
           : 24 + insets.bottom
 
-  /** Figma 2566-36698 / 2670-22068 — 语音模式（含长按录音态） */
-  if (!keyboardExpanded) {
-    const voiceHoldLabel = getVoiceHoldLabel(voiceCancelZone, isVoiceActive)
-    const isRecordingUi = isVoiceActive || voiceHolding
-    const isCancelUi = isRecordingUi && voiceCancelZone === 'active'
+  const voiceHoldLabel = getVoiceHoldLabel(voiceCancelZone, isVoiceActive)
+  const isRecordingUi = isVoiceActive || voiceHolding
+  const isCancelUi = isRecordingUi && voiceCancelZone === 'active'
+  const hideSideIcons = isVoiceMode && isRecordingUi
 
-    return (
-      <View style={[styles.collapsedRow, { paddingBottom: bottomPadding }]}>
-        <Pressable onPress={onPlusPress} style={styles.plusButton} accessibilityLabel="相册">
-          <Image source={{ uri: IconPlus }} style={{width: 20, height: 20}} />
-        </Pressable>
-
-        <View
-          style={[
-            styles.collapsedBubble,
-            isRecordingUi && styles.collapsedBubbleRecording,
-            isCancelUi && styles.collapsedBubbleCancel,
-          ]}
-        >
-          <Pressable
-            onPress={openKeyboardComposer}
-            disabled={isRecordingUi}
-            style={[styles.iconButton, isRecordingUi && styles.slotHidden]}
-            accessibilityLabel="切换到键盘输入"
-            accessibilityRole="button"
-          >
-            <Image source={{ uri: IconVoice }} style={{width: 24, height: 24}} />
-          </Pressable>
-
-          {isRecordingUi ? (
-            <VoiceHoldZone
-              {...voiceHoldHandlers}
-              active={isVoiceActive}
-              cancelZone={voiceCancelZone}
-              label={voiceHoldLabel}
-              onHoldingChange={setVoiceHolding}
-            />
-          ) : showEmojiPanel || preview ? (
-            <Pressable
-              onPress={showEmojiPanel ? openKeyboardComposer : activateComposer}
-              style={styles.previewZone}
-              accessibilityLabel="输入消息"
-            >
-              <Text
-                style={[styles.previewText, !preview && styles.previewPlaceholder]}
-                numberOfLines={1}
-              >
-                {preview || '输入消息'}
-              </Text>
-            </Pressable>
-          ) : (
-            <VoiceHoldZone
-              {...voiceHoldHandlers}
-              active={isVoiceActive}
-              cancelZone={voiceCancelZone}
-              label={voiceHoldLabel}
-              onHoldingChange={setVoiceHolding}
-            />
-          )}
-
-          <Pressable
-            onPress={handleEmojiPress}
-            disabled={isRecordingUi}
-            style={[styles.iconButton, isRecordingUi && styles.slotHidden]}
-            accessibilityLabel="表情"
-            accessibilityState={{ selected: showEmojiPanel }}
-          >
-            {showEmojiPanel ? (
-              <Image source={{ uri: IconBlackEmoji }} style={{width: 24, height: 24}} />
-            ) : (
-              <Image source={{ uri: IconEmoji }} style={{width: 24, height: 24}} />
-            )}
-          </Pressable>
-        </View>
-      </View>
-    )
-  }
-
-  /** Figma 2670-21933 — 键盘模式 */
   return (
     <View style={[styles.collapsedRow, { paddingBottom: bottomPadding }]}>
       <Pressable onPress={onPlusPress} style={styles.plusButton} accessibilityLabel="相册">
-        <Image source={{ uri: IconPlus }} style={{width: 20, height: 20}} />
+        <Image source={{ uri: IconPlus }} style={{ width: 20, height: 20 }} />
       </Pressable>
 
-      <View style={styles.collapsedBubble}>
+      <View
+        style={[
+          styles.collapsedBubble,
+          isRecordingUi && styles.collapsedBubbleRecording,
+          isCancelUi && styles.collapsedBubbleCancel,
+        ]}
+      >
         <Pressable
-          onPress={closeComposer}
-          style={styles.iconButton}
-          accessibilityLabel="切换到语音输入"
+          onPress={handleModeToggle}
+          disabled={hideSideIcons}
+          style={[styles.iconButton, hideSideIcons && styles.slotHidden]}
+          accessibilityLabel={isVoiceMode ? '切换到键盘输入' : '切换到语音输入'}
           accessibilityRole="button"
         >
-          <Image source={{ uri: IconKeyboard }} style={{width: 24, height: 24}} />
+          <Image
+            source={{ uri: isVoiceMode ? IconKeyboard : IconVoice }}
+            style={{ width: 24, height: 24 }}
+          />
         </Pressable>
 
-        <TextInput
-          ref={textInputRef}
-          value={text}
-          onChangeText={updateText}
-          onSubmitEditing={handleSend}
-          onFocus={() => setInputFocused(true)}
-          onBlur={() => setInputFocused(false)}
-          style={styles.keyboardInput}
-          placeholder="自由输入.."
-          placeholderTextColor="rgba(0,0,0,0.3)"
-          returnKeyType="send"
-          blurOnSubmit={false}
-          accessibilityLabel="消息输入"
-        />
+        {isVoiceMode ? (
+          <VoiceHoldZone
+            {...voiceHoldHandlers}
+            active={isVoiceActive}
+            cancelZone={voiceCancelZone}
+            label={voiceHoldLabel}
+            onHoldingChange={setVoiceHolding}
+          />
+        ) : (
+          <Pressable
+            onPress={showEmojiPanel ? requestTextInputFocus : undefined}
+            style={styles.textInputZone}
+            accessibilityLabel="输入消息"
+          >
+            <TextInput
+              ref={textInputRef}
+              value={text}
+              onChangeText={updateText}
+              onSubmitEditing={handleSend}
+              onFocus={() => {
+                setInputFocused(true)
+                setKeyboardExpanded(true)
+                onFocusChange?.(true)
+              }}
+              onBlur={() => setInputFocused(false)}
+              editable={!showEmojiPanel}
+              pointerEvents={showEmojiPanel ? 'none' : 'auto'}
+              style={[
+                styles.keyboardInput,
+                !inputFocused && !text && styles.keyboardInputEmpty,
+              ]}
+              placeholder="自由输入…"
+              placeholderTextColor="rgba(0,0,0,0.3)"
+              returnKeyType="send"
+              blurOnSubmit={false}
+              accessibilityLabel="消息输入"
+            />
+          </Pressable>
+        )}
 
         <Pressable
           onPress={handleEmojiPress}
-          style={styles.iconButton}
+          disabled={hideSideIcons}
+          style={[styles.iconButton, hideSideIcons && styles.slotHidden]}
           accessibilityLabel="表情"
           accessibilityState={{ selected: showEmojiPanel }}
         >
           {showEmojiPanel ? (
-            <Image source={{ uri: IconBlackEmoji }} style={{width: 24, height: 24}} />
+            <Image source={{ uri: IconBlackEmoji }} style={{ width: 24, height: 24 }} />
           ) : (
-            <Image source={{ uri: IconEmoji }} style={{width: 24, height: 24}} />
+            <Image source={{ uri: IconEmoji }} style={{ width: 24, height: 24 }} />
           )}
         </Pressable>
       </View>
@@ -492,20 +491,10 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
   },
-  previewZone: {
+  textInputZone: {
     flex: 1,
     minHeight: 44,
     justifyContent: 'center',
-  },
-  previewText: {
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 22,
-    color: 'rgba(0,0,0,0.9)',
-    textAlign: 'left',
-  },
-  previewPlaceholder: {
-    color: 'rgba(0,0,0,0.3)',
   },
   iconButton: {
     width: 24,
@@ -521,6 +510,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 22,
     color: 'rgba(0,0,0,0.9)',
+    textAlign: 'left',
+  },
+  keyboardInputEmpty: {
     textAlign: 'center',
   },
   banner: {

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, Text, Pressable, ScrollView, Modal, StyleSheet, Animated, Easing } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { View, Text, Pressable, ScrollView, Modal, StyleSheet, Animated, Easing, type GestureResponderEvent } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -9,7 +9,7 @@ import Svg, { Circle, Path } from 'react-native-svg'
 import { Image } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
 import type { CharacterListItem } from './types'
-import { MessagesRowMenu } from './messages-row-menu'
+import { MessagesRowMenu, type MessagesRowMenuAnchor } from './messages-row-menu'
 import { markReopenCharacterDrawer } from './drawer-return-flag'
 
 const IconPin = cdnImage('assets/character/dialog-pin.png')
@@ -135,6 +135,7 @@ export function MessagesCharacterDrawer({
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [menuRowKey, setMenuRowKey] = useState<string | null>(null)
+  const [menuAnchor, setMenuAnchor] = useState<MessagesRowMenuAnchor | null>(null)
   const [manageMode, setManageMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
@@ -197,6 +198,12 @@ export function MessagesCharacterDrawer({
   }, [open, resetManageState])
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+
+  const unpinnedCharacterCount = useMemo(
+    () => items.filter(item => !item.pinned).length,
+    [items],
+  )
+  const canPinUnpinnedCharacter = unpinnedCharacterCount > 1
 
   const handleSelect = useCallback(
     (characterId: string) => {
@@ -328,7 +335,11 @@ export function MessagesCharacterDrawer({
                       />
                     ) : (
                       <Pressable
-                        onPress={() => setMenuRowKey(item.id)}
+                        onPress={(event: GestureResponderEvent) => {
+                          const { pageX, pageY } = event.nativeEvent
+                          setMenuAnchor({ x: pageX, y: pageY })
+                          setMenuRowKey(item.id)
+                        }}
                         style={styles.moreButton}
                       >
                         <RowMoreIcon />
@@ -346,10 +357,12 @@ export function MessagesCharacterDrawer({
             <MessagesRowMenu
               open
               variant={items.find(i => i.id === menuRowKey)?.pinned ? 'pinned' : 'conversation'}
-              onClose={() => setMenuRowKey(null)}
-              onPin={() => { void onPin?.(menuRowKey).finally(() => setMenuRowKey(null)) }}
-              onUnpin={() => { void onUnpin?.(menuRowKey).finally(() => setMenuRowKey(null)) }}
-              onEndRelation={() => { void onEndRelation?.(menuRowKey).finally(() => setMenuRowKey(null)) }}
+              anchor={menuAnchor}
+              hidePin={!canPinUnpinnedCharacter}
+              onClose={() => { setMenuRowKey(null); setMenuAnchor(null) }}
+              onPin={() => { void onPin?.(menuRowKey).finally(() => { setMenuRowKey(null); setMenuAnchor(null) }) }}
+              onUnpin={() => { void onUnpin?.(menuRowKey).finally(() => { setMenuRowKey(null); setMenuAnchor(null) }) }}
+              onEndRelation={() => { void onEndRelation?.(menuRowKey).finally(() => { setMenuRowKey(null); setMenuAnchor(null) }) }}
             />
           )}
         </Animated.View>

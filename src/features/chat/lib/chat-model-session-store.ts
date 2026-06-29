@@ -4,6 +4,7 @@ export type ChatModelSessionConfig = {
 }
 
 const configBySessionModel = new Map<string, ChatModelSessionConfig>()
+const userPromptBySaveId = new Map<string, string>()
 
 function sessionModelKey(characterSaveId: string, modelId: string): string {
   return `${characterSaveId}:${modelId}`
@@ -24,6 +25,14 @@ export function migratePendingSessionConfig(characterId: string, characterSaveId
     }
     configBySessionModel.delete(key)
   }
+}
+
+export function setCharacterUserPrompt(characterSaveId: string, userPrompt: string): void {
+  userPromptBySaveId.set(characterSaveId, userPrompt)
+}
+
+export function getCharacterUserPrompt(characterSaveId: string): string {
+  return userPromptBySaveId.get(characterSaveId) ?? ''
 }
 
 export function getChatModelSessionConfig(

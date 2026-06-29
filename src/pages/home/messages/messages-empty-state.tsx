@@ -14,7 +14,7 @@ export function MessagesEmptyState({ onAddFriend }: MessagesEmptyStateProps) {
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: MascotEmpty }} style={{width: 184, height: 184}} />
+      <Image source={{ uri: MascotEmpty }} contentFit="contain" style={{ width: 184, height: 184 }} />
 
       <Pressable onPress={onAddFriend} style={styles.button}>
         <Text style={styles.buttonText}>{t('messages.addFriend')}</Text>

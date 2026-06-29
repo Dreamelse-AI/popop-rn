@@ -12,6 +12,7 @@ import { View,
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
+import { useTranslation } from 'react-i18next'
 import { cdnImage } from '@/shared/lib/cdn'
 
 import type { CharacterPostView } from '@/features/post/post-mapper'
@@ -151,6 +152,7 @@ function PostFeedItem({
   onToggleLike: () => void
   onBgmClick: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <View style={styles.postItem}>
       <PostImageCarousel
@@ -168,7 +170,7 @@ function PostFeedItem({
 
       <View style={styles.postFooter}>
         <Text style={styles.postTime}>
-          {formatCharacterProfilePostTime(post.publishedAtMs)}
+          {formatCharacterProfilePostTime(post.publishedAtMs, t)}
         </Text>
         <Pressable onPress={onToggleLike} style={styles.likeButton} accessibilityLabel={isLiked ? '取消喜欢' : '喜欢'}>
           <Svg width={22} height={20} viewBox="0 0 22 20" fill={isLiked ? '#FF2D55' : 'none'}>

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Svg, { Path } from 'react-native-svg'
-import { Image } from 'expo-image'
+import { Image, type ImageLoadEventData } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
 
 import type { HomeFeedPost } from '@/features/feed/feed-types'
@@ -14,6 +14,8 @@ import { ExpandableText } from '@/shared/ui/expandable-text'
 const IconLike = cdnImage('assets/feed/icon/like_1.png')
 const IconMusic = cdnImage('assets/feed/icon/music_1.png')
 const IconMoreImg = cdnImage('assets/feed/icon/moreImg-icon.png')
+
+const POST_IMAGE_MAX_HEIGHT = 292
 
 type PostLikeState = {
   isLiked: boolean
@@ -40,15 +42,29 @@ function LikedHeartIcon() {
 
 export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedPostProps) {
   const { t } = useTranslation()
+  const { width: windowWidth } = useWindowDimensions()
   const openCharacterChat = useOpenCharacterChat()
   const [liked, setLiked] = useState(post.isLiked)
   const [likeCount, setLikeCount] = useState(post.likeCount)
+  const [imageHeight, setImageHeight] = useState(POST_IMAGE_MAX_HEIGHT)
   const likingRef = useRef(false)
 
   useEffect(() => {
     setLiked(post.isLiked)
     setLikeCount(post.likeCount)
   }, [post.postId, post.isLiked, post.likeCount])
+
+  useEffect(() => {
+    setImageHeight(POST_IMAGE_MAX_HEIGHT)
+  }, [post.postId, post.imageUrl])
+
+  function handleImageLoad(event: ImageLoadEventData) {
+    const { width, height } = event.source
+    if (!width || !height || windowWidth <= 0) return
+    // 宽度铺满卡片，按比例换算自然高度；矮图贴合，高图封顶到 292 并居中裁剪
+    const naturalHeight = (windowWidth * height) / width
+    setImageHeight(Math.min(naturalHeight, POST_IMAGE_MAX_HEIGHT))
+  }
 
   async function handleLikeClick() {
     if (likingRef.current) return
@@ -79,13 +95,15 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
     <View style={styles.container}>
       <Pressable
         onPress={() => onImageClick?.(post)}
-        style={styles.imageWrapper}
+        style={[styles.imageWrapper, post.imageUrl ? { height: imageHeight } : styles.imageWrapperFixed]}
       >
         {post.imageUrl ? (
           <Image
             source={{ uri: post.imageUrl }}
             style={styles.postImage}
             contentFit="cover"
+            contentPosition="center"
+            onLoad={handleImageLoad}
           />
         ) : (
           <View style={styles.textFallback}>
@@ -141,7 +159,7 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
         <View style={styles.contentWrapper}>
           <ExpandableText
             style={styles.contentText}
-            expandLabel={t('feed.viewAll')}
+            expandLabel={t('feed.expandAll')}
           >
             {post.content}
           </ExpandableText>
@@ -150,7 +168,7 @@ export function FeedPost({ post, onImageClick, onCharacterClick, onLike }: FeedP
 
       <View style={styles.likeRow}>
         <Text style={styles.postTime}>
-          {formatCharacterProfilePostTime(post.publishedAtMs)}
+          {formatCharacterProfilePostTime(post.publishedAtMs, t)}
         </Text>
         <Pressable
           onPress={() => void handleLikeClick()}
@@ -176,15 +194,14 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     width: '100%',
-    height: 292,
     overflow: 'hidden',
+  },
+  imageWrapperFixed: {
+    height: POST_IMAGE_MAX_HEIGHT,
   },
   postImage: {
     width: '100%',
-    height: '133.33%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    height: '100%',
   },
   textFallback: {
     flex: 1,

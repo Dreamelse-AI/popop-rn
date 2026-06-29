@@ -12,6 +12,7 @@ import {
 } from '../lib/pick-and-upload-images';
 
 import { markEmojiUsed, updateMessageClickStatus } from '../api/chat-api';
+import { openChatLink } from '../lib/open-chat-link';
 import type { ChatMessage } from '../model/types';
 import { useChatSessionStore } from '../store/chat-session-store';
 
@@ -68,6 +69,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
   const setRollbackDraft = useChatSessionStore(s => s.setRollbackDraft);
   const markVoiceRead = useChatSessionStore(s => s.markVoiceRead);
   const revealVoiceTranscript = useChatSessionStore(s => s.revealVoiceTranscript);
+  const markMessageClicked = useChatSessionStore(s => s.markMessageClicked);
 
   const { emojiPanel, loading: emojiLoading, fetchFailed: emojiFetchFailed, retry: retryEmojiLoad } =
     useEmojiPanel(session.showEmojiPanel);
@@ -212,6 +214,20 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     setPreviewImageUrl(url);
   }, []);
 
+  const handleLinkCardPress = useCallback(
+    (message: Extract<ChatMessage, { type: 'link_card' }>) => {
+      openChatLink(message.url);
+      markMessageClicked(message.id);
+      const msgId = message.serverMessageId ?? message.id;
+      void updateMessageClickStatus({
+        character_id: characterId,
+        msg_id: msgId,
+        is_click: true,
+      });
+    },
+    [characterId, markMessageClicked],
+  );
+
   return {
     character: session.character,
     isLoading: session.isLoadingCharacter,
@@ -262,6 +278,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           onMessageLongPress: rollback.openMenu,
           onImagePress: handleImagePress,
           onFailedMessagePress: handleFailedMessagePress,
+          onLinkCardPress: handleLinkCardPress,
           rollbackMenuOpen: Boolean(rollback.menuTarget),
           rollbackCanCopy: Boolean(rollback.menuCopyText),
           rollbackCanRollback: rollback.canRollback,
