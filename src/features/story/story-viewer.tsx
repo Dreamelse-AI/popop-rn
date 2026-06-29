@@ -113,6 +113,7 @@ export function StoryViewer({
   const reportedStoryRef = useRef<string | null>(null)
   const musicRef = useRef<MusicControlHandle>(null)
   const scrollRef = useRef<ScrollView>(null)
+  const musicPausedByTapRef = useRef(false)
 
   // Heart animation
   const heartScale = useRef(new Animated.Value(0)).current
@@ -225,6 +226,7 @@ export function StoryViewer({
     setTextExpanded(false)
     setIsTapPaused(false)
     setIsMusicPausedByTap(false)
+    musicPausedByTapRef.current = false
     setTextPausedTimer(false)
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [currentStory?.id])
@@ -317,6 +319,7 @@ export function StoryViewer({
       setTextExpanded(false)
       setIsTapPaused(false)
       setIsMusicPausedByTap(false)
+      musicPausedByTapRef.current = false
       setTextPausedTimer(false)
       scrollRef.current?.scrollTo({ y: 0, animated: false })
       goTo(0)
@@ -353,6 +356,7 @@ export function StoryViewer({
     if (textPausedTimer) setTextPausedTimer(false)
     setIsTapPaused(prev => {
       const next = !prev
+      musicPausedByTapRef.current = next
       setIsMusicPausedByTap(next)
       return next
     })
@@ -462,7 +466,7 @@ export function StoryViewer({
             keyboardShouldPersistTaps="handled"
           >
             {currentStory.text ? (
-              <View style={styles.textWrapper}>
+              <View style={styles.textWrapper} onTouchEnd={e => e.stopPropagation()}>
                 <ViewerExpandableText
                   style={{ fontSize: 14, lineHeight: 20, color: themeColorText }}
                   expandLabel={t('post.expandText')}
@@ -506,7 +510,7 @@ export function StoryViewer({
                 isDark={isDark}
                 onExpandChange={setMusicExpanded}
                 onLoadingChange={setBgmLoading}
-                onUserPlay={() => setIsMusicPausedByTap(false)}
+                onUserPlay={() => { setIsMusicPausedByTap(false); musicPausedByTapRef.current = false }}
               />
             </View>
           )}

@@ -101,6 +101,7 @@ export const MusicControl = forwardRef<MusicControlHandle, MusicControlProps>(
       if (playedRef.current) return
       if (userMutedRef.current) return
       playedRef.current = true
+      player.volume = 1
       void Promise.resolve(player.seekTo(0)).catch(() => {})
       player.play()
       setMuted(false)
