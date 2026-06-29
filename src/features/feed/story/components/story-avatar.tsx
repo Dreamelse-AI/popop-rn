@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
-import { useStoryReadStore } from '@/features/story/story-store'
-
 import { isHeadlineCharacterUnread } from '../headline-read'
 import type { StoryHeadline } from '../types'
 import { Image } from 'expo-image'
@@ -17,13 +15,7 @@ type StoryAvatarProps = {
 
 export function StoryAvatar({ item, onClick }: StoryAvatarProps) {
   const [imageFailed, setImageFailed] = useState(false)
-  const readStoryIds = useStoryReadStore(s => s.readStoryIds)
-  const fullyReadCharacterIds = useStoryReadStore(s => s.fullyReadCharacterIds)
-  const showUnreadRing = isHeadlineCharacterUnread(item, {
-    isStoryRead: (storyId: string) => readStoryIds.has(storyId),
-    isCharacterFullyRead: (characterId: string) =>
-      fullyReadCharacterIds.has(characterId),
-  })
+  const showUnreadRing = isHeadlineCharacterUnread(item)
   const showFallback = !item.characterAvatarUrl || imageFailed
   const initial = item.characterName.charAt(0) || '?'
 

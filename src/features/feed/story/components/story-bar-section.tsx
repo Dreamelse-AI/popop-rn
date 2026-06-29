@@ -2,7 +2,6 @@ import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react'
 
 import { useAuthStore } from '@/features/auth/auth-store'
 import { useFriendshipList } from '@/features/friendship/hooks/use-friendship-list'
-import { useStoryReadStore } from '@/features/story/story-store'
 
 import { sortStoryHeadlineItems } from '../headline-read'
 import { useStoryHeadline } from '../use-story-headline'
@@ -28,27 +27,20 @@ export const StoryBarSection = forwardRef<StoryBarSectionRef, StoryBarSectionPro
       loading: friendsLoading,
       refresh: refreshFriends,
     } = useFriendshipList(hasToken)
-    const readStoryIds = useStoryReadStore(s => s.readStoryIds)
-    const fullyReadCharacterIds = useStoryReadStore(s => s.fullyReadCharacterIds)
 
     const refresh = useCallback(async () => {
       await Promise.all([refreshHeadline(), refreshFriends()])
     }, [refreshHeadline, refreshFriends])
 
     const sortedItems = useMemo(() => {
-      const readSnapshot = {
-        isStoryRead: (storyId: string) => readStoryIds.has(storyId),
-        isCharacterFullyRead: (characterId: string) =>
-          fullyReadCharacterIds.has(characterId),
-      }
       const real = data?.items.length
-        ? sortStoryHeadlineItems(data.items, readSnapshot)
+        ? sortStoryHeadlineItems(data.items)
         : []
       // DEV：把带 BGM 的 mock 角色拼到头像栏最前面，方便直接点开测试
       return __DEV__ && ENABLE_MOCK_MUSIC_STORIES
         ? [...MOCK_MUSIC_STORY_HEADLINES, ...real]
         : real
-    }, [data?.items, readStoryIds, fullyReadCharacterIds])
+    }, [data?.items])
 
     useImperativeHandle(ref, () => ({ refresh }), [refresh])
 
