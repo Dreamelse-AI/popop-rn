@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, Pressable, Modal, StyleSheet, Animated, Keyboard } from 'react-native'
+import { View, Text, Pressable, Modal, StyleSheet, Animated, Keyboard, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
@@ -101,17 +101,18 @@ export function StoryViewer({
   }, [])
 
   const [charIndex, setCharIndex] = useState(initialCharacterIndex)
-  const [storyIndex, setStoryIndex] = useState(initialStoryIdx)
   const [inputFocused, setInputFocused] = useState(false)
   const [isTapPaused, setIsTapPaused] = useState(false)
+  const [isMusicPausedByTap, setIsMusicPausedByTap] = useState(false)
+  const [textPausedTimer, setTextPausedTimer] = useState(false)
   const [isDraggingDown, setIsDraggingDown] = useState(false)
   const [textExpanded, setTextExpanded] = useState(false)
   const [musicExpanded, setMusicExpanded] = useState(false)
-  // 有 BGM 的 story 默认处于「加载中」：进度条先暂停，等 BGM 加载好再放行（含第一条）
-  const initialBgmLoading = !!characters[initialCharacterIndex]?.stories[initialStoryIdx]?.musicUrl
-  const [bgmLoading, setBgmLoading] = useState(initialBgmLoading)
+  // 对齐 web：bgmLoading 初始 false，由 MusicControl 的 onLoadingChange 驱动
+  const [bgmLoading, setBgmLoading] = useState(false)
   const reportedStoryRef = useRef<string | null>(null)
   const musicRef = useRef<MusicControlHandle>(null)
+  const scrollRef = useRef<ScrollView>(null)
 
   // Heart animation
   const heartScale = useRef(new Animated.Value(0)).current
@@ -126,26 +127,9 @@ export function StoryViewer({
   const isDragActive = useRef(false)
 
   const currentChar = characters[charIndex]
-  const currentStory = currentChar?.stories[storyIndex]
   const totalStories = currentChar?.stories.length ?? 0
-  const currentImageUrl = currentStory?.images?.[0]
-  const brightness = useImageBrightness(currentImageUrl)
-  const isDark = brightness === 'dark'
-  const themeColor = isDark ? '#ffffff' : '#000000'
-  const themeColorSoft = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
-  const themeColorText = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)'
 
   const handleAllCompleteRef = useRef<() => void>(() => {})
-  handleAllCompleteRef.current = () => {
-    if (!currentChar) return
-    onCharacterFullyRead?.(currentChar.id)
-    if (charIndex < characters.length - 1) {
-      setCharIndex(charIndex + 1)
-      setStoryIndex(0)
-    } else {
-      onClose()
-    }
-  }
 
   const handleAllComplete = useCallback(() => {
     handleAllCompleteRef.current()
@@ -155,29 +139,66 @@ export function StoryViewer({
     totalSlides: totalStories,
     duration: 5000,
     initialIndex: initialStoryIdx,
+    externalPaused: bgmLoading,
     onComplete: handleAllComplete,
   })
 
-  const shouldPause = pausedProp || inputFocused || isTapPaused || isDraggingDown || textExpanded || !modalVisible || bgmLoading
+  handleAllCompleteRef.current = () => {
+    if (!currentChar) return
+    onCharacterFullyRead?.(currentChar.id)
+    if (charIndex < characters.length - 1) {
+      const nextChar = characters[charIndex + 1]
+      const targetStory = nextChar?.stories[0]
+      if (targetStory?.musicUrl) setBgmLoading(true)
+      setCharIndex(charIndex + 1)
+      goTo(0)
+    } else {
+      onClose()
+    }
+  }
+
+  const currentStory = currentChar?.stories[currentIndex]
+
+  // 同步：story 切换时立即在渲染阶段将 bgmLoading 设 true（而非 useEffect，避免一帧延迟让进度条偷跑）
+  const prevStoryIdRef = useRef(currentStory?.id)
+  if (currentStory?.id !== prevStoryIdRef.current) {
+    prevStoryIdRef.current = currentStory?.id
+    if (currentStory?.musicUrl && !bgmLoading) {
+      setBgmLoading(true)
+    } else if (!currentStory?.musicUrl && bgmLoading) {
+      setBgmLoading(false)
+    }
+  }
+
+  const currentImageUrl = currentStory?.images?.[0]
+  const brightness = useImageBrightness(currentImageUrl)
+  const isDark = brightness === 'dark'
+  const themeColor = isDark ? '#ffffff' : '#000000'
+  const themeColorSoft = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
+  const themeColorText = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)'
+
+  // 进度条暂停条件：用户点击暂停 或 展开全文暂停
+  const shouldPauseTimer = pausedProp || inputFocused || isTapPaused || textPausedTimer || isDraggingDown || !modalVisible || bgmLoading
+  // 音乐暂停条件：独立的 isMusicPausedByTap（用户可通过胶囊单独恢复音乐）
+  const shouldPauseMusic = pausedProp || inputFocused || isMusicPausedByTap || isDraggingDown || !modalVisible
 
   useEffect(() => {
-    if (shouldPause) {
+    if (shouldPauseTimer) {
       pause()
-      musicRef.current?.pause()
     } else {
       resume()
+    }
+  }, [shouldPauseTimer, pause, resume])
+
+  useEffect(() => {
+    if (shouldPauseMusic) {
+      musicRef.current?.pause()
+    } else {
       musicRef.current?.resume()
     }
-  }, [shouldPause, pause, resume])
+  }, [shouldPauseMusic])
 
-  // 切换 story 时同步重置 BGM 加载态：有 BGM → 立即暂停进度条等待加载；无 BGM → 立即放行
-  useEffect(() => {
-    setBgmLoading(!!currentStory?.musicUrl)
-  }, [currentStory?.id, currentStory?.musicUrl])
-
-  useEffect(() => {
-    setStoryIndex(currentIndex)
-  }, [currentIndex])
+  // bgmLoading 已在渲染阶段同步处理，此处无需 effect
 
   const prevCharIndexRef = useRef(charIndex)
   const targetStoryIndexOnCharSwitch = useRef(0)
@@ -203,17 +224,30 @@ export function StoryViewer({
   useEffect(() => {
     setTextExpanded(false)
     setIsTapPaused(false)
+    setIsMusicPausedByTap(false)
+    setTextPausedTimer(false)
+    scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [currentStory?.id])
+
+  // 文字展开态变化：展开/收起都只暂停进度条（不影响音乐），需用户点屏幕才恢复
+  const handleTextExpandChange = useCallback((expanded: boolean) => {
+    setTextExpanded(expanded)
+    setTextPausedTimer(true)
+    if (!expanded) scrollRef.current?.scrollTo({ y: 0, animated: false })
+  }, [])
 
   // Prefetch adjacent story images for faster display
   useEffect(() => {
     const stories = currentChar?.stories ?? []
     const urls = [
-      stories[storyIndex + 1]?.images?.[0],
-      stories[storyIndex - 1]?.images?.[0],
+      stories[currentIndex + 1]?.images?.[0],
+      stories[currentIndex - 1]?.images?.[0],
     ].filter((u): u is string => !!u)
     if (urls.length) Image.prefetch(urls)
-  }, [currentChar, storyIndex])
+    // 预加载当前角色内下一条 story 的 BGM，减少切换等待
+    const nextBgm = stories[currentIndex + 1]?.musicUrl
+    if (nextBgm) void Promise.resolve(preloadAudio({ uri: nextBgm })).catch(() => {})
+  }, [currentChar, currentIndex])
 
   // 预加载下一个角色的 story（第一段 BGM + 第一张图），避免跨角色切换时等待下载
   useEffect(() => {
@@ -260,50 +294,76 @@ export function StoryViewer({
 
   // 向前切换：当前角色内先后退，到第一张时切到上一个角色的最后一张
   const handleGoPrev = useCallback(() => {
+    // 滑动切换时立即收起全文
+    if (textExpanded) {
+      setTextExpanded(false)
+      setTextPausedTimer(false)
+      scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }
     if (currentIndex > 0) {
       goPrev()
     } else if (charIndex > 0) {
       const prevCharIndex = charIndex - 1
       const prevChar = characters[prevCharIndex]
       const lastStoryIndex = prevChar ? Math.max(0, prevChar.stories.length - 1) : 0
+      const targetStory = prevChar?.stories[lastStoryIndex]
+      // 跨角色切换：提前设 bgmLoading 防止进度条偷跑
+      if (targetStory?.musicUrl) setBgmLoading(true)
       targetStoryIndexOnCharSwitch.current = lastStoryIndex
       setCharIndex(prevCharIndex)
-      setStoryIndex(lastStoryIndex)
+      goTo(lastStoryIndex)
+    } else {
+      // 已是第一个角色的第一条：重新播放当前 story，reset 所有状态
+      setTextExpanded(false)
+      setIsTapPaused(false)
+      setIsMusicPausedByTap(false)
+      setTextPausedTimer(false)
+      scrollRef.current?.scrollTo({ y: 0, animated: false })
+      goTo(0)
     }
-  }, [currentIndex, charIndex, characters, goPrev])
+  }, [currentIndex, charIndex, characters, goPrev, goTo, textExpanded])
 
   // 向后切换：与自动播放完成时共用同一套跨角色/关闭边界
   const handleGoNext = useCallback(() => {
+    // 滑动切换时立即收起全文
+    if (textExpanded) {
+      setTextExpanded(false)
+      setTextPausedTimer(false)
+      scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }
     if (currentIndex < totalStories - 1) {
       goNext()
     } else {
       handleAllComplete()
     }
-  }, [currentIndex, totalStories, goNext, handleAllComplete])
+  }, [currentIndex, totalStories, goNext, handleAllComplete, textExpanded])
 
-  const { offsetX, didSwipe, handleTouchStart, handleTouchMove, handleTouchEnd } = useStorySwipe({
-    onSwipeLeft: handleGoNext,
-    onSwipeRight: handleGoPrev,
-    canSwipe: () => !isDragActive.current,
-  })
-
-  const handleTapPause = useCallback(() => {
-    if (didSwipe.current) {
-      didSwipe.current = false
-      return
-    }
-    // 聚焦时点屏幕只收起键盘，暂停态交给 onInputBlur 统一处理
+  // 点屏幕：切换暂停/播放（对齐 web handleImageClick）。聚焦/音乐展开时先处理对应收起。
+  const handleTap = useCallback(() => {
     if (inputFocused) {
       Keyboard.dismiss()
       return
     }
-    Keyboard.dismiss()
     if (musicExpanded) {
       setMusicExpanded(false)
       return
     }
-    setIsTapPaused(prev => !prev)
-  }, [musicExpanded, inputFocused])
+    // toggle 暂停/播放（同时控制进度条和音乐）
+    // 如果 textPausedTimer 也为 true，一并清除
+    if (textPausedTimer) setTextPausedTimer(false)
+    setIsTapPaused(prev => {
+      const next = !prev
+      setIsMusicPausedByTap(next)
+      return next
+    })
+  }, [inputFocused, musicExpanded, textPausedTimer])
+
+  const { offsetX, handleTouchStart, handleTouchMove, handleTouchEnd } = useStorySwipe({
+    onSwipeLeft: handleGoNext,
+    onSwipeRight: handleGoPrev,
+    onTap: handleTap,
+    canSwipe: () => !isDragActive.current,
+  })
 
   // Drag-to-close handlers
   const dragStartXRef = useRef(0)
@@ -363,7 +423,7 @@ export function StoryViewer({
         )}
 
         <View style={[styles.content, { paddingTop: insets.top }]}>
-          <ProgressBar total={totalStories} currentIndex={storyIndex} progress={progress} />
+          <ProgressBar total={totalStories} currentIndex={currentIndex} progress={progress} />
 
           {/* Header - close only, no share */}
           <View style={styles.header}>
@@ -383,45 +443,62 @@ export function StoryViewer({
             <Text style={[styles.timeAgo, { color: themeColorSoft }]}>{timeAgo}</Text>
           </View>
 
-          {currentStory.text ? (
-            <View style={styles.textWrapper}>
-              <ViewerExpandableText
-                style={{ fontSize: 14, lineHeight: 20, color: themeColorText }}
-                expandLabel={t('post.expandText')}
-                collapseLabel={t('post.collapseText')}
-                labelColor={themeColorSoft}
-                onExpandChange={setTextExpanded}
-                text={currentStory.text}
-              />
-            </View>
-          ) : null}
-
-          {/* Image area - tap to pause */}
-          <Pressable
-            style={styles.imageArea}
-            onPress={handleTapPause}
+          {/* 文字 + 图片：始终用同一个 ScrollView（对齐 web：同容器，仅展开时可滚动），
+              避免在 View/ScrollView 间切换导致 ViewerExpandableText 重挂、需点两次才展开。
+              点按/左右滑动统一由 useStorySwipe 的 onTouch* 处理（含 tap 检测），不再用 onPress，
+              避免 onPress 与手势处理争夺触摸响应者导致点击失效。 */}
+          <View
+            style={styles.scrollArea}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {currentStory.images?.[0] && (
-              <Image
-                source={{ uri: currentStory.images[0] }}
-                style={[styles.storyImage, { transform: [{ translateX: offsetX }] }]}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-              />
-            )}
-            {currentStory.type === 'text' && !currentStory.images?.[0] && (
-              <View style={styles.textCard}>
-                <Text style={styles.textCardContent}>{currentStory.text}</Text>
+          <ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={textExpanded ? styles.scrollContentExpanded : styles.scrollContent}
+            scrollEnabled={textExpanded}
+            showsVerticalScrollIndicator={textExpanded}
+            keyboardShouldPersistTaps="handled"
+          >
+            {currentStory.text ? (
+              <View style={styles.textWrapper}>
+                <ViewerExpandableText
+                  style={{ fontSize: 14, lineHeight: 20, color: themeColorText }}
+                  expandLabel={t('post.expandText')}
+                  collapseLabel={t('post.collapseText')}
+                  labelColor={themeColorSoft}
+                  onExpandChange={handleTextExpandChange}
+                  text={currentStory.text}
+                  forceCollapsed={!textExpanded}
+                />
               </View>
-            )}
-          </Pressable>
+            ) : null}
+
+            <View
+              style={[styles.imageArea, textExpanded && styles.imageAreaExpanded]}
+            >
+              {currentStory.images?.[0] && (
+                <Image
+                  source={{ uri: currentStory.images[0] }}
+                  style={[styles.storyImage, { transform: [{ translateX: offsetX }] }]}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              )}
+              {currentStory.type === 'text' && !currentStory.images?.[0] && (
+                <View style={styles.textCard}>
+                  <Text style={styles.textCardContent}>{currentStory.text}</Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+          </View>
 
           {(currentStory.musicName || currentStory.musicUrl) && (
             <View style={styles.musicRow}>
               <MusicControl
+                key={currentStory.id}
                 ref={musicRef}
                 musicName={currentStory.musicName ?? 'BGM'}
                 musicUrl={currentStory.musicUrl}
@@ -429,6 +506,7 @@ export function StoryViewer({
                 isDark={isDark}
                 onExpandChange={setMusicExpanded}
                 onLoadingChange={setBgmLoading}
+                onUserPlay={() => setIsMusicPausedByTap(false)}
               />
             </View>
           )}
@@ -532,11 +610,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
+  scrollArea: {
+    flex: 1,
+    minHeight: 0,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  scrollContentExpanded: {
+    flexGrow: 0,
+  },
   imageArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
+  },
+  imageAreaExpanded: {
+    flex: 0,
+    height: 480,
   },
   storyImage: {
     width: '100%',

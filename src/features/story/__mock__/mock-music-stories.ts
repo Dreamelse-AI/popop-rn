@@ -25,6 +25,15 @@ const AVATAR_B = 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w
 const now = Date.now()
 const minsAgo = (m: number) => new Date(now - m * 60_000).toISOString()
 
+const LONG_TEXT =
+  '今天想跟你们好好聊聊最近发生的事情。清晨的时候我一个人去了海边，海风很大，浪一层一层地拍在礁石上，' +
+  '溅起的水花在阳光下闪着细碎的光。我坐在那里待了很久，脑子里想了很多过去的画面：第一次离开家的那个夜晚、' +
+  '在陌生城市迷路又被陌生人帮助的下午、还有那些以为永远不会结束、最后却悄悄散场的夏天。长大好像就是不断地告别，' +
+  '又不断地重新认识自己。我们总以为时间会把答案交到手里，可更多时候它只是把问题换了一种方式重新问一遍。' +
+  '后来我慢慢明白，重要的也许不是找到那个标准答案，而是在一次次选择里，越来越清楚自己想成为什么样的人。' +
+  '所以如果你此刻也正站在某个路口犹豫不决，别太苛责自己，慢一点没关系，走错一段路也没关系，' +
+  '那些看似绕远的弯路，往往藏着只有你才会遇见的风景。愿你被这个世界温柔以待，也愿你始终留有一份温柔，去对待你自己。'
+
 export const MOCK_MUSIC_STORY_CHARACTERS: StoryCharacter[] = [
   {
     id: 'mock-music-char-1',
@@ -32,6 +41,18 @@ export const MOCK_MUSIC_STORY_CHARACTERS: StoryCharacter[] = [
     avatar: AVATAR_A,
     hasUnread: true,
     stories: [
+      {
+        id: 'mock-music-story-1-0',
+        type: 'image',
+        images: [IMG_1],
+        text: LONG_TEXT,
+        createdAt: minsAgo(6),
+        musicName: 'SoundHelix 1',
+        musicUrl: MP3_1,
+        likeCount: 99,
+        commentCount: 18,
+        isLiked: false,
+      },
       {
         id: 'mock-music-story-1-1',
         type: 'image',

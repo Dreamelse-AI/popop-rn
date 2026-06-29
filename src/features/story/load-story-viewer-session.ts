@@ -10,6 +10,8 @@ import {
   MOCK_MUSIC_STORY_CHARACTERS,
 } from './__mock__/mock-music-stories'
 
+const MOCK_CHARACTER_IDS = new Set(MOCK_MUSIC_STORY_CHARACTERS.map(c => c.id))
+
 export async function loadStoryViewerSession(
   headlineItems: StoryHeadline[],
   clickedCharacterId: string,
@@ -18,6 +20,8 @@ export async function loadStoryViewerSession(
 
   const viewerResults = await Promise.all(
     headlineItems.map(async item => {
+      // mock 角色的数据来自本地 MOCK_MUSIC_STORY_CHARACTERS，不应去打真实后端（character_id 是假的，必然失败并弹红屏）
+      if (MOCK_CHARACTER_IDS.has(item.characterId)) return null
       try {
         const resp = await storyApi.getViewer({ character_id: item.characterId })
         const character = mapStoryViewerToCharacter(resp, item)
