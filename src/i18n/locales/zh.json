@@ -426,6 +426,8 @@
     "confirm": "确认",
     "edit": "编辑",
     "save": "保存",
+    "delete": "删除",
+    "deleting": "删除中…",
     "close": "关闭",
     "loadFailed": "加载自设失败",
     "retry": "重试"
@@ -488,7 +490,7 @@
     "customTheme": "用户自定义主题",
     "viewAll": "查看全部",
     "viewAllBackgrounds": "查看全部聊天背景",
-    "confirm": "确认"
+    "confirm": "应用"
   },
   "chatModeCustomSheet": {
     "title": "用户自定义设置",

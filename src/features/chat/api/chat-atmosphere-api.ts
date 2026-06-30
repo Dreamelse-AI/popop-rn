@@ -1,55 +1,65 @@
+import type { SetChatPreferenceReq } from '@/generated/arca_apiComponents';
+
+import { chatPreferenceApi } from './chat-preference-api';
 import {
-  findBackground,
-  type ChatAtmosphereConfig,
-} from '../lib/chat-atmosphere-presets';
+  decodeAtmospherePreference,
+  encodeAtmospherePreferenceFields,
+} from '../lib/chat-atmosphere-preference';
+import type { ChatAtmosphereConfig } from '../lib/chat-atmosphere-presets';
 import { saveChatAtmosphereLocal } from '../lib/chat-atmosphere-store';
+import { resolveCharacterSaveId } from '../lib/resolve-character-save-id';
 
-/** 提交给后端的聊天氛围配置（接口就绪后可直接对接） */
-export type SaveChatAtmosphereReq = {
-  character_id: string;
-  background_id: string;
-  bubble_style_id: string;
-  custom_theme_id: string;
-  custom_background_url?: string;
-  bkg_main_color?: string;
-};
+/** 仅同步氛围配置时不修改温度：-1 表示「不修改」 */
+const ATMOSPHERE_ONLY_TEMPERATURE = -1;
 
-function toSavePayload(characterId: string, config: ChatAtmosphereConfig): SaveChatAtmosphereReq {
-  const background = findBackground(config.backgroundId);
-  const payload: SaveChatAtmosphereReq = {
+function buildSetAtmosphereReq(
+  characterId: string,
+  config: ChatAtmosphereConfig,
+): SetChatPreferenceReq {
+  return {
     character_id: characterId,
-    background_id: config.backgroundId,
-    bubble_style_id: config.bubbleStyleId,
-    custom_theme_id: config.customThemeId,
+    temperature: ATMOSPHERE_ONLY_TEMPERATURE,
+    ...encodeAtmospherePreferenceFields(config),
   };
+}
 
-  if (background?.type === 'image' || background?.type === 'custom') {
-    if (typeof background.image === 'string') {
-      payload.custom_background_url = background.image;
+/** 从后端拉取并合并聊天氛围配置（失败时返回 null） */
+export async function loadChatAtmosphereFromServer(
+  characterId: string,
+): Promise<ChatAtmosphereConfig | null> {
+  if (!characterId) return null;
+
+  try {
+    const characterSaveId = await resolveCharacterSaveId(characterId);
+    const resp = await chatPreferenceApi.get(characterSaveId);
+    const config = decodeAtmospherePreference(
+      resp.current.background_url,
+      resp.current.bubble_key,
+    );
+    saveChatAtmosphereLocal(characterId, config);
+    return config;
+  } catch (error) {
+    if (__DEV__) {
+      console.error('[chat-atmosphere] load from server failed:', error);
     }
-    if (background.bkgMainColor) {
-      payload.bkg_main_color = background.bkgMainColor;
-    }
+    return null;
   }
-
-  return payload;
 }
 
 /**
- * 保存聊天氛围设置：先写入前端本地，再尝试同步后端。
- * 后端接口未就绪时仅本地持久化，并在控制台输出待对接 payload。
+ * 保存聊天氛围设置：先写入前端本地，再同步后端 chat_preference/set。
+ * 参考 popop-fe saveChatAtmosphereSettings 实现。
  */
 export async function saveChatAtmosphereSettings(
   characterId: string,
   config: ChatAtmosphereConfig,
-): Promise<SaveChatAtmosphereReq> {
+): Promise<ChatAtmosphereConfig> {
   saveChatAtmosphereLocal(characterId, config);
-  const payload = toSavePayload(characterId, config);
 
-  // TODO: 对接后端 save chat atmosphere API
-  if (__DEV__) {
-    console.info('[chat-atmosphere] pending backend sync', payload);
-  }
+  if (!characterId) return config;
 
-  return payload;
+  const resp = await chatPreferenceApi.set(buildSetAtmosphereReq(characterId, config));
+  const synced = decodeAtmospherePreference(resp.background_url, resp.bubble_key);
+  saveChatAtmosphereLocal(characterId, synced);
+  return synced;
 }

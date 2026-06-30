@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type {
   FlatList,
   LayoutChangeEvent,
@@ -24,6 +24,10 @@ type UseChatScrollOptions = {
   onLoadOlder: () => Promise<boolean>
 }
 
+function isUserSentMessage(message: ChatMessage | undefined): boolean {
+  return Boolean(message && 'sender' in message && message.sender === 'user')
+}
+
 export function useChatScroll({
   characterId,
   listRef,
@@ -39,16 +43,31 @@ export function useChatScroll({
   const needsInitialScrollRef = useRef(false)
   const loadingOlderRef = useRef(false)
   const prevLastMessageIdRef = useRef<string | null>(null)
+  const prevMessagesLengthRef = useRef(0)
+  const prevIsTypingRef = useRef(false)
+  const atBottomRef = useRef(true)
   const contentHeightRef = useRef(0)
   const scrollViewHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
+
+  const [showNewMessageHint, setShowNewMessageHint] = useState(false)
+  const [newMessageCount, setNewMessageCount] = useState(0)
+
+  const clearNewMessageHint = useCallback(() => {
+    setShowNewMessageHint(false)
+    setNewMessageCount(0)
+  }, [])
 
   useEffect(() => {
     initialScrollDoneRef.current = false
     needsInitialScrollRef.current = false
     prevLastMessageIdRef.current = null
+    prevMessagesLengthRef.current = 0
+    prevIsTypingRef.current = false
+    atBottomRef.current = true
     loadingOlderRef.current = false
-  }, [characterId])
+    clearNewMessageHint()
+  }, [characterId, clearNewMessageHint])
 
   const isNearBottom = useCallback(() => {
     const distanceFromBottom =
@@ -64,11 +83,21 @@ export function useChatScroll({
     list.scrollToIndex({ index: lastIndex, animated: false, viewPosition: 1 })
   }, [listRef, messages.length])
 
+  const jumpToLatest = useCallback(() => {
+    atBottomRef.current = true
+    clearNewMessageHint()
+    prevLastMessageIdRef.current = messages[messages.length - 1]?.id ?? null
+    requestAnimationFrame(scrollToLatest)
+  }, [clearNewMessageHint, messages, scrollToLatest])
+
   const completeInitialScroll = useCallback(() => {
     initialScrollDoneRef.current = true
     needsInitialScrollRef.current = false
     prevLastMessageIdRef.current = messages[messages.length - 1]?.id ?? null
-  }, [messages])
+    prevMessagesLengthRef.current = messages.length
+    prevIsTypingRef.current = isTyping
+    atBottomRef.current = true
+  }, [isTyping, messages])
 
   const performInitialScroll = useCallback(() => {
     if (initialScrollDoneRef.current) return
@@ -105,16 +134,42 @@ export function useChatScroll({
     if (!initialScrollDoneRef.current) return
     if (messages.length === 0) return
 
-    const lastMessageId = messages[messages.length - 1]?.id ?? null
-    if (lastMessageId === prevLastMessageIdRef.current) return
+    const lastMessage = messages[messages.length - 1]
+    const lastMessageId = lastMessage?.id ?? null
+    const lastIdChanged = lastMessageId !== prevLastMessageIdRef.current
+    const userJustSent = lastIdChanged && isUserSentMessage(lastMessage)
+    const typingBecameTrue = isTyping && !prevIsTypingRef.current
+    const addedCount = Math.max(0, messages.length - prevMessagesLengthRef.current)
 
-    const shouldStick = isNearBottom() || isTyping
-    prevLastMessageIdRef.current = lastMessageId
-
-    if (shouldStick) {
-      requestAnimationFrame(scrollToLatest)
+    if (userJustSent) {
+      atBottomRef.current = true
     }
-  }, [isTyping, messages, isNearBottom, scrollToLatest])
+
+    prevIsTypingRef.current = isTyping
+    prevMessagesLengthRef.current = messages.length
+
+    const shouldScroll =
+      userJustSent ||
+      (typingBecameTrue && atBottomRef.current) ||
+      (lastIdChanged && atBottomRef.current)
+
+    if (lastIdChanged) {
+      prevLastMessageIdRef.current = lastMessageId
+    }
+
+    if (shouldScroll) {
+      clearNewMessageHint()
+      atBottomRef.current = true
+      requestAnimationFrame(scrollToLatest)
+      return
+    }
+
+    // 仅列表尾部有新消息时提示（上滑加载更早历史会 prepend，length 增加但 lastId 不变）
+    if (addedCount > 0 && lastIdChanged && !atBottomRef.current && !loadingOlderRef.current) {
+      setShowNewMessageHint(true)
+      setNewMessageCount(count => count + addedCount)
+    }
+  }, [clearNewMessageHint, isTyping, messages, scrollToLatest])
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -122,6 +177,12 @@ export function useChatScroll({
       scrollOffsetRef.current = contentOffset.y
       contentHeightRef.current = contentSize.height
       scrollViewHeightRef.current = layoutMeasurement.height
+
+      const nearBottom = isNearBottom()
+      atBottomRef.current = nearBottom
+      if (nearBottom && showNewMessageHint) {
+        clearNewMessageHint()
+      }
 
       if (
         !historyUpHasMore ||
@@ -150,7 +211,15 @@ export function useChatScroll({
           loadingOlderRef.current = false
         })
     },
-    [historyUpHasMore, isLoadingOlderHistory, onLoadOlder, listRef],
+    [
+      clearNewMessageHint,
+      historyUpHasMore,
+      isLoadingOlderHistory,
+      isNearBottom,
+      onLoadOlder,
+      listRef,
+      showNewMessageHint,
+    ],
   )
 
   const onContentSizeChange = useCallback(
@@ -195,5 +264,13 @@ export function useChatScroll({
     scrollViewHeightRef.current = event.nativeEvent.layout.height
   }, [])
 
-  return { onScroll, onContentSizeChange, onLayout, onScrollToIndexFailed }
+  return {
+    onScroll,
+    onContentSizeChange,
+    onLayout,
+    onScrollToIndexFailed,
+    showNewMessageHint,
+    newMessageCount,
+    jumpToLatest,
+  }
 }

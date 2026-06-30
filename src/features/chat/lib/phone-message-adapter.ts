@@ -665,6 +665,16 @@ export function injectTimestampSeparators(messages: ChatMessage[]): ChatMessage[
   return result;
 }
 
+/**
+ * 角色回复是否包含可展示内容：服务端可能返回空文本等「空回复」，
+ * 此时不应据此把用户消息标记为失败（红色感叹号），属正常现象。
+ */
+export function hasVisibleReplyContent(outputs: PhoneMessageOutput[]): boolean {
+  return filterVisiblePhoneMessages(outputs).some(
+    output => expandPhoneMessageOutput(output).length > 0,
+  );
+}
+
 export function phoneMessagesToDisplayList(
   outputs: PhoneMessageOutput[],
   options?: ExpandOptions,

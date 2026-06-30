@@ -157,11 +157,6 @@ export function ChatSettingsDrawer({
       subtitle: selectedProfileName,
     },
     {
-      id: 'sync',
-      title: t('chatSettings.syncRealWorld'),
-      subtitle: t('chatSettings.syncRealWorldValue'),
-    },
-    {
       id: 'atmosphere',
       title: t('chatSettings.chatAtmosphere'),
       subtitle: t('chatSettings.chatAtmosphereValue'),
@@ -328,7 +323,6 @@ export function ChatSettingsDrawer({
         onClose={() => setProfileSheetOpen(false)}
         onConfirm={persona => {
           setAppliedPersona(persona)
-          setProfileSheetOpen(false)
           showGlobalToast(t('chatSettings.changeApplied'))
         }}
       />

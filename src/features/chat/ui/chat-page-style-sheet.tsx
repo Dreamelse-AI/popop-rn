@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { useTranslation } from 'react-i18next'
-import { cdnImage } from '@/shared/lib/cdn'
 
 import {
   BUBBLE_STYLE_TOKENS,
-  CUSTOM_THEMES,
   DEFAULT_CHAT_ATMOSPHERE,
   getBackgroundPreview,
   type BubbleStyleId,
@@ -17,10 +15,10 @@ import { BottomSheet } from '@/shared/ui/bottom-sheet'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
-const IconUnion = cdnImage('assets/dialog/dialog-page-style-settings/dialogPageStyleSettings-union.png')
-
 import { BubbleTail } from './bubble-tail'
 import { ChatBackgroundPage } from './chat-background-page'
+
+const IconUnion = dialogPageStyleSettingsAssets.union
 
 type ChatPageStyleSheetProps = {
   open: boolean
@@ -33,7 +31,7 @@ type ChatPageStyleSheetProps = {
 type BubbleStyleOption = {
   id: BubbleStyleId
   received: { type: 'union' | 'solid'; color?: string; tail?: 'blue' }
-  sent: { color: string; tail: 'yellow' | 'black' }
+  sent: { color: string; tail: 'yellow' | 'black' | 'blue' }
 }
 
 const BUBBLE_STYLE_OPTIONS: BubbleStyleOption[] = [
@@ -43,9 +41,9 @@ const BUBBLE_STYLE_OPTIONS: BubbleStyleOption[] = [
     sent: { color: BUBBLE_STYLE_TOKENS.classic.sent.bgColor, tail: 'yellow' },
   },
   {
-    id: 'dark',
+    id: 'sky',
     received: { type: 'union' },
-    sent: { color: BUBBLE_STYLE_TOKENS.dark.sent.bgColor, tail: 'black' },
+    sent: { color: BUBBLE_STYLE_TOKENS.sky.sent.bgColor, tail: 'blue' },
   },
   {
     id: 'blue',
@@ -62,9 +60,7 @@ function ReceivedBubblePreview({ option }: { option: BubbleStyleOption['received
   if (option.type === 'union') {
     return (
       <View style={styles.receivedBubbleRow}>
-        <View style={styles.unionBubble}>
-          <Image source={{ uri: IconUnion }} style={{width: 92, height: 42}} />
-        </View>
+        <Image source={{ uri: IconUnion }} style={{width: 92, height: 42}} />
       </View>
     )
   }
@@ -72,7 +68,7 @@ function ReceivedBubblePreview({ option }: { option: BubbleStyleOption['received
   return (
     <View style={styles.receivedBubbleRow}>
       <View style={[styles.solidBubble, { backgroundColor: option.color }]}>
-        <BubbleTail variant="blue" side="right" style={styles.previewTail} />
+        <BubbleTail variant="blue" side="left" style={styles.previewTail} />
       </View>
     </View>
   )
@@ -80,7 +76,7 @@ function ReceivedBubblePreview({ option }: { option: BubbleStyleOption['received
 
 function SentBubblePreview({ option }: { option: BubbleStyleOption['sent'] }) {
   return (
-    <View style={styles.receivedBubbleRow}>
+    <View style={styles.sentBubbleRow}>
       <View style={[styles.solidBubble, { backgroundColor: option.color }]}>
         <BubbleTail variant={option.tail} side="right" style={styles.previewTail} />
       </View>
@@ -149,6 +145,7 @@ export function ChatPageStyleSheet({
         embedded={embedded}
         embeddedZIndex={60}
         scrollable={false}
+        heightRatio={0.9}
         header={<SheetHeader title={t('chatPageStyleSheet.title')} />}
         footer={
           <SheetFooterButton
@@ -209,24 +206,6 @@ export function ChatPageStyleSheet({
                       setDraftConfig(prev => ({ ...prev, bubbleStyleId: option.id }))
                     }
                   />
-                ))}
-              </View>
-            </View>
-
-            {/* Custom themes */}
-            <View style={styles.section}>
-              <View style={styles.themeSectionHeader}>
-                <SectionLabel>{t('chatPageStyleSheet.customTheme')}</SectionLabel>
-                <Pressable style={styles.viewAllButton}>
-                  <Text style={styles.viewAllText}>{t('chatPageStyleSheet.viewAll')}</Text>
-                  <Image source={{ uri: dialogPageStyleSettingsAssets.blackBack }} style={{width: 16, height: 16}} />
-                </Pressable>
-              </View>
-              <View style={styles.themeGrid}>
-                {CUSTOM_THEMES.map(theme => (
-                  <View key={theme.id} style={styles.themeCard}>
-                    <PopImage source={theme.image} contentFit="cover" style={styles.themeImage} />
-                  </View>
                 ))}
               </View>
             </View>
@@ -317,10 +296,11 @@ const styles = StyleSheet.create({
   },
   receivedBubbleRow: {
     width: '100%',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
-  unionBubble: {
-    transform: [{ scaleY: -1 }, { rotate: '180deg' }],
+  sentBubbleRow: {
+    width: '100%',
+    alignItems: 'flex-end',
   },
   solidBubble: {
     position: 'relative',
@@ -330,39 +310,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   previewTail: {
-    bottom: -9,
+    bottom: 0,
     top: undefined,
-  },
-  themeSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingRight: 8,
-  },
-  viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  viewAllText: {
-    fontSize: 12,
-    fontFamily: 'Black Han Sans',
-    color: '#000000',
-  },
-  themeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 9,
-    rowGap: 8,
-  },
-  themeCard: {
-    width: '31%',
-    aspectRatio: 116 / 208,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  themeImage: {
-    width: '100%',
-    height: '100%',
   },
 })

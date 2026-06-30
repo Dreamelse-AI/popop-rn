@@ -426,6 +426,8 @@
     "confirm": "확인하다",
     "edit": "편집",
     "save": "저장",
+    "delete": "삭제",
+    "deleting": "삭제 중...",
     "close": "닫기",
     "loadFailed": "프로필을 불러오지 못했습니다",
     "retry": "다시 시도"
@@ -488,7 +490,7 @@
     "customTheme": "사용자 정의 테마",
     "viewAll": "모두 보기",
     "viewAllBackgrounds": "모든 채팅 배경 보기",
-    "confirm": "확인하다"
+    "confirm": "적용"
   },
   "chatModeCustomSheet": {
     "title": "사용자 지정 설정",

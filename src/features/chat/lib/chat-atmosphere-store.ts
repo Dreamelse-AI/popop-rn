@@ -1,6 +1,7 @@
 import {
   DEFAULT_CHAT_ATMOSPHERE,
-  type BubbleStyleId,
+  normalizeBackgroundId,
+  normalizeBubbleStyleId,
   type ChatAtmosphereConfig,
 } from './chat-atmosphere-presets'
 import { storage } from '@/shared/storage'
@@ -8,10 +9,6 @@ import { storage } from '@/shared/storage'
 const STORAGE_KEY = 'chat_atmosphere_by_character'
 
 type StoredAtmosphereMap = Record<string, Partial<ChatAtmosphereConfig>>
-
-function isBubbleStyleId(value: unknown): value is BubbleStyleId {
-  return value === 'classic' || value === 'dark' || value === 'blue'
-}
 
 function parseStoredMap(raw: string | undefined): StoredAtmosphereMap {
   if (!raw) return {}
@@ -27,13 +24,8 @@ function parseStoredMap(raw: string | undefined): StoredAtmosphereMap {
 
 function normalizeConfig(partial: Partial<ChatAtmosphereConfig> | undefined): ChatAtmosphereConfig {
   return {
-    backgroundId:
-      typeof partial?.backgroundId === 'string'
-        ? partial.backgroundId
-        : DEFAULT_CHAT_ATMOSPHERE.backgroundId,
-    bubbleStyleId: isBubbleStyleId(partial?.bubbleStyleId)
-      ? partial.bubbleStyleId
-      : DEFAULT_CHAT_ATMOSPHERE.bubbleStyleId,
+    backgroundId: normalizeBackgroundId(partial?.backgroundId),
+    bubbleStyleId: normalizeBubbleStyleId(partial?.bubbleStyleId),
     customThemeId: DEFAULT_CHAT_ATMOSPHERE.customThemeId,
   }
 }

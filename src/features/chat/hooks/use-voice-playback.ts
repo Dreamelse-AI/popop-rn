@@ -6,19 +6,24 @@ import { safeAudioPlayerAction } from '../lib/safe-audio-player'
 export type VoicePlaybackControls = {
   play: (messageId: string, url: string) => void
   stop: () => void
+  /** 当前关联的语音消息（播放中或已暂停） */
   playingMessageId: string | null
+  /** 是否正在播放（暂停时为 false） */
+  isVoicePlaying: boolean
 }
 
 export function useVoicePlayback(): VoicePlaybackControls {
   const player = useAudioPlayer(null)
-  const playingIdRef = useRef<string | null>(null)
+  const activeIdRef = useRef<string | null>(null)
+  const finishedRef = useRef(false)
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null)
+  const [isVoicePlaying, setIsVoicePlaying] = useState(false)
 
   useEffect(() => {
     const subscription = player.addListener('playbackStatusUpdate', (status) => {
       if (status.didJustFinish) {
-        playingIdRef.current = null
-        setPlayingMessageId(null)
+        finishedRef.current = true
+        setIsVoicePlaying(false)
       }
     })
     return () => subscription.remove()
@@ -29,28 +34,38 @@ export function useVoicePlayback(): VoicePlaybackControls {
       player.pause()
       player.seekTo(0)
     })
-    playingIdRef.current = null
+    activeIdRef.current = null
+    finishedRef.current = false
     setPlayingMessageId(null)
+    setIsVoicePlaying(false)
   }, [player])
 
   const play = useCallback(
-    async (messageId: string, url: string) => {
+    (messageId: string, url: string) => {
       if (!url) return
 
-      if (playingIdRef.current === messageId) {
-        stop()
+      // 再次点击当前语音：在暂停 / 继续之间切换（不从头播放）
+      if (activeIdRef.current === messageId && !finishedRef.current) {
+        if (player.playing) {
+          safeAudioPlayerAction(player, () => player.pause())
+          setIsVoicePlaying(false)
+        } else {
+          safeAudioPlayerAction(player, () => player.play())
+          setIsVoicePlaying(true)
+        }
         return
       }
-
-      stop()
 
       try {
         safeAudioPlayerAction(player, () => {
           player.replace({ uri: url })
+          player.seekTo(0)
           player.play()
         })
-        playingIdRef.current = messageId
+        activeIdRef.current = messageId
+        finishedRef.current = false
         setPlayingMessageId(messageId)
+        setIsVoicePlaying(true)
       } catch {
         stop()
       }
@@ -60,5 +75,5 @@ export function useVoicePlayback(): VoicePlaybackControls {
 
   useEffect(() => () => { stop() }, [stop])
 
-  return { play, stop, playingMessageId }
+  return { play, stop, playingMessageId, isVoicePlaying }
 }

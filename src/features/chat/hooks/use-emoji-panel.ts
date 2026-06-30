@@ -4,6 +4,7 @@ import type { ListEmojiPanelResp } from '@/generated/arca_apiComponents'
 
 import { listEmojiPanel } from '../api/chat-api'
 import { buildEmojiDescriptionMap } from '../lib/character-adapter'
+import { writeEmojiPanelSession } from '../lib/emoji-panel-session'
 import { flattenEmojiPanel } from '../lib/emoji-panel-utils'
 import { useChatSessionStore } from '../store/chat-session-store'
 
@@ -33,6 +34,7 @@ export function useEmojiPanel(open: boolean) {
     setFetchFailed(false)
     try {
       const resp = await listEmojiPanel()
+      writeEmojiPanelSession(resp)
       setEmojiPanel(resp)
       setEmojiList(flattenEmojiPanel(resp))
       setEmojiDescriptions(

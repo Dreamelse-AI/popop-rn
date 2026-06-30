@@ -8,6 +8,7 @@ import {
   MAX_OUTBOUND_MESSAGES,
   MAX_OUTBOUND_WAIT_MS,
   READ_DELAY_MS,
+  clampChatText,
 } from '../config/chat-config';
 import type { EmojiItem } from '@/generated/arca_apiComponents';
 
@@ -19,19 +20,26 @@ import {
   createOptimisticImageMessage,
   createOptimisticTextMessage,
   createOptimisticVoiceMessage,
+  hasVisibleReplyContent,
   toPhoneMessageInput,
 } from '../lib/phone-message-adapter';
+import { extractUserRollbackDraft } from '../lib/message-rollback';
 import { deliverCharacterRepliesImmediately } from '../lib/reply-delivery';
 import { isActiveChatSession } from '../lib/session-guard';
 import { transcribeVoice, userVoiceDisplaySecFromTranscript } from '../api/voice-api';
 import type { ChatMessage } from '../model/types';
 import { useChatSessionStore } from '../store/chat-session-store';
 import { runPaidAction } from '@/shared/wallet';
+import {
+  API_CODE,
+  ApiError,
+  isChatContentAuditError,
+} from '@/shared/api/api-errors';
 
 import type { ReplyPlaybackControls } from './use-reply-playback';
 
 type OutboundQueueOptions = {
-  onSendFailed?: () => void;
+  onSendFailed?: (error: unknown) => void;
 };
 
 function isResendableMessage(
@@ -58,6 +66,25 @@ function randomReadDelayMs() {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/** 从即将被删除的 optimistic 气泡中取回原文，用于回填输入框 */
+function extractAuditRollbackDraft(pendingIds: string[]): string {
+  const messages = useChatSessionStore.getState().messages;
+  for (const localId of pendingIds) {
+    const message = messages.find(item => item.id === localId);
+    if (!message) continue;
+    const draft = extractUserRollbackDraft(message);
+    if (draft) return draft;
+  }
+  return '';
+}
+
+/** 等待两帧再执行，避免「回填输入框」与「删除气泡」同帧造成闪烁 */
+function runAfterNextPaint(run: () => void) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(run);
+  });
+}
+
 export function useOutboundQueue(
   characterId: string,
   playback: ReplyPlaybackControls,
@@ -69,6 +96,7 @@ export function useOutboundQueue(
   const markPendingByLocalIds = useChatSessionStore(s => s.markPendingByLocalIds);
   const markMessagesAsFailed = useChatSessionStore(s => s.markMessagesAsFailed);
   const removeMessageById = useChatSessionStore(s => s.removeMessageById);
+  const setRollbackDraft = useChatSessionStore(s => s.setRollbackDraft);
   const setTyping = useChatSessionStore(s => s.setTyping);
   const setOutboundPhase = useChatSessionStore(s => s.setOutboundPhase);
   const setCharacterStatus = useChatSessionStore(s => s.setCharacterStatus);
@@ -139,8 +167,11 @@ export function useOutboundQueue(
         if (!isActiveChatSession(characterId)) return;
 
         const hasCharacterReply = resp.character_messages.length > 0;
+        // 角色返回空回复（无可展示内容）时，服务端可能仍标记 is_failed，
+        // 此时不应给用户消息显示红色感叹号，这是正常现象。
+        const hasVisibleReply = hasVisibleReplyContent(resp.character_messages);
         applyApiCurrentMessages(resp.current_messages, pendingIds, {
-          ignoreServerFailed: !hasCharacterReply,
+          ignoreServerFailed: !hasVisibleReply,
         });
         clearPendingByLocalIds(pendingIds);
         setCharacterStatus(resp.character_status);
@@ -156,12 +187,42 @@ export function useOutboundQueue(
           setTyping(false);
           setOutboundPhase('idle');
         }
-      } catch {
+      } catch (error) {
         if (isActiveChatSession(characterId)) {
-          markMessagesAsFailed(pendingIds);
-          setTyping(false);
-          setOutboundPhase('idle');
-          onSendFailedRef.current?.();
+          if (isChatContentAuditError(error)) {
+            const draft =
+              error.status === API_CODE.CHAT_TEXT_AUDIT_FAILED
+                ? extractAuditRollbackDraft(pendingIds)
+                : '';
+
+            const removeBubbles = () => {
+              for (const localId of pendingIds) {
+                removeMessageById(localId);
+              }
+            };
+
+            const finishAuditFailure = () => {
+              setTyping(false);
+              setOutboundPhase('idle');
+              onSendFailedRef.current?.(error);
+            };
+
+            if (draft) {
+              setRollbackDraft(draft);
+              runAfterNextPaint(() => {
+                removeBubbles();
+                runAfterNextPaint(finishAuditFailure);
+              });
+            } else {
+              removeBubbles();
+              finishAuditFailure();
+            }
+          } else {
+            markMessagesAsFailed(pendingIds);
+            setTyping(false);
+            setOutboundPhase('idle');
+            onSendFailedRef.current?.(error);
+          }
         }
       } finally {
         flushingRef.current = false;
@@ -174,9 +235,11 @@ export function useOutboundQueue(
       markPendingByLocalIds,
       markMessagesAsFailed,
       playback,
+      removeMessageById,
       resetQueueTimers,
       setCharacterStatus,
       setOutboundPhase,
+      setRollbackDraft,
       setTyping,
     ],
   );
@@ -205,6 +268,18 @@ export function useOutboundQueue(
       void flush();
     }, MAX_OUTBOUND_WAIT_MS);
   }, [flush]);
+
+  /**
+   * 用户继续输入 / 收起键盘时重置「脑内判断」读延时。
+   * 仅当已有排队消息时生效：
+   * - 输入中不断 bump → 把已发出的消息与后续输入合并，避免半句就触发回复；
+   * - 收起键盘后调用 → 从此刻重新计时，确保卡住的消息能发出去。
+   * 注意：不重置 maxWait（最长等待 60s），即便一直输入也会兜底 flush。
+   */
+  const bumpReadDelayIfQueued = useCallback(() => {
+    if (queueRef.current.length === 0) return;
+    scheduleReadDelay();
+  }, [scheduleReadDelay]);
 
   const interruptIfNeeded = useCallback(() => {
     const phase = useChatSessionStore.getState().outboundPhase;
@@ -243,7 +318,7 @@ export function useOutboundQueue(
 
   const sendText = useCallback(
     (text: string) => {
-      const trimmed = text.trim();
+      const trimmed = clampChatText(text.trim());
       if (!trimmed) return;
 
       const optimistic = createOptimisticTextMessage(trimmed);
@@ -388,5 +463,5 @@ export function useOutboundQueue(
     };
   }, [flush, resetQueueTimers]);
 
-  return { sendText, sendEmoji, sendImage, sendVoice, resendFailedMessage };
+  return { sendText, sendEmoji, sendImage, sendVoice, resendFailedMessage, bumpReadDelayIfQueued };
 }

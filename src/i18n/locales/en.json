@@ -426,6 +426,8 @@
     "confirm": "Confirm",
     "edit": "Edit",
     "save": "Save",
+    "delete": "Delete",
+    "deleting": "Deleting...",
     "close": "Close",
     "loadFailed": "Failed to load profiles",
     "retry": "Retry"
@@ -488,7 +490,7 @@
     "customTheme": "Custom Themes",
     "viewAll": "View All",
     "viewAllBackgrounds": "View all chat backgrounds",
-    "confirm": "Confirm"
+    "confirm": "Apply"
   },
   "chatModeCustomSheet": {
     "title": "Custom Settings",

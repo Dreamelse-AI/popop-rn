@@ -18,6 +18,7 @@ const IconVoiceWave = cdnImage('assets/dialog/dialog-message-voice-wave.png')
 const IconKeyboard = cdnImage('assets/dialog/dialog-keyboard.png')
 
 import type { VoiceCancelZone, VoiceRecorderPhase } from '../hooks/use-voice-recorder'
+import { clampChatText, CHAT_TEXT_MAX_LENGTH } from '../config/chat-config'
 import { useKeyboardInset } from './hooks/use-keyboard-inset'
 
 export type ChatComposerInputMode = 'text' | 'voice'
@@ -36,6 +37,7 @@ type ChatInputBarProps = {
   onDraftChange?: (value: string) => void
   voiceRecorderPhase?: VoiceRecorderPhase
   voiceCancelZone?: VoiceCancelZone
+  voiceHoldReleaseToken?: number
   onVoiceHoldStart?: (clientY: number) => void
   onVoiceHoldMove?: (clientY: number) => void
   onVoiceHoldEnd?: () => void
@@ -55,6 +57,7 @@ export function ChatInputBar({
   onDraftChange,
   voiceRecorderPhase = 'idle',
   voiceCancelZone = 'none',
+  voiceHoldReleaseToken = 0,
   onVoiceHoldStart,
   onVoiceHoldMove,
   onVoiceHoldEnd,
@@ -70,7 +73,7 @@ export function ChatInputBar({
   const isVoiceMode = inputMode === 'voice'
 
   useEffect(() => {
-    if (draft !== undefined) setText(draft)
+    if (draft !== undefined) setText(clampChatText(draft))
   }, [draft])
 
   useEffect(() => {
@@ -115,7 +118,7 @@ export function ChatInputBar({
   }, [collapseKeyboard, onInputModeChange])
 
   const switchToTextMode = useCallback(() => {
-    activateTextComposer({ autoFocus: true })
+    activateTextComposer()
   }, [activateTextComposer])
 
   const handleModeToggle = useCallback(() => {
@@ -154,8 +157,9 @@ export function ChatInputBar({
 
   const updateText = useCallback(
     (value: string) => {
-      setText(value)
-      onDraftChange?.(value)
+      const next = clampChatText(value)
+      setText(next)
+      onDraftChange?.(next)
     },
     [onDraftChange],
   )
@@ -235,6 +239,7 @@ export function ChatInputBar({
             active={isVoiceActive}
             cancelZone={voiceCancelZone}
             label={voiceHoldLabel}
+            forceReleaseToken={voiceHoldReleaseToken}
             onHoldingChange={setVoiceHolding}
           />
         ) : (
@@ -247,6 +252,10 @@ export function ChatInputBar({
               ref={textInputRef}
               value={text}
               onChangeText={updateText}
+              maxLength={CHAT_TEXT_MAX_LENGTH}
+              multiline={false}
+              numberOfLines={1}
+              scrollEnabled={false}
               onSubmitEditing={handleSend}
               onFocus={() => {
                 setInputFocused(true)
@@ -292,6 +301,7 @@ type VoiceHoldZoneProps = {
   active?: boolean
   cancelZone?: VoiceCancelZone
   label: string
+  forceReleaseToken?: number
   onHoldingChange?: (holding: boolean) => void
   onVoiceHoldStart?: (clientY: number) => void
   onVoiceHoldMove?: (clientY: number) => void
@@ -310,6 +320,7 @@ function VoiceHoldZone({
   active = false,
   cancelZone = 'none',
   label,
+  forceReleaseToken = 0,
   onHoldingChange,
   onVoiceHoldStart,
   onVoiceHoldMove,
@@ -342,6 +353,18 @@ function VoiceHoldZone({
     handlersRef.current.onHoldingChange?.(false)
     handlersRef.current.onVoiceHoldEnd?.()
   }, [])
+
+  const releaseHoldWithoutSend = useCallback(() => {
+    if (!holdingRef.current) return
+    holdingRef.current = false
+    setPressing(false)
+    handlersRef.current.onHoldingChange?.(false)
+  }, [])
+
+  useEffect(() => {
+    if (!forceReleaseToken) return
+    releaseHoldWithoutSend()
+  }, [forceReleaseToken, releaseHoldWithoutSend])
 
   const panResponder = useMemo(
     () =>
@@ -495,6 +518,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   iconButton: {
     width: 24,
@@ -503,8 +527,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   keyboardInput: {
-    flex: 1,
     height: 22,
+    alignSelf: 'stretch',
     padding: 0,
     fontSize: 16,
     fontWeight: '500',
