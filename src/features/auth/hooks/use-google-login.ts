@@ -3,22 +3,25 @@ import { Platform } from 'react-native'
 import { GoogleSignin, isSuccessResponse, isCancelledResponse } from '@react-native-google-signin/google-signin'
 import { authApi } from '../auth-api'
 import type { AuthResponse } from '../auth-types'
+import * as Crypto from 'expo-crypto'
 
 export const LOGIN_CANCELLED = 'LOGIN_CANCELLED'
 
-const GOOGLE_IOS_CLIENT_ID = '875163971501-17vv2c5589c9d4j7h2ml3icf48nqtk5b.apps.googleusercontent.com'
-const GOOGLE_ANDROID_CLIENT_ID = '875163971501-93st2gobt1ip1j3c4p8g8ipbkk2og2s9.apps.googleusercontent.com'
-
-GoogleSignin.configure(
-  Platform.select({
-    ios: { iosClientId: GOOGLE_IOS_CLIENT_ID },
-    android: { webClientId: GOOGLE_ANDROID_CLIENT_ID },
-  })!,
-)
+const GOOGLE_IOS_CLIENT_ID = '959580844343-p91v3bhk57jk06ililkavt498s8f2pkq.apps.googleusercontent.com'
+const GOOGLE_ANDROID_CLIENT_ID = '959580844343-9lsu6dbnf5fraqoo7vh9badtsshjjpes.apps.googleusercontent.com'
 
 export function useGoogleLogin() {
   const login = useCallback(async (): Promise<AuthResponse> => {
     await GoogleSignin.hasPlayServices()
+
+    const nonce = Crypto.randomUUID()
+
+    GoogleSignin.configure(
+      Platform.select({
+        ios: { iosClientId: GOOGLE_IOS_CLIENT_ID, nonce },
+        android: { webClientId: GOOGLE_ANDROID_CLIENT_ID },
+      })!,
+    )
 
     const response = await GoogleSignin.signIn()
 
@@ -33,7 +36,7 @@ export function useGoogleLogin() {
 
     return authApi.createOAuthSession('google', {
       idToken,
-      nonce: '',
+      nonce,
     })
   }, [])
 
