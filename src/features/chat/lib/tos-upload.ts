@@ -1,6 +1,7 @@
 import { getTosUploadCredential } from '@/generated'
 import type { GetTosUploadCredentialResp, StorageObject } from '@/generated/arca_apiComponents'
-import { File } from 'expo-file-system'
+import { File as ExpoFile } from 'expo-file-system'
+import { digest, CryptoDigestAlgorithm } from 'expo-crypto'
 
 import { randomUUID } from '@/shared/lib/random-uuid'
 
@@ -112,38 +113,78 @@ export type TosImageUploadResult = {
   storageObject: StorageObject
 }
 
-async function readUploadBody(fileUri: string): Promise<Uint8Array> {
-  return new File(fileUri).bytes()
+async function hmacSha1Base64(key: string, message: string): Promise<string> {
+  const enc = new TextEncoder()
+  let keyBytes = enc.encode(key)
+
+  const BLOCK_SIZE = 64
+  if (keyBytes.length > BLOCK_SIZE) {
+    const hashed = await digest(CryptoDigestAlgorithm.SHA1, keyBytes)
+    keyBytes = new Uint8Array(hashed)
+  }
+
+  const paddedKey = new Uint8Array(BLOCK_SIZE)
+  paddedKey.set(keyBytes)
+
+  const ipad = new Uint8Array(BLOCK_SIZE)
+  const opad = new Uint8Array(BLOCK_SIZE)
+  for (let i = 0; i < BLOCK_SIZE; i++) {
+    ipad[i] = paddedKey[i] ^ 0x36
+    opad[i] = paddedKey[i] ^ 0x5c
+  }
+
+  const msgBytes = enc.encode(message)
+  const inner = new Uint8Array(BLOCK_SIZE + msgBytes.length)
+  inner.set(ipad)
+  inner.set(msgBytes, BLOCK_SIZE)
+  const innerHash = new Uint8Array(await digest(CryptoDigestAlgorithm.SHA1, inner))
+
+  const outer = new Uint8Array(BLOCK_SIZE + innerHash.length)
+  outer.set(opad)
+  outer.set(innerHash, BLOCK_SIZE)
+  const hmac = new Uint8Array(await digest(CryptoDigestAlgorithm.SHA1, outer))
+
+  let binary = ''
+  for (let i = 0; i < hmac.length; i++) {
+    binary += String.fromCharCode(hmac[i])
+  }
+  return btoa(binary)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-function getOSS() {
-  return require('ali-oss') as { new (config: unknown): OSSClient; Buffer: typeof Buffer }
-}
-
-type OSSClient = {
-  put(name: string, body: unknown, options?: unknown): Promise<{ res?: { headers?: Record<string, string> } }>
-}
-
-function getOSSClient(config: {
+function buildOssSignedUrl(params: {
   accessKeyId: string
   accessKeySecret: string
   stsToken: string
   bucket: string
   endpoint: string
-  secure: boolean
-}) {
-  const OSS = getOSS()
-  return new OSS(config)
+  objectKey: string
+  contentType: string
+  expires: number
+}): Promise<string> {
+  const { accessKeyId, accessKeySecret, stsToken, bucket, endpoint, objectKey, contentType, expires } = params
+  const host = endpoint.replace(/^https?:\/\//, '')
+  const resource = `/${bucket}/${objectKey}`
+  const stringToSign = `PUT\n\n${contentType}\n${expires}\nx-oss-security-token:${stsToken}\n${resource}`
+
+  return hmacSha1Base64(accessKeySecret, stringToSign).then(signature => {
+    const query = [
+      `OSSAccessKeyId=${encodeURIComponent(accessKeyId)}`,
+      `Expires=${expires}`,
+      `Signature=${encodeURIComponent(signature)}`,
+      `security-token=${encodeURIComponent(stsToken)}`,
+    ].join('&')
+    return `https://${bucket}.${host}/${objectKey}?${query}`
+  })
 }
 
 /**
- * 上传文件至公有 OSS bucket（ali-oss SDK 处理签名）。
+ * 上传文件至公有 OSS bucket。
  *
  * 流程：
- * 1. 请求 tos_credential（use_public=true）获取 STS 临时凭证（同一有效期内复用）
- * 2. ali-oss SDK 上传（内部处理签名）
- * 3. 拼接公有 CDN URL 作为访问地址
+ * 1. 请求 tos_credential（use_public=true）获取 STS 临时凭证
+ * 2. 内联 OSS V1 签名生成 presigned URL（Web Crypto HMAC-SHA1）
+ * 3. RN 原生 fetch PUT 上传文件
+ * 4. 拼接公有 CDN URL 作为访问地址
  */
 async function uploadToTos(
   fileUri: string,
@@ -153,35 +194,35 @@ async function uploadToTos(
   const objectKey = buildObjectKey(fileUri, prefix)
   const contentType = getContentTypeFromUri(fileUri)
 
-  const client = getOSSClient({
+  const expires = Math.floor(Date.now() / 1000) + 600
+
+  const signedUrl = await buildOssSignedUrl({
     accessKeyId: credential.access_key_id,
     accessKeySecret: credential.secret_access_key,
     stsToken: credential.session_token,
     bucket: credential.bucket,
     endpoint: credential.endpoint,
-    secure: true,
+    objectKey,
+    contentType,
+    expires,
   })
 
-  const fileBytes = await readUploadBody(fileUri)
-  const OSSBuffer = getOSS().Buffer
-  const uploadBody = OSSBuffer.from(
-    fileBytes.buffer,
-    fileBytes.byteOffset,
-    fileBytes.byteLength,
-  )
+  const file = new ExpoFile(fileUri)
+  const fileBytes = await file.bytes()
 
-  let result: { res?: { headers?: Record<string, string> } }
-  try {
-    result = await client.put(objectKey, uploadBody, {
-      headers: { 'Content-Type': contentType },
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`OSS upload failed: ${message}`)
+  const res = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: fileBytes,
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`TOS upload failed (${res.status}): ${text.slice(0, 200)}`)
   }
 
   const cdnUrl = buildCdnUrl(objectKey)
-  const requestId = result.res?.headers?.['x-oss-request-id'] as string | undefined
+  const requestId = res.headers.get('x-oss-request-id') ?? undefined
 
   const storageObject: StorageObject = {
     bucket_name: credential.bucket,
