@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { takePendingForward } from '@/features/share';
 import type { EmojiItem } from '@/generated/arca_apiComponents';
+import { isChatContentAuditError } from '@/shared/api/api-errors';
 import { useToast } from '@/shared/ui/toast';
 
 import {
@@ -12,6 +13,11 @@ import {
 } from '../lib/pick-and-upload-images';
 
 import { markEmojiUsed, updateMessageClickStatus } from '../api/chat-api';
+import { VOICE_MAX_DISPLAY_SEC } from '../config/chat-config';
+import {
+  prependEmojiPanelRecent,
+  writeEmojiPanelSession,
+} from '../lib/emoji-panel-session';
 import { openChatLink } from '../lib/open-chat-link';
 import type { ChatMessage } from '../model/types';
 import { useChatSessionStore } from '../store/chat-session-store';
@@ -41,7 +47,14 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
   const playback = useReplyPlayback();
   const { toast, showToast } = useToast();
   const outbound = useOutboundQueue(characterId, playback, {
-    onSendFailed: () => showToast('发送失败，请稍后重试'),
+    onSendFailed: error => {
+      if (isChatContentAuditError(error)) {
+        const message = error.message.trim();
+        showToast(message || '内容包含敏感信息');
+        return;
+      }
+      showToast('发送失败，请稍后重试');
+    },
   });
   useMessagePolling(
     characterId,
@@ -54,7 +67,15 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     Boolean(session.character),
     playback,
   );
-  const voiceRecorder = useVoiceRecorder();
+  const [voiceHoldReleaseToken, setVoiceHoldReleaseToken] = useState(0);
+  const handleVoiceHoldEndRef = useRef<() => Promise<void>>(async () => {});
+  const voiceRecorder = useVoiceRecorder({
+    onMaxDurationReached: () => {
+      showToast(`最长可录制 ${VOICE_MAX_DISPLAY_SEC} 秒`);
+      setVoiceHoldReleaseToken(token => token + 1);
+      void handleVoiceHoldEndRef.current();
+    },
+  });
   const voicePlayback = useVoicePlayback();
   const rollback = useMessageRollback(characterId, playback);
   const versionSync = useCharacterVersionSync({
@@ -66,6 +87,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
   });
 
   const setShowEmojiPanel = useChatSessionStore(s => s.setShowEmojiPanel);
+  const setEmojiPanel = useChatSessionStore(s => s.setEmojiPanel);
   const setRollbackDraft = useChatSessionStore(s => s.setRollbackDraft);
   const markVoiceRead = useChatSessionStore(s => s.markVoiceRead);
   const revealVoiceTranscript = useChatSessionStore(s => s.revealVoiceTranscript);
@@ -77,7 +99,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
 
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const { onScroll, onContentSizeChange, onLayout, onScrollToIndexFailed } = useChatScroll({
+  const { onScroll, onContentSizeChange, onLayout, onScrollToIndexFailed, showNewMessageHint, newMessageCount, jumpToLatest } = useChatScroll({
     characterId,
     listRef,
     messages: session.messages,
@@ -132,6 +154,14 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     (emoji: EmojiItem) => {
       outbound.sendEmoji(emoji);
       setShowEmojiPanel(false);
+
+      const currentPanel = useChatSessionStore.getState().emojiPanel;
+      if (currentPanel) {
+        const nextPanel = prependEmojiPanelRecent(currentPanel, emoji);
+        setEmojiPanel(nextPanel);
+        writeEmojiPanelSession(nextPanel);
+      }
+
       void markEmojiUsed({
         emoji_id: emoji.emoji_id,
         source: emoji.source,
@@ -140,12 +170,29 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
         // 与发送解耦，失败不影响聊天
       });
     },
-    [outbound, setShowEmojiPanel],
+    [outbound, setEmojiPanel, setShowEmojiPanel],
   );
 
   const toggleEmojiPanel = useCallback(() => {
     setShowEmojiPanel(!useChatSessionStore.getState().showEmojiPanel);
   }, [setShowEmojiPanel]);
+
+  /** 用户继续输入时，重置已排队消息的读延时，避免半句就触发发送 */
+  const handleDraftChange = useCallback(
+    (value: string) => {
+      setRollbackDraft(value);
+      outbound.bumpReadDelayIfQueued();
+    },
+    [outbound, setRollbackDraft],
+  );
+
+  /** 收起键盘时重新计时：确保「输入未发送、收起键盘」的消息不会一直卡着 */
+  const handleComposerFocusChange = useCallback(
+    (focused: boolean) => {
+      if (!focused) outbound.bumpReadDelayIfQueued();
+    },
+    [outbound],
+  );
 
   const openProfile = useCallback(() => {
     if (session.character) actions.onOpenProfile(session.character.id);
@@ -154,6 +201,8 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
   const handleCharacterVoicePress = useCallback(
     (message: Extract<ChatMessage, { type: 'voice' }>) => {
       if (!message.voiceUrl) return;
+
+      revealVoiceTranscript(message.id);
       voicePlayback.play(message.id, message.voiceUrl);
 
       if (!message.unread) return;
@@ -167,7 +216,7 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
         is_click: true,
       });
     },
-    [characterId, markVoiceRead, voicePlayback],
+    [characterId, markVoiceRead, revealVoiceTranscript, voicePlayback],
   );
 
   const handleUserVoicePress = useCallback(
@@ -202,6 +251,10 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
       durationMs: result.durationMs,
     });
   }, [outbound, voiceRecorder]);
+
+  useEffect(() => {
+    handleVoiceHoldEndRef.current = handleVoiceHoldEnd;
+  }, [handleVoiceHoldEnd]);
 
   const handleFailedMessagePress = useCallback(
     (message: ChatMessage) => {
@@ -242,6 +295,9 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           onContentSizeChange,
           onLayout,
           onScrollToIndexFailed,
+          showNewMessageHint,
+          newMessageCount,
+          onJumpToLatest: jumpToLatest,
           character: session.character,
           characterAka: session.characterAka,
           messages: session.messages,
@@ -255,12 +311,13 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           emojiFetchFailed,
           onEmojiRetry: retryEmojiLoad,
           draft: session.rollbackDraft,
-          playingVoiceId: voicePlayback.playingMessageId,
+          playingVoiceId: voicePlayback.isVoicePlaying ? voicePlayback.playingMessageId : null,
           voiceRecorderPhase: voiceRecorder.phase,
           voicePermissionDenied: voiceRecorder.permissionDenied,
           voiceIsCancelled: voiceRecorder.isCancelled,
           voicePressTooShort: voiceRecorder.isPressTooShort,
           voiceCancelZone: voiceRecorder.cancelZone,
+          voiceHoldReleaseToken,
           voiceInterimTranscript: voiceRecorder.interimTranscript,
           onBack: actions.onBack,
           onProfilePress: openProfile,
@@ -269,7 +326,8 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
           onToggleEmojiPanel: toggleEmojiPanel,
           onEmojiSelect: handleEmojiSelect,
           onEmojiPanelClose: () => setShowEmojiPanel(false),
-          onDraftChange: setRollbackDraft,
+          onDraftChange: handleDraftChange,
+          onComposerFocusChange: handleComposerFocusChange,
           onCharacterVoicePress: handleCharacterVoicePress,
           onUserVoicePress: handleUserVoicePress,
           onVoiceHoldStart: handleVoiceHoldStart,

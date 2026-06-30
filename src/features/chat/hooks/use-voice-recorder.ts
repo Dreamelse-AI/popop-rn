@@ -18,6 +18,7 @@ import {
 import {
   VOICE_RECORD_CANCEL_HINT_OFFSET_PX,
   VOICE_RECORD_CANCEL_OFFSET_PX,
+  VOICE_RECORD_MAX_DURATION_MS,
   VOICE_RECORD_MIN_DURATION_MS,
 } from '../config/chat-config'
 import {
@@ -51,6 +52,11 @@ export type VoiceRecorderControls = {
   cancelRecording: () => void
 }
 
+type UseVoiceRecorderOptions = {
+  /** 录音达到上限时触发（仍按住时由上层完成发送） */
+  onMaxDurationReached?: () => void
+}
+
 const FALLBACK_RECORDING_OPTIONS: RecordingOptions = {
   ...RecordingPresets.HIGH_QUALITY,
   sampleRate: 16000,
@@ -78,9 +84,12 @@ function canUseSpeechRecording(): boolean {
   }
 }
 
-export function useVoiceRecorder(): VoiceRecorderControls {
+export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): VoiceRecorderControls {
   const fallbackRecorder = useAudioRecorder(FALLBACK_RECORDING_OPTIONS)
   const useSpeechRecording = canUseSpeechRecording()
+
+  const onMaxDurationReachedRef = useRef(options.onMaxDurationReached)
+  onMaxDurationReachedRef.current = options.onMaxDurationReached
 
   const [phase, setPhase] = useState<VoiceRecorderPhase>('idle')
   const [permissionDenied, setPermissionDenied] = useState(false)
@@ -97,6 +106,7 @@ export function useVoiceRecorder(): VoiceRecorderControls {
   const cancelledRef = useRef(false)
   const abortRequestedRef = useRef(false)
   const tooShortTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const finalTranscriptRef = useRef('')
   const interimTranscriptRef = useRef('')
@@ -121,6 +131,13 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     setInterimTranscript(text)
   }, [])
 
+  const clearMaxDurationTimer = useCallback(() => {
+    if (maxDurationTimerRef.current !== null) {
+      clearTimeout(maxDurationTimerRef.current)
+      maxDurationTimerRef.current = null
+    }
+  }, [])
+
   const flashPressTooShort = useCallback(() => {
     setIsPressTooShort(true)
     if (tooShortTimerRef.current !== null) {
@@ -140,13 +157,14 @@ export function useVoiceRecorder(): VoiceRecorderControls {
   }, [updateInterim])
 
   const resetRecorder = useCallback(() => {
+    clearMaxDurationTimer()
     cancelledRef.current = false
     abortRequestedRef.current = false
     resetTranscriptState()
     setIsCancelled(false)
     setCancelZoneSafe('none')
     setPhaseSafe('idle')
-  }, [resetTranscriptState, setCancelZoneSafe, setPhaseSafe])
+  }, [clearMaxDurationTimer, resetTranscriptState, setCancelZoneSafe, setPhaseSafe])
 
   const resolveFinish = useCallback(
     (result: VoiceRecorderResult | null) => {
@@ -222,6 +240,15 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     }
   }, [handleSpeechEnd, handleSpeechError, handleSpeechResult, useSpeechRecording])
 
+  const armMaxDurationTimer = useCallback(() => {
+    clearMaxDurationTimer()
+    maxDurationTimerRef.current = setTimeout(() => {
+      maxDurationTimerRef.current = null
+      if (phaseRef.current !== 'recording') return
+      onMaxDurationReachedRef.current?.()
+    }, VOICE_RECORD_MAX_DURATION_MS)
+  }, [clearMaxDurationTimer])
+
   const startSpeechRecording = useCallback(async () => {
     const speechGranted = await requestSpeechRecognitionPermissions()
     if (!speechGranted) {
@@ -258,7 +285,8 @@ export function useVoiceRecorder(): VoiceRecorderControls {
 
     startedAtRef.current = Date.now()
     setPhaseSafe('recording')
-  }, [flashPressTooShort, resetRecorder, resetTranscriptState, setPhaseSafe])
+    armMaxDurationTimer()
+  }, [armMaxDurationTimer, flashPressTooShort, resetRecorder, resetTranscriptState, setPhaseSafe])
 
   const startFallbackRecording = useCallback(async () => {
     const permissionResult = await requestRecordingPermissionsAsync()
@@ -287,7 +315,8 @@ export function useVoiceRecorder(): VoiceRecorderControls {
 
     startedAtRef.current = Date.now()
     setPhaseSafe('recording')
-  }, [fallbackRecorder, flashPressTooShort, resetRecorder, setPhaseSafe])
+    armMaxDurationTimer()
+  }, [armMaxDurationTimer, fallbackRecorder, flashPressTooShort, resetRecorder, setPhaseSafe])
 
   const startRecording = useCallback(
     async (startY: number) => {
@@ -463,6 +492,7 @@ export function useVoiceRecorder(): VoiceRecorderControls {
 
   const finishRecording = useCallback(async (): Promise<VoiceRecorderResult | null> => {
     const pressDurationMs = Date.now() - pressedAtRef.current
+    clearMaxDurationTimer()
 
     if (phaseRef.current === 'requesting') {
       abortRequestedRef.current = true
@@ -499,6 +529,7 @@ export function useVoiceRecorder(): VoiceRecorderControls {
     finishFallbackRecording,
     finishSpeechRecording,
     flashPressTooShort,
+    clearMaxDurationTimer,
     setCancelZoneSafe,
     useSpeechRecording,
   ])
@@ -508,13 +539,14 @@ export function useVoiceRecorder(): VoiceRecorderControls {
       if (tooShortTimerRef.current !== null) {
         clearTimeout(tooShortTimerRef.current)
       }
+      clearMaxDurationTimer()
       try {
         ExpoSpeechRecognitionModule.abort()
       } catch {
         /* noop */
       }
     },
-    [],
+    [clearMaxDurationTimer],
   )
 
   return {

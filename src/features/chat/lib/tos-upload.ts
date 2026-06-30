@@ -205,7 +205,9 @@ export async function uploadImageToTos(fileUri: string): Promise<string> {
   return result.url
 }
 
-export async function uploadAudioToTosWithMeta(fileUri: string): Promise<TosImageUploadResult> {
+export async function uploadAudioToTosWithMeta(
+  fileUri: string,
+): Promise<TosImageUploadResult> {
   return uploadToTos(fileUri, { prefix: 'popop-fe-user-upload/voice', objectType: 'audio' })
 }
 

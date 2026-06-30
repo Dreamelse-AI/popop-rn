@@ -3,12 +3,13 @@ import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 
 import { useTranslation } from 'react-i18next'
 
 import { BottomSheet } from '@/shared/ui/bottom-sheet'
+import type { UserPersonaItem } from '@/generated'
 import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 import { showGlobalToast } from '@/shared/wallet'
 
 import { useUserPersona } from '../hooks/use-user-persona'
-import { PERSONA_NAME_MAX, resolvePersonaAvatarUrl } from '../lib/persona-utils'
+import { PERSONA_NAME_MAX, PERSONA_PROFILE_MAX, clampPersonaNameInput, resolvePersonaAvatarUrl } from '../lib/persona-utils'
 
 type UserPersonaSheetProps = {
   open: boolean
@@ -18,9 +19,14 @@ type UserPersonaSheetProps = {
   personaId?: string | null
   isDefaultOnCreate?: boolean
   confirmLabelKey?: 'persona.goChat' | 'chatProfileSheet.save'
-  onSaved?: (personaId: string) => void
+  onSaved?: (persona: UserPersonaItem) => void
   embedded?: boolean
   embeddedZIndex?: number
+  /** 编辑模式底部左侧删除按钮 */
+  showDeleteButton?: boolean
+  canDelete?: boolean
+  deleting?: boolean
+  onDelete?: () => void
 }
 
 export function UserPersonaSheet({
@@ -33,6 +39,10 @@ export function UserPersonaSheet({
   onSaved,
   embedded = false,
   embeddedZIndex = 70,
+  showDeleteButton = false,
+  canDelete = false,
+  deleting = false,
+  onDelete,
 }: UserPersonaSheetProps) {
   const { t } = useTranslation()
   const { form, loading, saving, avatarUploading, setForm, pickAvatar, save } = useUserPersona(open, {
@@ -57,7 +67,7 @@ export function UserPersonaSheet({
     if (!form.name.trim()) return
     const result = await save()
     if (result.ok) {
-      if (result.personaId) onSaved?.(result.personaId)
+      if (result.persona) onSaved?.(result.persona)
       onClose()
     } else if (result.auditFailed) {
       showGlobalToast(t('profile.avatarAuditFailed'))
@@ -76,12 +86,40 @@ export function UserPersonaSheet({
       embeddedZIndex={embeddedZIndex}
       header={<SheetHeader title={t('persona.title')} />}
       footer={
-        <SheetFooterButton
-          label={saving ? t('persona.saving') : t(confirmLabelKey)}
-          onPress={() => void handleSave()}
-          disabled={saving}
-          loading={saving}
-        />
+        showDeleteButton ? (
+          <View style={styles.footerRow}>
+            <Pressable
+              onPress={() => onDelete?.()}
+              disabled={!canDelete || saving || deleting}
+              style={[styles.deleteButton, (!canDelete || saving || deleting) && styles.deleteButtonDisabled]}
+            >
+              {deleting ? (
+                <ActivityIndicator color="#000000" />
+              ) : (
+                <Text
+                  style={[styles.deleteButtonText, (!canDelete || saving) && styles.deleteButtonTextDisabled]}
+                >
+                  {t('chatProfileSheet.delete')}
+                </Text>
+              )}
+            </Pressable>
+            <View style={styles.footerConfirm}>
+              <SheetFooterButton
+                label={saving ? t('persona.saving') : t(confirmLabelKey)}
+                onPress={() => void handleSave()}
+                disabled={saving || deleting}
+                loading={saving}
+              />
+            </View>
+          </View>
+        ) : (
+          <SheetFooterButton
+            label={saving ? t('persona.saving') : t(confirmLabelKey)}
+            onPress={() => void handleSave()}
+            disabled={saving}
+            loading={saving}
+          />
+        )
       }
     >
       <SheetBody style={styles.container}>
@@ -109,13 +147,13 @@ export function UserPersonaSheet({
             <Text style={styles.label}>{t('persona.name')}</Text>
             <Text style={styles.requiredMark}>*</Text>
             <Text style={styles.nameCounter}>
-              {form.name.length}/{PERSONA_NAME_MAX}
+              {Array.from(form.name).length}/{PERSONA_NAME_MAX}
             </Text>
           </View>
           <TextInput
             value={form.name}
             onChangeText={text => setForm(prev => ({ ...prev, name: text }))}
-            maxLength={PERSONA_NAME_MAX}
+            onBlur={() => setForm(prev => ({ ...prev, name: clampPersonaNameInput(prev.name) }))}
             placeholder={t('persona.namePlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.2)"
             style={[styles.nameInput, nameInvalid && styles.inputError]}
@@ -150,10 +188,14 @@ export function UserPersonaSheet({
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>{t('persona.instruction')}</Text>
+            <Text style={styles.nameCounter}>
+              {Array.from(form.profile).length}/{PERSONA_PROFILE_MAX}
+            </Text>
           </View>
           <TextInput
             value={form.profile}
             onChangeText={text => setForm(prev => ({ ...prev, profile: text }))}
+            maxLength={PERSONA_PROFILE_MAX}
             placeholder={t('persona.instructionPlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.2)"
             style={styles.profileInput}
@@ -176,6 +218,34 @@ export function UserPersonaSheet({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 0,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  footerConfirm: {
+    flex: 1,
+  },
+  deleteButton: {
+    flex: 1,
+    height: 60,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonDisabled: {
+    opacity: 1,
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  deleteButtonTextDisabled: {
+    color: 'rgba(0,0,0,0.2)',
   },
   avatarSection: {
     alignItems: 'center',

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { saveChatAtmosphereSettings } from '../api/chat-atmosphere-api'
+import { loadChatAtmosphereFromServer, saveChatAtmosphereSettings } from '../api/chat-atmosphere-api'
 import {
   DEFAULT_CHAT_ATMOSPHERE,
   getBubbleStyleTokens,
@@ -18,7 +18,14 @@ export function useChatAtmosphere(characterId: string) {
 
   useEffect(() => {
     if (!characterId) return
+    let active = true
     setConfig(loadChatAtmosphere(characterId))
+    void loadChatAtmosphereFromServer(characterId).then(serverConfig => {
+      if (active && serverConfig) setConfig(serverConfig)
+    })
+    return () => {
+      active = false
+    }
   }, [characterId])
 
   const pageBackground: ResolvedPageBackground = resolvePageBackground(config)
@@ -31,7 +38,7 @@ export function useChatAtmosphere(characterId: string) {
         return
       }
       const saved = await saveChatAtmosphereSettings(characterId, nextConfig)
-      setConfig(nextConfig)
+      setConfig(saved)
       return saved
     },
     [characterId],

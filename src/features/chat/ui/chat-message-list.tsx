@@ -161,6 +161,8 @@ export function ChatMessageList({
             <CharacterVoiceBubble
               avatar={avatar}
               duration={message.durationSec}
+              transcript={message.transcript}
+              transcriptRevealed={message.transcriptRevealed}
               isPlaying={playingVoiceId === message.id}
               bubbleStyle={bubbleStyle}
               onAvatarPress={onAvatarPress}
@@ -380,20 +382,28 @@ function UserImageBubble({
   )
 }
 
-function CharacterVoiceBubble({ avatar, duration, isPlaying, bubbleStyle, onAvatarPress, onPress, onLongPress }: { avatar: string; duration: number; isPlaying: boolean; bubbleStyle: BubbleStyleTokens; onAvatarPress?: () => void; onPress?: () => void; onLongPress?: () => void }) {
+function CharacterVoiceBubble({ avatar, duration, transcript, transcriptRevealed = false, isPlaying, bubbleStyle, onAvatarPress, onPress, onLongPress }: { avatar: string; duration: number; transcript?: string; transcriptRevealed?: boolean; isPlaying: boolean; bubbleStyle: BubbleStyleTokens; onAvatarPress?: () => void; onPress?: () => void; onLongPress?: () => void }) {
   const { received } = bubbleStyle
+  const resolvedTranscript = transcript?.trim()
   return (
     <View style={styles.characterRow}>
       <Pressable onPress={onAvatarPress}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
       </Pressable>
-      <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
-        <View style={styles.voiceContent}>
-          <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
-          <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
-        </View>
-        <BubbleTail variant={received.tail} side="left" />
-      </Pressable>
+      <View style={styles.characterVoiceColumn}>
+        <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, styles.characterVoiceBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
+          <View style={styles.voiceContent}>
+            <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
+            <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
+          </View>
+          <BubbleTail variant={received.tail} side="left" />
+        </Pressable>
+        {transcriptRevealed && resolvedTranscript ? (
+          <View style={[styles.receivedBubble, styles.voiceTranscriptBubble, { backgroundColor: received.bgColor }]}>
+            <Text style={[styles.bubbleText, { color: received.textColor }]}>{resolvedTranscript}</Text>
+          </View>
+        ) : null}
+      </View>
     </View>
   )
 }
@@ -593,6 +603,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  characterVoiceColumn: {
+    maxWidth: '75%',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  characterVoiceBubble: {
+    maxWidth: undefined,
+    alignSelf: 'flex-start',
+  },
+  voiceTranscriptBubble: {
+    maxWidth: undefined,
+    alignSelf: 'flex-start',
   },
   voiceDuration: {
     fontSize: 16,

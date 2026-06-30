@@ -33,6 +33,8 @@ type BottomSheetProps = {
   fitContent?: boolean
   /** 占满视口可用高度（自底部顶起，顶部预留吉祥物探出空间） */
   fullHeight?: boolean
+  /** 固定为视口高度的比例（0~1），如 0.9 表示 90% */
+  heightRatio?: number
   /** 允许 sheet 顶部内容溢出（如 Logo 探出圆角） */
   sheetOverflowVisible?: boolean
   backgroundColor?: string
@@ -64,6 +66,7 @@ export function BottomSheet({
   scrollable = true,
   fitContent = false,
   fullHeight = false,
+  heightRatio,
   sheetOverflowVisible = false,
   backgroundColor = SHEET.background,
   footerStyle,
@@ -133,13 +136,17 @@ export function BottomSheet({
 
   const peekOffset = Math.max(56, insets.top + 12)
   const fullSheetHeight = Math.min(AUTH_SHEET_MAX_HEIGHT, windowHeight - peekOffset)
+  const ratioSheetHeight =
+    heightRatio != null ? Math.round(windowHeight * heightRatio) : null
+
+  const useColumnLayout = fullHeight || ratioSheetHeight != null
 
   const bodyContent = scrollable ? (
     <ScrollView
       style={[
         styles.scrollArea,
         fitContent && styles.scrollAreaFitContent,
-        fullHeight && !fitContent && styles.scrollAreaFullHeight,
+        useColumnLayout && !fitContent && styles.scrollAreaFullHeight,
       ]}
       showsVerticalScrollIndicator={false}
       bounces={false}
@@ -151,7 +158,7 @@ export function BottomSheet({
       style={[
         styles.bodyArea,
         fitContent && styles.bodyAreaFitContent,
-        fullHeight && !fitContent && styles.bodyAreaFullHeight,
+        useColumnLayout && !fitContent && styles.bodyAreaFullHeight,
       ]}
     >
       {children}
@@ -169,7 +176,8 @@ export function BottomSheet({
           styles.sheet,
           fitContent && styles.sheetFitContent,
           fullHeight && { height: fullSheetHeight, maxHeight: fullSheetHeight },
-          fullHeight && styles.sheetFullHeight,
+          ratioSheetHeight != null && { height: ratioSheetHeight, maxHeight: ratioSheetHeight },
+          useColumnLayout && styles.sheetFullHeight,
           sheetOverflowVisible && styles.sheetOverflowVisible,
           { backgroundColor, paddingBottom: insets.bottom, transform: [{ translateY: slideAnim }] },
         ]}

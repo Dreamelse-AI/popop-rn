@@ -1,11 +1,18 @@
-import { dialogPageStyleSettingsAssets } from '@/shared/assets/dialog/dialog-page-style-settings'
-
 import type { ImageProps } from 'expo-image'
 
 import { loadCustomBackgrounds, type StoredCustomBackground } from './chat-background-store'
 import { resolveTosAssetUrl } from './tos-upload'
 
-export type BubbleStyleId = 'classic' | 'dark' | 'blue'
+export type BubbleStyleId = 'classic' | 'sky' | 'blue'
+
+const LEGACY_BUBBLE_STYLE_MAP: Record<string, BubbleStyleId> = {
+  dark: 'sky',
+}
+
+const LEGACY_BACKGROUND_MAP: Record<string, string> = {
+  'default-1': 'yellow',
+  'default-2': 'yellow',
+}
 
 export type ChatAtmosphereConfig = {
   backgroundId: string
@@ -37,11 +44,6 @@ export type CustomBackground = {
 
 export type BackgroundItem = PresetBackground | ImageBackground | CustomBackground
 
-export type CustomTheme = {
-  id: string
-  image: ImageAssetSource
-}
-
 export type BubbleTailVariant = 'white' | 'yellow' | 'black' | 'blue'
 
 export type BubbleStyleTokens = {
@@ -65,27 +67,8 @@ export const DEFAULT_CHAT_ATMOSPHERE: ChatAtmosphereConfig = {
 
 export const PRESET_BACKGROUNDS: BackgroundItem[] = [
   { id: 'yellow', type: 'color', color: '#fbf2d8' },
-  {
-    id: 'default-1',
-    type: 'image',
-    image: dialogPageStyleSettingsAssets.default1,
-    bkgMainColor: '#fbf2d8',
-  },
-  {
-    id: 'default-2',
-    type: 'image',
-    image: dialogPageStyleSettingsAssets.default2,
-    bkgMainColor: '#fbf2d8',
-  },
-]
-
-export const CUSTOM_THEMES: CustomTheme[] = [
-  { id: 'theme-1', image: dialogPageStyleSettingsAssets.tempImg1 },
-  { id: 'theme-2', image: dialogPageStyleSettingsAssets.tempImg2 },
-  { id: 'theme-3', image: dialogPageStyleSettingsAssets.tempImg3 },
-  { id: 'theme-4', image: dialogPageStyleSettingsAssets.tempImg4 },
-  { id: 'theme-5', image: dialogPageStyleSettingsAssets.tempImg5 },
-  { id: 'theme-6', image: dialogPageStyleSettingsAssets.tempImg6 },
+  { id: 'sky-blue', type: 'color', color: '#d7f0ff' },
+  { id: 'gray', type: 'color', color: '#f6f6f6' },
 ]
 
 export const BUBBLE_STYLE_TOKENS: Record<BubbleStyleId, BubbleStyleTokens> = {
@@ -93,14 +76,27 @@ export const BUBBLE_STYLE_TOKENS: Record<BubbleStyleId, BubbleStyleTokens> = {
     received: { bgColor: '#ffffff', tail: 'white', textColor: '#000000' },
     sent: { bgColor: '#fdeab3', tail: 'yellow', textColor: 'rgba(0,0,0,0.9)' },
   },
-  dark: {
+  sky: {
     received: { bgColor: '#ffffff', tail: 'white', textColor: '#000000' },
-    sent: { bgColor: '#000000', tail: 'black', textColor: '#ffffff' },
+    sent: { bgColor: '#d7f0ff', tail: 'blue', textColor: '#000000' },
   },
   blue: {
     received: { bgColor: '#d7f0ff', tail: 'blue', textColor: '#000000' },
     sent: { bgColor: '#fdeab3', tail: 'yellow', textColor: 'rgba(0,0,0,0.9)' },
   },
+}
+
+export function normalizeBubbleStyleId(value: unknown): BubbleStyleId {
+  if (value === 'classic' || value === 'sky' || value === 'blue') return value
+  if (typeof value === 'string' && value in LEGACY_BUBBLE_STYLE_MAP) {
+    return LEGACY_BUBBLE_STYLE_MAP[value]!
+  }
+  return DEFAULT_CHAT_ATMOSPHERE.bubbleStyleId
+}
+
+export function normalizeBackgroundId(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_CHAT_ATMOSPHERE.backgroundId
+  return LEGACY_BACKGROUND_MAP[value] ?? value
 }
 
 export function getAllBackgrounds(): BackgroundItem[] {
@@ -115,8 +111,8 @@ export function getAllBackgrounds(): BackgroundItem[] {
   return [...PRESET_BACKGROUNDS, ...customs]
 }
 
-export function getBubbleStyleTokens(bubbleStyleId: BubbleStyleId): BubbleStyleTokens {
-  return BUBBLE_STYLE_TOKENS[bubbleStyleId]
+export function getBubbleStyleTokens(bubbleStyleId: BubbleStyleId | string): BubbleStyleTokens {
+  return BUBBLE_STYLE_TOKENS[normalizeBubbleStyleId(bubbleStyleId)]
 }
 
 export function resolveImageAssetSource(image: ImageAssetSource): ImageProps['source'] {
@@ -151,7 +147,8 @@ export type ResolvedPageBackground = {
 }
 
 export function findBackground(id: string): BackgroundItem | undefined {
-  return getAllBackgrounds().find(item => item.id === id)
+  const normalizedId = normalizeBackgroundId(id)
+  return getAllBackgrounds().find(item => item.id === normalizedId)
 }
 
 export function resolvePageBackground(config: ChatAtmosphereConfig): ResolvedPageBackground {

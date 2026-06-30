@@ -7,8 +7,8 @@ import { PopImage } from '@/shared/ui/pop-image'
 import { SheetBody, SheetFooterButton, SheetHeader } from '@/shared/ui/sheet-primitives'
 
 import {
-  PERSONA_NAME_MAX,
   PERSONA_PROFILE_MAX,
+  clampPersonaNameInput,
   resolvePersonaAvatarUrl,
 } from '../lib/persona-utils'
 import type { PersonaGender } from '../types'
@@ -62,7 +62,7 @@ export function PersonaEditSheet({
     if (!values.name.trim()) return
     onSubmit({
       ...values,
-      name: values.name.trim(),
+      name: clampPersonaNameInput(values.name.trim()),
       profile: values.profile.trim(),
     })
   }
@@ -101,7 +101,7 @@ export function PersonaEditSheet({
             <TextInput
               value={values.name}
               onChangeText={text => setValues(prev => ({ ...prev, name: text }))}
-              maxLength={PERSONA_NAME_MAX}
+              onBlur={() => setValues(prev => ({ ...prev, name: clampPersonaNameInput(prev.name) }))}
               placeholder={t('persona.namePlaceholder')}
               placeholderTextColor="rgba(0,0,0,0.2)"
               style={[styles.nameInput, nameInvalid && styles.inputError]}

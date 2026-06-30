@@ -25,6 +25,7 @@ import { ChatHeader } from './chat-header'
 import { ChatInputBar, VoiceRecordingBanner, type ChatComposerInputMode } from './chat-input-bar'
 import { ChatMessageContextMenu } from './chat-message-context-menu'
 import { ChatMessageList } from './chat-message-list'
+import { ChatNewMessageHint } from './chat-new-message-hint'
 import { ChatCharacterVersionSyncDialog } from './chat-character-version-sync-dialog'
 import { ChatRollbackConfirmDialog } from './chat-rollback-confirm-dialog'
 import { ChatSettingsDrawer } from './chat-settings-drawer'
@@ -47,6 +48,9 @@ export type CharacterChatScreenProps = {
   emojiLoading: boolean
   emojiFetchFailed?: boolean
   onEmojiRetry?: () => void
+  showNewMessageHint?: boolean
+  newMessageCount?: number
+  onJumpToLatest?: () => void
   draft: string
   playingVoiceId?: string | null
   voiceRecorderPhase?: VoiceRecorderPhase
@@ -54,6 +58,7 @@ export type CharacterChatScreenProps = {
   voiceIsCancelled?: boolean
   voicePressTooShort?: boolean
   voiceCancelZone?: VoiceCancelZone
+  voiceHoldReleaseToken?: number
   voiceInterimTranscript?: string
   onBack: () => void
   onProfilePress: () => void
@@ -63,6 +68,7 @@ export type CharacterChatScreenProps = {
   onEmojiSelect: (emoji: EmojiItem) => void
   onEmojiPanelClose: () => void
   onDraftChange: (value: string) => void
+  onComposerFocusChange?: (focused: boolean) => void
   onCharacterVoicePress?: (message: Extract<ChatMessage, { type: 'voice' }>) => void
   onUserVoicePress?: (message: Extract<ChatMessage, { type: 'voice' }>) => void
   onVoiceHoldStart?: (clientY: number) => void
@@ -108,6 +114,9 @@ export function CharacterChatScreen({
   emojiLoading,
   emojiFetchFailed = false,
   onEmojiRetry,
+  showNewMessageHint = false,
+  newMessageCount = 0,
+  onJumpToLatest,
   draft,
   playingVoiceId,
   voiceRecorderPhase = 'idle',
@@ -115,6 +124,7 @@ export function CharacterChatScreen({
   voiceIsCancelled = false,
   voicePressTooShort = false,
   voiceCancelZone = 'none',
+  voiceHoldReleaseToken = 0,
   voiceInterimTranscript,
   onBack,
   onProfilePress,
@@ -124,6 +134,7 @@ export function CharacterChatScreen({
   onEmojiSelect,
   onEmojiPanelClose,
   onDraftChange,
+  onComposerFocusChange,
   onCharacterVoicePress,
   onUserVoicePress,
   onVoiceHoldStart,
@@ -237,6 +248,9 @@ export function CharacterChatScreen({
                 accessibilityLabel="收起输入"
               />
             )}
+            {showNewMessageHint && onJumpToLatest && (
+              <ChatNewMessageHint count={newMessageCount} onPress={onJumpToLatest} />
+            )}
           </>
         )}
       </View>
@@ -255,7 +269,10 @@ export function CharacterChatScreen({
           </View>
         )}
         <ChatInputBar
-          onFocusChange={setComposerFocused}
+          onFocusChange={focused => {
+            setComposerFocused(focused)
+            onComposerFocusChange?.(focused)
+          }}
           composerExpanded={composerFocused && !showEmojiPanel}
           inputMode={composerInputMode}
           onInputModeChange={setComposerInputMode}
@@ -271,6 +288,7 @@ export function CharacterChatScreen({
           onDraftChange={onDraftChange}
           voiceRecorderPhase={voiceRecorderPhase}
           voiceCancelZone={voiceCancelZone}
+          voiceHoldReleaseToken={voiceHoldReleaseToken}
           onVoiceHoldStart={onVoiceHoldStart}
           onVoiceHoldMove={onVoiceHoldMove}
           onVoiceHoldEnd={onVoiceHoldEnd}

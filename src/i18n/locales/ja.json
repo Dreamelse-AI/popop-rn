@@ -426,6 +426,8 @@
     "confirm": "確認",
     "edit": "編集",
     "save": "保存",
+    "delete": "削除",
+    "deleting": "削除中...",
     "close": "閉じる",
     "loadFailed": "プロフィールの読み込みに失敗しました",
     "retry": "再試行"
@@ -488,7 +490,7 @@
     "customTheme": "ユーザー定義テーマ",
     "viewAll": "すべて表示",
     "viewAllBackgrounds": "すべてのチャット背景を表示",
-    "confirm": "確認"
+    "confirm": "適用"
   },
   "chatModeCustomSheet": {
     "title": "ユーザー定義設定",

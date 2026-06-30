@@ -1,6 +1,14 @@
 /** 「脑内判断」随机延时 [min, max] ms */
 export const READ_DELAY_MS = { min: 5000, max: 10000 } as const;
 
+/** 聊天文本输入字数上限 */
+export const CHAT_TEXT_MAX_LENGTH = 500;
+
+/** 截断超过上限的聊天文本（用于输入、粘贴、发送前兜底） */
+export function clampChatText(value: string): string {
+  return value.slice(0, CHAT_TEXT_MAX_LENGTH);
+}
+
 /** 角色气泡间隔：delayMs = ceil(上一气泡字数 / CHARS_PER_SECOND * 1000) */
 export const CHARS_PER_SECOND = 8;
 
@@ -36,6 +44,9 @@ export const MOCK_CHAT_LATENCY_MS = 800;
 
 /** 用户语音展示时长上限（秒） */
 export const VOICE_MAX_DISPLAY_SEC = 60;
+
+/** 按住录音最长时长（毫秒），达到后自动结束 */
+export const VOICE_RECORD_MAX_DURATION_MS = VOICE_MAX_DISPLAY_SEC * 1000;
 
 /** 用户语音展示时长：charCount / 200 * 60 */
 export const VOICE_CHARS_PER_MINUTE = 200;

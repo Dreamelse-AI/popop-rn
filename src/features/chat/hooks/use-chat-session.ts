@@ -5,17 +5,15 @@ import { friendshipApi } from '@/features/friendship/api';
 import {
   getCharacterDetail,
   listCharacterPhoneChatHistory,
-  listCharacterScheduleByDay,
   listEmojiPanel,
 } from '../api/chat-api';
 import { HISTORY_PAGE_SIZE } from '../config/chat-config';
 import {
   buildEmojiDescriptionMap,
   mapCharacterDetailToChatCharacter,
-  pickCurrentSchedule,
-  scheduleToCharacterStatus,
 } from '../lib/character-adapter';
 import { flattenEmojiPanel } from '../lib/emoji-panel-utils';
+import { readEmojiPanelSession, writeEmojiPanelSession } from '../lib/emoji-panel-session';
 import { restoreFollowUpConsumed } from '../lib/follow-up-scheduler';
 import {
   clearMountedChatCharacter,
@@ -81,11 +79,13 @@ export function useChatSession(characterId: string) {
     let cancelled = false;
 
     (async () => {
+      const cachedEmojiPanel = readEmojiPanelSession();
+
       try {
         const [detailResp, historyResp, panelResult, friendshipResp] = await Promise.all([
           getCharacterDetail({ character_id: characterId, source: 'direct' }),
           listCharacterPhoneChatHistory({ character_id: characterId, limit: HISTORY_PAGE_SIZE }),
-          listEmojiPanel().catch(() => null),
+          cachedEmojiPanel ? Promise.resolve(cachedEmojiPanel) : listEmojiPanel().catch(() => null),
           friendshipApi.listFriends(),
         ]);
         if (cancelled) return;
@@ -107,23 +107,11 @@ export function useChatSession(characterId: string) {
         const emojiDescriptions = buildEmojiDescriptionMap(panelEmojis);
         setEmojiDescriptions(emojiDescriptions);
         setEmojiList(panelEmojis);
-        if (panelResult) setEmojiPanel(panelResult);
+        if (panelResult) {
+          setEmojiPanel(panelResult);
+          if (!cachedEmojiPanel) writeEmojiPanelSession(panelResult);
+        }
         setCharacter(mapCharacterDetailToChatCharacter(detailResp.character));
-
-        void listCharacterScheduleByDay({
-          character_id: characterId,
-          current_time: new Date().toISOString(),
-        })
-          .then(scheduleResp => {
-            if (cancelled) return;
-            const currentSchedule = pickCurrentSchedule(scheduleResp.schedules);
-            if (currentSchedule?.character_state) {
-              setCharacterStatus(scheduleToCharacterStatus(currentSchedule));
-            }
-          })
-          .catch(() => {
-            // 日程接口失败不影响聊天主流程
-          });
 
         // 保留态：内存里的消息/输入中即离开前的状态，不用历史覆盖。
         if (!preserveInMemory) {

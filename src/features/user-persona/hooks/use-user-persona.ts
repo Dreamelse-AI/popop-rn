@@ -10,6 +10,7 @@ import {
   PersonaAvatarAuditError,
   uploadPersonaAvatar,
 } from '../lib/persona-avatar-upload'
+import { normalizePersonaName } from '../lib/persona-utils'
 import type { PersonaGender, UserPersonaForm } from '../types'
 
 const EMPTY_FORM: UserPersonaForm = {
@@ -50,7 +51,7 @@ type UseUserPersonaResult = {
   avatarUploading: boolean
   setForm: (updater: (prev: UserPersonaForm) => UserPersonaForm) => void
   pickAvatar: () => void
-  save: () => Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string }>
+  save: () => Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string; persona?: UserPersonaItem }>
 }
 
 export function useUserPersona(
@@ -135,8 +136,9 @@ export function useUserPersona(
       .finally(() => setLoading(false))
   }, [enabled, personaId])
 
-  const save = useCallback(async (): Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string }> => {
-    if (!form.name.trim()) return { ok: false }
+  const save = useCallback(async (): Promise<{ ok: boolean; auditFailed?: boolean; personaId?: string; persona?: UserPersonaItem }> => {
+    const name = normalizePersonaName(form.name)
+    if (!name) return { ok: false }
     setSaving(true)
     try {
       let avatarUrl: StorageObject | undefined
@@ -153,7 +155,7 @@ export function useUserPersona(
       if (form.personaId) {
         const resp = await userPersonaApi.update({
           persona_id: form.personaId,
-          name: form.name.trim(),
+          name,
           gender: form.gender,
           profile: form.profile,
           avatar_url: avatarUrl,
@@ -161,11 +163,11 @@ export function useUserPersona(
         commitForm(toForm(resp.persona))
         syncMeProfileFromPersona(resp.persona)
         avatarUriRef.current = null
-        return { ok: true, personaId: resp.persona.persona_id }
+        return { ok: true, personaId: resp.persona.persona_id, persona: resp.persona }
       }
 
       const resp = await userPersonaApi.create({
-        name: form.name.trim(),
+        name,
         gender: form.gender,
         profile: form.profile,
         avatar_url: avatarUrl,
@@ -173,7 +175,7 @@ export function useUserPersona(
       commitForm(toForm(resp.persona))
       syncMeProfileFromPersona(resp.persona)
       avatarUriRef.current = null
-      return { ok: true, personaId: resp.persona.persona_id }
+      return { ok: true, personaId: resp.persona.persona_id, persona: resp.persona }
     } catch (e) {
       console.error('[useUserPersona] save failed:', e)
       if (e instanceof PersonaAvatarAuditError) {
