@@ -199,6 +199,7 @@ export function CharacterChatScreen({
       <ChatHeader
         name={character.name}
         characterAka={characterAka}
+        isTyping={isTyping}
         onBack={onBack}
         onProfilePress={onProfilePress}
         onMenuPress={() => setSettingsOpen(true)}

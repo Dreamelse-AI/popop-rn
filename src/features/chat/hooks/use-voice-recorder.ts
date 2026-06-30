@@ -25,7 +25,6 @@ import {
   isSpeechRecognitionSupported,
   requestSpeechRecognitionPermissions,
   resolveSpeechRecognitionLang,
-  transcribeAudioFile,
 } from '../lib/speech-recognition'
 
 export type VoiceRecorderPhase = 'idle' | 'requesting' | 'recording' | 'processing'
@@ -86,7 +85,9 @@ function canUseSpeechRecording(): boolean {
 
 export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): VoiceRecorderControls {
   const fallbackRecorder = useAudioRecorder(FALLBACK_RECORDING_OPTIONS)
-  const useSpeechRecording = canUseSpeechRecording()
+  // 统一走后端 ASR（/file/asr_recognize）：仅用 expo-audio 录制 wav，不依赖 on-device 识别。
+  // on-device 识别在模拟器上会报 audio-capture，且后端 ASR 不需要本地转写结果。
+  const useSpeechRecording = false
 
   const onMaxDurationReachedRef = useRef(options.onMaxDurationReached)
   onMaxDurationReachedRef.current = options.onMaxDurationReached
@@ -460,16 +461,9 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): VoiceRe
         return null
       }
 
-      let transcript = ''
-      if (speechRecognitionAvailable) {
-        const speechGranted = await requestSpeechRecognitionPermissions()
-        if (speechGranted) {
-          transcript = await transcribeAudioFile(uri, {
-            lang: resolveSpeechRecognitionLang(),
-            onInterim: updateInterim,
-          })
-        }
-      }
+      // 不在本地做 on-device 转写：交由后端 /file/asr_recognize 识别。
+      // 本地识别在模拟器/部分机型会失败且会增加松手后的延迟。
+      const transcript = ''
 
       cancelledRef.current = false
       setIsCancelled(false)
@@ -486,8 +480,6 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): VoiceRe
     resetRecorder,
     setCancelZoneSafe,
     setPhaseSafe,
-    speechRecognitionAvailable,
-    updateInterim,
   ])
 
   const finishRecording = useCallback(async (): Promise<VoiceRecorderResult | null> => {

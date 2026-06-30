@@ -9,6 +9,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     }
   | {
@@ -21,6 +22,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     }
   | {
@@ -31,6 +33,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     }
   | {
@@ -45,6 +48,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     }
   | {
@@ -61,6 +65,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     }
   | {
@@ -75,6 +80,7 @@ export type ChatMessage =
       at: number;
       serverMessageId?: string;
       cursor?: string;
+      displayTime?: string;
       status?: 'pending' | 'failed';
     };
 

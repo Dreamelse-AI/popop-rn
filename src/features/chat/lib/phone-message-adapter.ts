@@ -1,11 +1,11 @@
-import type { PhoneMessageForward, PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents';
+import type { PhoneForwardItem, PhoneMessageForward, PhoneMessageInput, PhoneMessageOutput } from '@/generated/arca_apiComponents';
 import { characterAssets } from '@/shared/assets/character';
 import { randomUUID } from '@/shared/lib/random-uuid';
 
 import { FOLLOW_UP_PROMPT, RE_FRIEND_GREETING_PROMPT } from '../config/chat-config';
 import { getEmojiLabel } from './character-adapter';
 import { splitTextBubbles } from './text-bubble-split';
-import { formatMessageTimestamp, resolvePhoneMessageListTime, shouldInsertTimestamp } from './timestamp-format';
+import { formatMessageTimestamp, resolvePhoneMessageAtMs, resolvePhoneMessageDisplayTime, resolvePhoneMessageListTime, shouldInsertTimestamp } from './timestamp-format';
 import { userVoiceDisplayDurationSec } from './voice-duration';
 import type { ChatMessage } from '../model/types';
 
@@ -160,6 +160,85 @@ function resolvePhoneMessageForward(output: PhoneMessageOutput) {
   );
 }
 
+function forwardItemVoicePreviewDurationSec(item: PhoneForwardItem): number {
+  const durationMs = item.voice?.voice?.duration;
+  if (durationMs && durationMs > 0) return Math.max(1, Math.ceil(durationMs / 1000));
+  return userVoiceDisplayDurationSec(item.voice?.text?.length ?? 0);
+}
+
+function formatPhoneForwardItemPreview(item: PhoneForwardItem): string {
+  if (item.msg_direction === 'system') {
+    return resolvePhoneMessageText(item.text);
+  }
+
+  if (item.msg_type === 'text') {
+    return resolvePhoneMessageText(item.text);
+  }
+
+  const outputText = resolvePhoneMessageText(item.text);
+  if (outputText) return outputText;
+
+  switch (item.msg_type) {
+    case 'voice': {
+      const transcript = item.voice?.text?.trim();
+      if (transcript) return transcript;
+      return `[语音] ${forwardItemVoicePreviewDurationSec(item)}"`;
+    }
+    case 'image':
+      return '[图片]';
+    case 'emoji': {
+      if (item.emoji?.media) {
+        const label = getEmojiLabel({
+          emoji_id: item.emoji.emoji_id ?? '',
+          media: item.emoji.media,
+        });
+        if (label !== '表情包') return label;
+      }
+      return '[表情]';
+    }
+    case 'gift':
+      return item.gift?.name ? `[礼物] ${item.gift.name}` : '[礼物]';
+    case 'invitation':
+      return item.invitation?.title ?? item.invitation?.description ?? '[邀约]';
+    case 'html_file': {
+      const media = item.html_file?.html_file;
+      const name = media?.name?.trim();
+      if (name) return `[链接] ${name}`;
+      const desc = resolveHtmlFileDescription(media);
+      return desc ? `[链接] ${desc}` : '[链接]';
+    }
+    case 'forward':
+      return item.forward ? formatPhoneForwardPreview(item.forward) : '[转发]';
+    default:
+      return '';
+  }
+}
+
+function formatPhoneForwardItemSnippet(item: PhoneForwardItem): string {
+  const content = formatPhoneForwardItemPreview(item);
+  if (!content) return '';
+  const senderName = item.sender_name?.trim();
+  return senderName ? `${senderName}: ${content}` : content;
+}
+
+function formatPhoneForwardPreview(forward: PhoneMessageForward): string {
+  const summary = forward.summary?.trim();
+  if (summary) return summary;
+
+  const title = forward.title?.trim();
+  if (title) return title;
+
+  const source = forward.source?.trim();
+  if (source) return `[转发] ${source}`;
+
+  const snippets = (forward.items ?? [])
+    .map(formatPhoneForwardItemSnippet)
+    .filter(Boolean);
+  if (snippets.length > 0) return snippets.join(' ');
+
+  return '[转发]';
+}
+
 function resolveHtmlFileDescription(media?: { text?: string; desc?: string }): string {
   if (!media) return '';
   return media.text?.trim() || media.desc?.trim() || '';
@@ -218,8 +297,8 @@ export function formatPhoneMessagePreview(message: PhoneMessageOutput): string {
       return desc ? `[链接] ${desc}` : '[链接]';
     }
     case 'forward': {
-      const forward = message.chat_forward ?? message.media_forward;
-      return forward?.summary ?? forward?.title ?? '[转发]';
+      const forward = resolvePhoneMessageForward(message);
+      return forward ? formatPhoneForwardPreview(forward) : '[转发]';
     }
     default:
       return '';
@@ -281,9 +360,11 @@ export function expandPhoneMessageOutput(
   options: ExpandOptions = {},
 ): ChatMessage[] {
   const { emojiDescriptions, splitCharacterText = true } = options;
-  const at = output.created_at ?? Date.now();
+  const at = resolvePhoneMessageAtMs(output);
+  const displayTime = resolvePhoneMessageDisplayTime(output);
   const base = {
     at,
+    displayTime,
     serverMessageId: output.message_id,
     cursor: output.cursor,
   };
@@ -571,7 +652,8 @@ export function applyCurrentMessages(
           serverMsg.is_failed && !options?.ignoreServerFailed ? 'failed' : undefined,
         serverMessageId: serverMsg.message_id,
         cursor: serverMsg.cursor,
-        at: serverMsg.created_at ?? existing.at,
+        at: resolvePhoneMessageAtMs(serverMsg, existing.at),
+        displayTime: resolvePhoneMessageDisplayTime(serverMsg) ?? existing.displayTime,
         ...(existing.type === 'voice'
           ? {
               durationSec: userVoiceDurationSec(serverMsg),
@@ -650,10 +732,11 @@ export function injectTimestampSeparators(messages: ChatMessage[]): ChatMessage[
     }
 
     if (shouldInsertTimestamp(lastAt, message.at)) {
+      const displayTime = 'displayTime' in message ? message.displayTime : undefined;
       result.push({
         id: `ts-${message.at}-${message.id}`,
         type: 'timestamp',
-        text: formatMessageTimestamp(message.at),
+        text: displayTime ?? formatMessageTimestamp(message.at),
         at: message.at,
       });
     }
