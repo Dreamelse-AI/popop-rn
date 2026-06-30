@@ -1,5 +1,6 @@
 import type { AccountRegion, AgreementKey, AuthProvider, KnownAccountRegion } from './auth-types';
 import { getLocales } from 'expo-localization';
+import { Platform } from 'react-native';
 import { env } from '@/shared/env';
 
 /** region 无法从 IP / 设备解析时的最终回退（美国英语） */
