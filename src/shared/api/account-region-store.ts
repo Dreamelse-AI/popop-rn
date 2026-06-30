@@ -7,7 +7,6 @@ import {
   mapCountryCodeToAccountRegion,
 } from '@/features/auth/region-config'
 import { API_BASE, IP_REGION_PATH } from '@/shared/api/api-base'
-import { buildLocaleHeaders } from '@/shared/api/locale-headers'
 import { buildRequestSignHeaders } from '@/shared/api/request-sign'
 import i18n from '@/i18n'
 import { storage } from '@/shared/storage'
@@ -50,9 +49,23 @@ export function setAccountRegion(region: AccountRegion): void {
 async function fetchIPRegionIso(): Promise<string | null | 'empty'> {
   const method = 'GET'
   const bodyString = ''
+
+  const accountRegion = getAccountRegion()
+  const storedUiLanguage = readStoredUiLanguage()
+  const language = storedUiLanguage ?? getLanguageForRegion(accountRegion)
+
+  const xRegion = accountRegion === 'OTHER' ? 'US' : accountRegion.toUpperCase()
+  const normalized = language.trim().toLowerCase()
+  let xLanguage = 'en'
+  if (normalized === 'ja' || normalized.startsWith('ja-')) xLanguage = 'ja'
+  else if (normalized === 'ko' || normalized.startsWith('ko-')) xLanguage = 'ko'
+  else if (normalized === 'zh-hant' || normalized.startsWith('zh-hant') || normalized === 'zh-tw' || normalized === 'zh-hk') xLanguage = 'zh-Hant'
+  else if (normalized === 'zh-hans' || normalized.startsWith('zh-hans') || normalized === 'zh-cn' || normalized === 'zh') xLanguage = 'zh-Hans'
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...buildLocaleHeaders(),
+    'X-Language': xLanguage,
+    'X-Region': xRegion,
     ...(await buildRequestSignHeaders(method, IP_REGION_PATH, bodyString)),
   }
 

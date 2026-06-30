@@ -116,6 +116,15 @@ async function readUploadBody(fileUri: string): Promise<Uint8Array> {
   return new File(fileUri).bytes()
 }
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+function getOSS() {
+  return require('ali-oss') as { new (config: unknown): OSSClient; Buffer: typeof Buffer }
+}
+
+type OSSClient = {
+  put(name: string, body: unknown, options?: unknown): Promise<{ res?: { headers?: Record<string, string> } }>
+}
+
 function getOSSClient(config: {
   accessKeyId: string
   accessKeySecret: string
@@ -124,7 +133,7 @@ function getOSSClient(config: {
   endpoint: string
   secure: boolean
 }) {
-  const OSS = require('ali-oss')
+  const OSS = getOSS()
   return new OSS(config)
 }
 
@@ -154,14 +163,16 @@ async function uploadToTos(
   })
 
   const fileBytes = await readUploadBody(fileUri)
-  const uploadBody = fileBytes.buffer.slice(
+  const OSSBuffer = getOSS().Buffer
+  const uploadBody = OSSBuffer.from(
+    fileBytes.buffer,
     fileBytes.byteOffset,
-    fileBytes.byteOffset + fileBytes.byteLength,
-  ) as ArrayBuffer
+    fileBytes.byteLength,
+  )
 
   let result: { res?: { headers?: Record<string, string> } }
   try {
-    result = await client.put(objectKey, new Blob([uploadBody], { type: contentType }), {
+    result = await client.put(objectKey, uploadBody, {
       headers: { 'Content-Type': contentType },
     })
   } catch (error) {
