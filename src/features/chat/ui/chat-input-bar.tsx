@@ -7,14 +7,17 @@ import { View,
   StyleSheet,
   Platform } from 'react-native'
 import { Image } from 'expo-image'
+import LottieView from 'lottie-react-native'
+import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { cdnImage } from '@/shared/lib/cdn'
+
+const voiceRecordingAnimation = require('@/shared/assets/dialog/voice.json')
 
 const IconPlus = cdnImage('assets/dialog/dialog-plus.png')
 const IconEmoji = cdnImage('assets/dialog/dialog-emoji.png')
 const IconBlackEmoji = cdnImage('assets/dialog/dialog-black-emoji.png')
 const IconVoice = cdnImage('assets/dialog/dialog-voice.png')
-const IconVoiceWave = cdnImage('assets/dialog/dialog-message-voice-wave.png')
 const IconKeyboard = cdnImage('assets/dialog/dialog-keyboard.png')
 
 import type { VoiceCancelZone, VoiceRecorderPhase } from '../hooks/use-voice-recorder'
@@ -63,6 +66,7 @@ export function ChatInputBar({
   onVoiceHoldEnd,
 }: ChatInputBarProps) {
   const insets = useSafeAreaInsets()
+  const { t } = useTranslation()
   const [keyboardExpanded, setKeyboardExpanded] = useState(false)
   const [inputFocused, setInputFocused] = useState(false)
   const [voiceHolding, setVoiceHolding] = useState(false)
@@ -269,7 +273,7 @@ export function ChatInputBar({
                 styles.keyboardInput,
                 !inputFocused && !text && styles.keyboardInputEmpty,
               ]}
-              placeholder="自由输入…"
+              placeholder={t('chatInput.placeholder')}
               placeholderTextColor="rgba(0,0,0,0.3)"
               returnKeyType="send"
               blurOnSubmit={false}
@@ -402,7 +406,12 @@ function VoiceHoldZone({
         isCancelUi ? (
           <Text style={styles.voiceHoldLabelCancel}>{label}</Text>
         ) : (
-          <Image source={{ uri: IconVoiceWave }} style={{width: 44, height: 26}} />
+          <LottieView
+            source={voiceRecordingAnimation}
+            autoPlay
+            loop
+            style={styles.voiceHoldLottie}
+          />
         )
       ) : (
         <Text style={styles.voiceHoldLabel}>{label}</Text>
@@ -499,6 +508,10 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  voiceHoldLottie: {
+    width: 44,
+    height: 26,
   },
   voiceHoldLabel: {
     fontSize: 16,

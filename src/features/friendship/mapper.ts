@@ -12,15 +12,35 @@ import type {
   MessageConversation,
   MessageScene,
 } from '@/pages/home/messages/types';
+import type { PinnedCharacterItem } from '@/pages/home/messages/messages-pinned-row';
 
-export function mapFriendshipToCharacterListItem(friend: FriendshipBasicInfo): CharacterListItem {
+export function mapFriendshipToCharacterListItem(
+  friend: FriendshipBasicInfo,
+  pinned = false,
+): CharacterListItem {
   return {
     id: friend.character_id,
     name: friend.name ?? friend.aka ?? '',
     avatar: friend.avatar?.url ?? '',
-    pinned: (friend.pinned_at ?? 0) > 0,
+    pinned,
     unread: (friend.unread_count ?? 0) > 0,
   };
+}
+
+export function mapFriendshipToPinnedCharacter(friend: FriendshipBasicInfo): PinnedCharacterItem {
+  return {
+    id: friend.character_id,
+    name: friend.name ?? friend.aka ?? '',
+    avatar: friend.avatar?.url ?? '',
+    unread: (friend.unread_count ?? 0) > 0,
+    preview: formatPinnedPreview(friend.latest_messages),
+    hasUnreadMessage: hasUnreadLatestPhoneMessage(friend.latest_messages),
+  };
+}
+
+function formatPinnedPreview(messages?: FriendshipBasicInfo['latest_messages']): string {
+  const latest = pickLatestPhoneMessage(messages);
+  return latest ? formatPhoneMessagePreview(latest) : '';
 }
 
 export function mapFriendshipToConversation(friend: FriendshipBasicInfo): MessageConversation {
@@ -40,7 +60,7 @@ export function mapFriendshipToConversation(friend: FriendshipBasicInfo): Messag
 }
 
 export function mapFriendshipList(resp: ListFriendshipResp): CharacterListItem[] {
-  return resp.friends.map(mapFriendshipToCharacterListItem);
+  return resp.friends.map(friend => mapFriendshipToCharacterListItem(friend));
 }
 
 export function mapFriendshipConversations(resp: ListFriendshipResp): MessageConversation[] {

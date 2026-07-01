@@ -39,6 +39,7 @@ export function MessagesPage({
   const {
     items: characterListItems,
     conversations,
+    pinnedItems,
     loading,
     error,
     pinFriend,
@@ -52,25 +53,7 @@ export function MessagesPage({
     void refresh()
   }, [hasToken, isActive, refresh])
 
-  const pinnedCharacters = useMemo(
-    () => {
-      const conversationById = new Map(conversations.map(item => [item.id, item]))
-      return characterListItems
-        .filter(item => item.pinned)
-        .map(item => {
-          const conversation = conversationById.get(item.id)
-          return {
-            id: item.id,
-            name: item.name,
-            avatar: item.avatar,
-            unread: item.unread,
-            preview: conversation?.preview ?? '',
-            hasUnreadMessage: conversation?.hasUnreadMessage ?? false,
-          }
-        })
-    },
-    [characterListItems, conversations],
-  )
+  const pinnedCharacters = pinnedItems
 
   const pinnedCharacterIds = useMemo(
     () => pinnedCharacters.map(item => item.id),

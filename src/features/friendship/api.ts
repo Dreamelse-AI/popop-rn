@@ -2,6 +2,7 @@ import type { AddFriendResp, UpdateFriendSaveVersionResp } from '@/generated';
 import {
   addFriend,
   listFriendship,
+  listPinnedFriendship,
   pinCharacter,
   removeFriend,
   unpinCharacter,
@@ -15,6 +16,12 @@ import { applyReFriendHandoff } from '@/features/friendship/lib/re-friend-handof
 
 export const friendshipApi = {
   listFriends: (limit = 50) => listFriendship({ limit }),
+
+  /** 置顶角色一次性全量返回，无分页。 */
+  listPinnedFriends: ({ keyword }: { keyword?: string } = {}) =>
+    listPinnedFriendship({
+      ...(keyword ? { keyword } : {}),
+    }),
 
   addFriend: async (characterId: string): Promise<AddFriendResp> => {
     const resp = USE_MOCK

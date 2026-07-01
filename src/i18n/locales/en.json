@@ -432,6 +432,13 @@
     "loadFailed": "Failed to load profiles",
     "retry": "Retry"
   },
+  "chatInput": {
+    "placeholder": "Type a message…"
+  },
+  "chat": {
+    "sendFailed": "Failed to send. Please try again later.",
+    "sensitiveContent": "Content contains sensitive information."
+  },
   "chatSettings": {
     "title": "Chat Settings",
     "close": "Close chat settings",

@@ -432,6 +432,13 @@
     "loadFailed": "프로필을 불러오지 못했습니다",
     "retry": "다시 시도"
   },
+  "chatInput": {
+    "placeholder": "메시지를 입력하세요…"
+  },
+  "chat": {
+    "sendFailed": "전송에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    "sensitiveContent": "콘텐츠에 민감한 정보가 포함되어 있습니다."
+  },
   "chatSettings": {
     "title": "채팅 설정",
     "close": "채팅 설정 닫기",

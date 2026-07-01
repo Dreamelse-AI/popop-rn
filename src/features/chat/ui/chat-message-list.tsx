@@ -12,6 +12,7 @@ import type { ChatMessage } from '../model/types'
 import { BubbleTail } from './bubble-tail'
 import { ChatTypingIndicator } from './chat-typing-indicator'
 import { ShareCardBubble } from './share-card-bubble'
+import { VoicePlayingIcon } from './voice-playing-icon'
 
 const IconVoiceReceive = cdnImage('assets/dialog/dialog-message-voice-receive.png')
 const IconVoiceSend = cdnImage('assets/dialog/dialog-message-voice-send.png')
@@ -425,7 +426,11 @@ function CharacterVoiceBubble({ avatar, duration, transcript, transcriptRevealed
       <View style={styles.characterVoiceColumn}>
         <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, styles.characterVoiceBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
           <View style={styles.voiceContent}>
-            <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
+            {isPlaying ? (
+              <VoicePlayingIcon isPlaying size={20} color={received.textColor} />
+            ) : (
+              <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
+            )}
             <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
           </View>
           <BubbleTail variant={received.tail} side="left" />
