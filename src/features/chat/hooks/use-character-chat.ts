@@ -50,10 +50,10 @@ export function useCharacterChat(characterId: string, actions: CharacterChatActi
     onSendFailed: error => {
       if (isChatContentAuditError(error)) {
         const message = error.message.trim();
-        showToast(message || '内容包含敏感信息');
+        showToast(message || t('chat.sensitiveContent'));
         return;
       }
-      showToast('发送失败，请稍后重试');
+      showToast(t('chat.sendFailed'));
     },
   });
   useMessagePolling(

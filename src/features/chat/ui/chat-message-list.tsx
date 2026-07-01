@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type RefObject } from 'react'
-import { View, Text, Pressable, FlatList, StyleSheet, type ListRenderItemInfo } from 'react-native'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { View, Text, Pressable, FlatList, StyleSheet, Animated, Easing, type ListRenderItemInfo } from 'react-native'
 import { Image, type ImageLoadEventData } from 'expo-image'
 import { cdnImage } from '@/shared/lib/cdn'
 import { normalizeAssetUrl } from '@/shared/lib/normalize-asset-url'
@@ -12,6 +12,7 @@ import type { ChatMessage } from '../model/types'
 import { BubbleTail } from './bubble-tail'
 import { ChatTypingIndicator } from './chat-typing-indicator'
 import { ShareCardBubble } from './share-card-bubble'
+import { VoicePlayingIcon } from './voice-playing-icon'
 
 const IconVoiceReceive = cdnImage('assets/dialog/dialog-message-voice-receive.png')
 const IconVoiceSend = cdnImage('assets/dialog/dialog-message-voice-send.png')
@@ -20,6 +21,38 @@ const IconWarning = cdnImage('assets/dialog/dialog-warning.png')
 
 const CHAT_IMAGE_MAX_WIDTH = 240
 const CHAT_IMAGE_MAX_HEIGHT = 256
+
+function WaitingSpinner() {
+  const spinValue = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    spinValue.setValue(0)
+    const anim = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    )
+    anim.start()
+    return () => {
+      anim.stop()
+      spinValue.setValue(0)
+    }
+  }, [spinValue])
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  })
+
+  return (
+    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+      <Image source={{ uri: IconWaiting }} style={{ width: 24, height: 24 }} />
+    </Animated.View>
+  )
+}
 
 function fitChatImageSize(width: number, height: number) {
   const scale = Math.min(CHAT_IMAGE_MAX_WIDTH / width, CHAT_IMAGE_MAX_HEIGHT / height, 1)
@@ -290,7 +323,7 @@ function UserTextBubble({ text, status, bubbleStyle, onFailedPress }: { text: st
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
+      {status === 'pending' && <WaitingSpinner />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
           <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
@@ -320,7 +353,7 @@ function CharacterEmojiBubble({ avatar, url, onAvatarPress }: { avatar: string; 
 function UserEmojiBubble({ url, status, onFailedPress }: { url: string; status?: string; onFailedPress?: () => void }) {
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
+      {status === 'pending' && <WaitingSpinner />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
           <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
@@ -369,7 +402,7 @@ function UserImageBubble({
 }) {
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
+      {status === 'pending' && <WaitingSpinner />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
           <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
@@ -393,7 +426,11 @@ function CharacterVoiceBubble({ avatar, duration, transcript, transcriptRevealed
       <View style={styles.characterVoiceColumn}>
         <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.receivedBubble, styles.characterVoiceBubble, { backgroundColor: received.bgColor, opacity: isPlaying ? 0.8 : 1 }]}>
           <View style={styles.voiceContent}>
-            <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
+            {isPlaying ? (
+              <VoicePlayingIcon isPlaying size={20} color={received.textColor} />
+            ) : (
+              <Image source={{ uri: IconVoiceReceive }} style={{width: 20, height: 20}} />
+            )}
             <Text style={[styles.voiceDuration, { color: received.textColor }]}>{duration}"</Text>
           </View>
           <BubbleTail variant={received.tail} side="left" />
@@ -412,7 +449,7 @@ function UserVoiceBubble({ duration, status, bubbleStyle, onPress, onLongPress, 
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{width: 24, height: 24}} />}
+      {status === 'pending' && <WaitingSpinner />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
           <Image source={{ uri: IconWarning }} style={{width: 24, height: 24}} />
@@ -488,7 +525,7 @@ function UserLinkCardBubble({
   const { sent } = bubbleStyle
   return (
     <View style={styles.userRow}>
-      {status === 'pending' && <Image source={{ uri: IconWaiting }} style={{ width: 24, height: 24 }} />}
+      {status === 'pending' && <WaitingSpinner />}
       {status === 'failed' && (
         <Pressable onPress={onFailedPress}>
           <Image source={{ uri: IconWarning }} style={{ width: 24, height: 24 }} />

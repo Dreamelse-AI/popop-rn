@@ -432,6 +432,13 @@
     "loadFailed": "プロフィールの読み込みに失敗しました",
     "retry": "再試行"
   },
+  "chatInput": {
+    "placeholder": "メッセージを入力…"
+  },
+  "chat": {
+    "sendFailed": "送信に失敗しました。しばらくしてから再試行してください。",
+    "sensitiveContent": "コンテンツに機密情報が含まれています。"
+  },
   "chatSettings": {
     "title": "チャット設定",
     "close": "チャット設定を閉じる",

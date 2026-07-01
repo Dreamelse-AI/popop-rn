@@ -9,6 +9,7 @@ const IconMenu = cdnImage('assets/dialog/dialog-topright-back.png')
 type ChatHeaderProps = {
   name: string
   characterAka: string
+  isTyping?: boolean
   onBack: () => void
   onProfilePress?: () => void
   onMenuPress?: () => void
@@ -17,6 +18,7 @@ type ChatHeaderProps = {
 export function ChatHeader({
   name,
   characterAka,
+  isTyping = false,
   onBack,
   onProfilePress,
   onMenuPress,
@@ -31,15 +33,21 @@ export function ChatHeader({
         </Pressable>
 
         <View style={styles.nameRow}>
-          <Pressable onPress={onProfilePress}>
-            <Text style={styles.name} numberOfLines={1}>{name}</Text>
-          </Pressable>
+          {isTyping ? (
+            <Text style={styles.typing} numberOfLines={1}>正在输入中</Text>
+          ) : (
+            <>
+              <Pressable onPress={onProfilePress}>
+                <Text style={styles.name} numberOfLines={1}>{name}</Text>
+              </Pressable>
 
-          {characterAka ? (
-            <View style={styles.akaBadge}>
-              <Text style={styles.akaText} numberOfLines={1}>{characterAka}</Text>
-            </View>
-          ) : null}
+              {characterAka ? (
+                <View style={styles.akaBadge}>
+                  <Text style={styles.akaText} numberOfLines={1}>{characterAka}</Text>
+                </View>
+              ) : null}
+            </>
+          )}
         </View>
       </View>
 
@@ -82,6 +90,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontFamily: 'Black Han Sans',
     color: '#000000',
+    flexShrink: 1,
+  },
+  typing: {
+    fontSize: 16,
+    lineHeight: 20,
+    paddingTop: 2,
+    fontWeight: '500',
+    color: 'rgba(0, 0, 0, 0.5)',
     flexShrink: 1,
   },
   akaBadge: {

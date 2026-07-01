@@ -432,6 +432,13 @@
     "loadFailed": "加载自设失败",
     "retry": "重试"
   },
+  "chatInput": {
+    "placeholder": "自由输入…"
+  },
+  "chat": {
+    "sendFailed": "发送失败，请稍后重试",
+    "sensitiveContent": "内容包含敏感信息"
+  },
   "chatSettings": {
     "title": "聊天设置",
     "close": "关闭聊天设置",
