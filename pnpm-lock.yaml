@@ -13,6 +13,9 @@ importers:
 
   .:
     dependencies:
+      '@invertase/react-native-apple-authentication':
+        specifier: ^2.5.1
+        version: 2.5.1
       '@react-native-google-signin/google-signin':
         specifier: ^16.1.2
         version: 16.1.2(patch_hash=7a82ee0d8c8611a252c6d6ecfd228eaa2ee9a1c9a663060e92e97e76ad4196b7)(expo@56.0.11)(react-native@0.85.3(patch_hash=b0a4cdca3888acb1fa78426a841852039078965448261de702d92bf59ffa3e5b)(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -979,6 +982,10 @@ packages:
     engines: {node: '>=20.9.0'}
     cpu: [x64]
     os: [win32]
+
+  '@invertase/react-native-apple-authentication@2.5.1':
+    resolution: {integrity: sha512-KPKKc0wtRYpH4J0RkDfHzoKSZ+dYPEHmCXhpPdgHsT2MbK5AIkW1cYurjhAgev/kL7nOHFmWITjY1At5WhFEMQ==}
+    engines: {node: '>=14'}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -5558,6 +5565,8 @@ snapshots:
 
   '@img/sharp-win32-x64@0.35.1':
     optional: true
+
+  '@invertase/react-native-apple-authentication@2.5.1': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:

@@ -106,6 +106,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       projectId: '7c4a5581-8a44-4d7f-b66b-9bd954d9b38a',
     },
     apiBaseUrl: process.env.API_BASE_URL ?? 'https://api.popop.dev',
+    /** 与 web 端 window.location.origin 对应，用于拼 Apple Android redirect_uri */
+    appOrigin: process.env.APP_ORIGIN ?? 'https://test.popop.ai',
+    appleAndroidClientId: process.env.APPLE_ANDROID_CLIENT_ID ?? 'com.dreamelse.arca.web',
     apiSignSecret: process.env.API_SIGN_SECRET ?? 'sk-ios-bG9jYWxfc2VjcmV0X2tleQ',
     apiAppId: process.env.API_APP_ID ?? 'belike_ios',
     devAuthToken: process.env.DEV_AUTH_TOKEN ?? '',

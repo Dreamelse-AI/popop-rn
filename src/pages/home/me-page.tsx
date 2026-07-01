@@ -11,7 +11,7 @@ import { useAppTerms } from '@/features/auth/hooks/use-app-terms'
 import { apiClient } from '@/shared/api/api-client'
 import { waitForAccountRegion } from '@/shared/api/account-region-store'
 import type { AccountRegion } from '@/features/auth/auth-types'
-import { deregister, getUserInfo, updateUserInfo } from '@/generated/arca_api'
+import { getUserInfo, updateUserInfo } from '@/generated/arca_api'
 import { openRecharge, refreshWallet, showGlobalToast, WalletBalanceCard } from '@/shared/wallet'
 import { CenterDialog } from '@/shared/ui/center-dialog'
 import { PopImage } from '@/shared/ui/pop-image'
@@ -225,9 +225,8 @@ export function MePage({ isActive = true }: MePageProps) {
   }, [isActive])
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
+
+
   const [showLangPicker, setShowLangPicker] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
@@ -276,28 +275,11 @@ export function MePage({ isActive = true }: MePageProps) {
     navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
   }
 
-  const handleDeleteAccount = async () => {
-    if (deleting) return
-    setDeleting(true)
-    setDeleteError('')
-    try {
-      await deregister()
-      apiClient.setToken(null)
-      logout()
-      navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
-    } catch (e) {
-      console.error('[MePage] deregister failed:', e)
-      setDeleteError(t('me.deleteAccountFailed'))
-    } finally {
-      setDeleting(false)
-    }
-  }
 
   const menuItems: MenuItem[] = [
     { emoji: '🎁', label: t('me.inviteFriends'), onPress: () => setShowInvite(true) },
     { emoji: '', label: t('me.about'), onPress: () => setShowAbout(true) },
     { emoji: '🌍', label: t('me.language'), trailing: currentLangLabel, onPress: () => setShowLangPicker(true) },
-    { emoji: '🗑', label: t('me.deleteAccount'), onPress: () => { setDeleteError(''); setShowDeleteModal(true) } },
   ]
 
   return (
@@ -365,33 +347,6 @@ export function MePage({ isActive = true }: MePageProps) {
             <Text style={styles.dialogCancelText}>{t('me.cancel')}</Text>
           </Pressable>
           <Pressable style={styles.dialogConfirmBtn} onPress={handleLogout}>
-            <Text style={styles.dialogConfirmText}>{t('me.confirm')}</Text>
-          </Pressable>
-        </View>
-      </CenterDialog>
-
-      <CenterDialog
-        open={showDeleteModal}
-        onClose={() => { if (!deleting) setShowDeleteModal(false) }}
-      >
-        <View style={styles.dialogContent}>
-          <Text style={styles.dialogTitle}>{t('me.deleteAccountConfirmTitle')}</Text>
-          <Text style={styles.dialogMessage}>{t('me.deleteAccountConfirmMessage')}</Text>
-          {deleteError ? <Text style={styles.dialogError}>{deleteError}</Text> : null}
-        </View>
-        <View style={styles.dialogActions}>
-          <Pressable
-            style={[styles.dialogCancelBtn, deleting && styles.disabledBtn]}
-            onPress={() => setShowDeleteModal(false)}
-            disabled={deleting}
-          >
-            <Text style={styles.dialogCancelText}>{t('me.cancel')}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.dialogConfirmBtn, deleting && styles.disabledBtn]}
-            onPress={() => void handleDeleteAccount()}
-            disabled={deleting}
-          >
             <Text style={styles.dialogConfirmText}>{t('me.confirm')}</Text>
           </Pressable>
         </View>

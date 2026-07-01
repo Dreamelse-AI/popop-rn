@@ -1,16 +1,11 @@
 import { useCallback } from 'react'
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
-import * as Crypto from 'expo-crypto'
+import { appleAuthAndroid } from '@invertase/react-native-apple-authentication'
 import { authApi } from '../auth-api'
 import type { AuthResponse } from '../auth-types'
-
-/** 生成原始随机 nonce（hex 字符串）。与 Google 登录一致：原样写入 id_token 的 nonce claim，
- *  并把同一个原始值发往后端比对（后端不做哈希，直接比对 nonce == token.nonce_claim）。 */
-function generateNonce(length = 32): string {
-  const bytes = Crypto.getRandomBytes(length)
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-}
+import { env } from '@/shared/env'
+import { generateNonce, sha256Hash } from '../utils/oauth-utils'
 
 /**
  * Apple 登录原生面板会让 app 短暂进入非 active 状态，
@@ -34,34 +29,79 @@ function waitForAppActive(timeoutMs = 3000): Promise<void> {
   })
 }
 
+async function loginIOS(): Promise<AuthResponse> {
+  const isAvailable = await AppleAuthentication.isAvailableAsync()
+  if (!isAvailable) {
+    throw new Error('Apple Sign In is not available on this device')
+  }
+
+  const nonce = generateNonce()
+
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+    nonce,
+  })
+
+  const idToken = credential.identityToken
+  if (!idToken) {
+    throw new Error('Apple login failed: no identity_token received')
+  }
+
+  await waitForAppActive()
+
+  return authApi.createOAuthSession('apple', {
+    idToken,
+    nonce,
+  })
+}
+
+async function loginAndroid(): Promise<AuthResponse> {
+  if (!appleAuthAndroid.isSupported) {
+    throw new Error(
+      'Apple Sign In requires a native rebuild. Run: npx expo run:android',
+    )
+  }
+  const { appleAndroidClientId, appleAndroidRedirectUri } = env
+  if (!appleAndroidClientId || !appleAndroidRedirectUri) {
+    throw new Error('Apple Sign In on Android is not configured yet')
+  }
+
+  const requestNonce = generateNonce()
+
+  appleAuthAndroid.configure({
+    clientId: appleAndroidClientId,
+    redirectUri: appleAndroidRedirectUri,
+    responseType: appleAuthAndroid.ResponseType.ID_TOKEN,
+    scope: appleAuthAndroid.Scope.ALL,
+    nonce: requestNonce,
+  })
+
+  const response = await appleAuthAndroid.signIn()
+
+  const idToken = response.id_token
+  if (!idToken) {
+    throw new Error('Apple login failed: no identity_token received')
+  }
+
+  await waitForAppActive()
+
+  // Android Web OAuth：invertase 把 rawNonce 做 SHA256 后发给 Apple，id_token.nonce 是哈希值。
+  // 后端要求 nonce 与 id_token 内 nonce 一致，故发 SHA256(rawNonce)。
+  const rawNonce = response.nonce ?? requestNonce
+  const nonce = await sha256Hash(rawNonce)
+
+  return authApi.createOAuthSession('apple', {
+    idToken,
+    nonce,
+  })
+}
+
 export function useAppleLogin() {
-  const login = useCallback(async (): Promise<AuthResponse> => {
-    const isAvailable = await AppleAuthentication.isAvailableAsync()
-    if (!isAvailable) {
-      throw new Error('Apple Sign In is not available on this device')
-    }
-
-    const nonce = generateNonce()
-
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-      nonce,
-    })
-
-    const idToken = credential.identityToken
-    if (!idToken) {
-      throw new Error('Apple login failed: no identity_token received')
-    }
-
-    await waitForAppActive()
-
-    return authApi.createOAuthSession('apple', {
-      idToken,
-      nonce,
-    })
+  const login = useCallback((): Promise<AuthResponse> => {
+    return Platform.OS === 'android' ? loginAndroid() : loginIOS()
   }, [])
 
   return { login }

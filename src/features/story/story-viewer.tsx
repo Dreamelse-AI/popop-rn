@@ -67,6 +67,34 @@ function computeInitialStoryIndex(
 
 const DRAG_CLOSE_THRESHOLD = 150
 
+function getAdjacentStoryImage(
+  characters: StoryCharacter[],
+  charIndex: number,
+  storyIndex: number,
+  direction: -1 | 1,
+): string | undefined {
+  const char = characters[charIndex]
+  if (!char?.stories.length) return undefined
+
+  if (direction < 0) {
+    if (storyIndex > 0) return char.stories[storyIndex - 1]?.images?.[0]
+    if (charIndex > 0) {
+      const prevChar = characters[charIndex - 1]
+      const lastIdx = Math.max(0, (prevChar?.stories.length ?? 1) - 1)
+      return prevChar?.stories[lastIdx]?.images?.[0]
+    }
+    return undefined
+  }
+
+  if (storyIndex < char.stories.length - 1) {
+    return char.stories[storyIndex + 1]?.images?.[0]
+  }
+  if (charIndex < characters.length - 1) {
+    return characters[charIndex + 1]?.stories[0]?.images?.[0]
+  }
+  return undefined
+}
+
 export function StoryViewer({
   characters,
   initialCharacterIndex,
@@ -114,6 +142,8 @@ export function StoryViewer({
   const musicRef = useRef<MusicControlHandle>(null)
   const scrollRef = useRef<ScrollView>(null)
   const musicPausedByTapRef = useRef(false)
+  const [scrollAreaHeight, setScrollAreaHeight] = useState(0)
+  const [scrollLocked, setScrollLocked] = useState(false)
 
   // Heart animation
   const heartScale = useRef(new Animated.Value(0)).current
@@ -221,6 +251,10 @@ export function StoryViewer({
     onRead?.(currentChar.id, currentStory.id)
   }, [currentChar, currentStory, onRead, setLastReadStory, markStoryRead])
 
+  useEffect(() => {
+    if (!textExpanded) setScrollLocked(false)
+  }, [textExpanded])
+
   // Reset textExpanded on story change
   useEffect(() => {
     setTextExpanded(false)
@@ -228,6 +262,7 @@ export function StoryViewer({
     setIsMusicPausedByTap(false)
     musicPausedByTapRef.current = false
     setTextPausedTimer(false)
+    setScrollLocked(false)
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [currentStory?.id])
 
@@ -238,18 +273,17 @@ export function StoryViewer({
     if (!expanded) scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [])
 
-  // Prefetch adjacent story images for faster display
+  // Prefetch adjacent story images (含跨角色) for faster swipe
   useEffect(() => {
-    const stories = currentChar?.stories ?? []
     const urls = [
-      stories[currentIndex + 1]?.images?.[0],
-      stories[currentIndex - 1]?.images?.[0],
+      getAdjacentStoryImage(characters, charIndex, currentIndex, -1),
+      getAdjacentStoryImage(characters, charIndex, currentIndex, 1),
     ].filter((u): u is string => !!u)
     if (urls.length) Image.prefetch(urls)
     // 预加载当前角色内下一条 story 的 BGM，减少切换等待
-    const nextBgm = stories[currentIndex + 1]?.musicUrl
+    const nextBgm = currentChar?.stories[currentIndex + 1]?.musicUrl
     if (nextBgm) void Promise.resolve(preloadAudio({ uri: nextBgm })).catch(() => {})
-  }, [currentChar, currentIndex])
+  }, [characters, charIndex, currentIndex, currentChar])
 
   // 预加载下一个角色的 story（第一段 BGM + 第一张图），避免跨角色切换时等待下载
   useEffect(() => {
@@ -362,10 +396,12 @@ export function StoryViewer({
     })
   }, [inputFocused, musicExpanded, textPausedTimer])
 
-  const { offsetX, handleTouchStart, handleTouchMove, handleTouchEnd } = useStorySwipe({
+  const { getSwipeOffset, handleTouchStart, handleTouchMove, handleTouchEnd } = useStorySwipe({
     onSwipeLeft: handleGoNext,
     onSwipeRight: handleGoPrev,
     onTap: handleTap,
+    allowVerticalScroll: textExpanded,
+    onHorizontalLock: setScrollLocked,
     canSwipe: () => !isDragActive.current,
   })
 
@@ -378,7 +414,7 @@ export function StoryViewer({
   }, [])
 
   const handleDragMove = useCallback((pageX: number, pageY: number) => {
-    if (Math.abs(offsetX) > 5) return
+    if (Math.abs(getSwipeOffset()) > 5) return
     const dy = pageY - dragStartY.current
     const dx = Math.abs(pageX - dragStartXRef.current)
     if (!isDragActive.current) {
@@ -389,7 +425,7 @@ export function StoryViewer({
       return
     }
     dragY.setValue(Math.max(0, dy))
-  }, [dragY, offsetX])
+  }, [dragY, getSwipeOffset])
 
   const handleDragEnd = useCallback(() => {
     isDragActive.current = false
@@ -453,20 +489,28 @@ export function StoryViewer({
               避免 onPress 与手势处理争夺触摸响应者导致点击失效。 */}
           <View
             style={styles.scrollArea}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            onLayout={e => {
+              const h = e.nativeEvent.layout.height
+              if (h > 0 && h !== scrollAreaHeight) setScrollAreaHeight(h)
+            }}
           >
           <ScrollView
             ref={scrollRef}
             style={{ flex: 1 }}
-            contentContainerStyle={textExpanded ? styles.scrollContentExpanded : styles.scrollContent}
-            scrollEnabled={textExpanded}
+            contentContainerStyle={[
+              textExpanded ? styles.scrollContentExpanded : styles.scrollContent,
+              scrollAreaHeight > 0 ? { minHeight: scrollAreaHeight } : null,
+            ]}
+            scrollEnabled={textExpanded && !scrollLocked}
             showsVerticalScrollIndicator={textExpanded}
             keyboardShouldPersistTaps="handled"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
+            <View style={styles.scrollInner}>
             {currentStory.text ? (
-              <View style={styles.textWrapper} onTouchEnd={e => e.stopPropagation()}>
+              <View style={styles.textWrapper}>
                 <ViewerExpandableText
                   style={{ fontSize: 14, lineHeight: 20, color: themeColorText }}
                   expandLabel={t('post.expandText')}
@@ -479,22 +523,22 @@ export function StoryViewer({
               </View>
             ) : null}
 
-            <View
-              style={[styles.imageArea, textExpanded && styles.imageAreaExpanded]}
-            >
-              {currentStory.images?.[0] && (
+            <View style={[styles.imageArea, textExpanded && styles.imageAreaExpanded]}>
+              {currentStory.images?.[0] ? (
                 <Image
+                  key={currentStory.id}
                   source={{ uri: currentStory.images[0] }}
-                  style={[styles.storyImage, { transform: [{ translateX: offsetX }] }]}
+                  style={styles.storyImage}
                   contentFit="cover"
                   cachePolicy="memory-disk"
+                  transition={200}
                 />
-              )}
-              {currentStory.type === 'text' && !currentStory.images?.[0] && (
+              ) : currentStory.type === 'text' ? (
                 <View style={styles.textCard}>
                   <Text style={styles.textCardContent}>{currentStory.text}</Text>
                 </View>
-              )}
+              ) : null}
+            </View>
             </View>
           </ScrollView>
           </View>
@@ -624,14 +668,20 @@ const styles = StyleSheet.create({
   scrollContentExpanded: {
     flexGrow: 0,
   },
+  scrollInner: {
+    flexGrow: 1,
+  },
   imageArea: {
     flex: 1,
+    minHeight: 280,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
+    overflow: 'hidden',
   },
   imageAreaExpanded: {
-    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
     height: 480,
   },
   storyImage: {
